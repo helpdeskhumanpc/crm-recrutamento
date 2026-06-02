@@ -327,6 +327,7 @@
     <div class="stat-card"><div class="stat-num" id="s-renraku">-</div><div class="stat-label">連絡前</div></div>
     <div class="stat-card"><div class="stat-num" id="s-taiochu">-</div><div class="stat-label">対応中</div></div>
     <div class="stat-card"><div class="stat-num" id="s-mensetsu">-</div><div class="stat-label">面接</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-kengaku">-</div><div class="stat-label">見学</div></div>
     <div class="stat-card"><div class="stat-num" id="s-naitei">-</div><div class="stat-label">内定</div></div>
     <div class="stat-card"><div class="stat-num" id="s-nyusha">-</div><div class="stat-label">入社</div></div>
     <div class="stat-card"><div class="stat-num" id="s-stock" style="color:#e91e8c">-</div><div class="stat-label">ストック</div></div>
@@ -854,6 +855,7 @@ function renderPipeline() {
   document.getElementById('s-renraku').textContent  = grouped.renrakumae.length
   document.getElementById('s-taiochu').textContent  = grouped.taiochu.length
   document.getElementById('s-mensetsu').textContent = grouped.mensetsu.length
+  document.getElementById('s-kengaku').textContent  = grouped.kengaku.length
   document.getElementById('s-naitei').textContent   = grouped.naitei.length
   document.getElementById('s-nyusha').textContent   = grouped.nyusha.length
   document.getElementById('s-stock').textContent    = grouped.stock.length
