@@ -108,11 +108,19 @@
     <!-- 工場 / 面接日 -->
     <div class="form-row">
       <div>
+        <label>都道府県（工場）</label>
+        <select id="estadoSelect" onchange="filtrarFabricasPorEstado()">
+          <option value="">全県</option>
+        </select>
+      </div>
+      <div>
         <label>工場 <span class="required">*</span></label>
         <select id="fabricaSelect" name="fabrica" required>
           <option value="">選択してください</option>
         </select>
       </div>
+    </div>
+    <div class="form-row">
       <div>
         <label>面接日</label>
         <input type="date" name="dt_mensetsu">
@@ -343,8 +351,7 @@
     <div class="alert alert-success" id="successMsg">
       ✅ 登録が完了しました。<br><br>
       <strong>ありがとうございます！</strong><br>
-      候補者情報が正常に登録されました。<br>
-      担当者より追ってご連絡いたします。
+      候補者情報が正常に登録されました。
     </div>
     <div class="alert alert-error"   id="errorMsg">❌ エラーが発生しました。もう一度お試しください。</div>
 
@@ -359,16 +366,42 @@
     'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE'
   )
 
+  let todasFabricas = []
+
   async function carregarFabricas() {
-    const { data, error } = await sb.from('locations').select('nome').eq('tipo', '工場').order('nome')
+    const { data, error } = await sb.from('locations').select('nome, estado').eq('tipo', '工場').order('nome')
     if (error || !data) return
+    todasFabricas = data
+
+    // popula estados únicos
+    const estados = [...new Set(data.map(f => f.estado).filter(Boolean))].sort()
+    const estadoSel = document.getElementById('estadoSelect')
+    estados.forEach(e => {
+      const opt = document.createElement('option')
+      opt.value = e
+      opt.textContent = e
+      estadoSel.appendChild(opt)
+    })
+
+    // popula todas as fábricas inicialmente
+    preencherFabricas(data)
+  }
+
+  function preencherFabricas(lista) {
     const sel = document.getElementById('fabricaSelect')
-    data.forEach(f => {
+    sel.innerHTML = '<option value="">選択してください</option>'
+    lista.forEach(f => {
       const opt = document.createElement('option')
       opt.value = f.nome
       opt.textContent = f.nome
       sel.appendChild(opt)
     })
+  }
+
+  function filtrarFabricasPorEstado() {
+    const estado = document.getElementById('estadoSelect').value
+    const filtradas = estado ? todasFabricas.filter(f => f.estado === estado) : todasFabricas
+    preencherFabricas(filtradas)
   }
 
   let todosShokaishas = []
