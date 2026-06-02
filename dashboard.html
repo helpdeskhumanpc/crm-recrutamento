@@ -914,6 +914,7 @@ function renderCalendar() {
   const fabFilter = document.getElementById('calFabricaFilter').value
   const today     = new Date()
   const todayStr  = today.toISOString().split('T')[0]
+  const firstDay  = new Date(calYear, calMonth, 1)
   const lastDay   = new Date(calYear, calMonth + 1, 0)
   const months    = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
   const dows      = ['日','月','火','水','木','金','土']
@@ -943,8 +944,6 @@ function renderCalendar() {
   // ── GRID (desktop) ──────────────────────────────────────
   const grid = document.getElementById('calGrid')
   let html = dows.map(d => `<div class="cal-day-header">${d}</div>`).join('')
-  const firstDay = new Date(calYear, calMonth, 1)
-  const lastDay  = new Date(calYear, calMonth + 1, 0)
   let startDow = firstDay.getDay()
   for (let i = 0; i < startDow; i++) {
     const d = new Date(calYear, calMonth, -startDow + i + 1)
