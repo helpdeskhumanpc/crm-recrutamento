@@ -60,6 +60,10 @@ app.use((req, res, next) => {
   next()
 })
 
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dashboard.html'))
+})
+
 app.use(express.static(path.join(__dirname)))
 
 const PORT = process.env.PORT || 4000
