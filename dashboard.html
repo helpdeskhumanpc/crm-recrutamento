@@ -621,7 +621,7 @@ function diasNaEtapa(c) {
 async function carregarDados() {
   document.getElementById('pipeline').innerHTML = '<div class="loading">読み込み中...</div>'
   const [res1, res2] = await Promise.all([
-    sb.from('candidates').select('*').order('created_at', { ascending: false }),
+    sb.from('candidates').select('*').eq('is_deleted', false).order('created_at', { ascending: false }),
     sb.from('locations').select('nome').eq('tipo', '工場').order('nome')
   ])
   todosOsCandidatos = res1.data || []
@@ -1153,8 +1153,8 @@ async function salvarCandidato() {
 
 async function deletarCandidato() {
   if (!candidatoAtivo) return
-  if (!confirm(`「${candidatoAtivo.shimei}」を削除しますか？`)) return
-  const { error } = await sb.from('candidates').delete().eq('id', candidatoAtivo.id)
+  if (!confirm(`「${candidatoAtivo.shimei}」を非表示にしますか？\n（データはシステムに保持されます）`)) return
+  const { error } = await sb.from('candidates').update({ is_deleted: true }).eq('id', candidatoAtivo.id)
   if (error) { alert('エラー: ' + error.message); return }
   fecharModal()
   await carregarDados()
