@@ -1,0 +1,11 @@
+{
+  "name": "crm-recrutamento",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "serve -l $PORT .",
+    "dev": "serve -l 4000 ."
+  },
+  "dependencies": {
+    "serve": "^14.2.3"
+  }
+}

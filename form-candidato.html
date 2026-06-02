@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>候補者登録フォーム</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    .form-container { max-width: 800px; margin: 0 auto; background: white; padding: 32px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #e8621a; font-size: 22px; margin-bottom: 28px; border-bottom: 2px solid #e8621a; padding-bottom: 12px; }
+    .form-group { margin-bottom: 20px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; color: #333; }
+    .required { color: red; margin-left: 2px; }
+    input[type="text"],
+    input[type="tel"],
+    input[type="date"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #333;
+      background: white;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #e8621a;
+      box-shadow: 0 0 0 2px rgba(232,98,26,0.1);
+    }
+    .checkbox-group { display: flex; flex-direction: column; gap: 10px; }
+    .checkbox-group label {
+      font-weight: normal;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .checkbox-group input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    .section-title {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 14px;
+      color: #333;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #eee;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 28px;
+      transition: background 0.2s;
+    }
+    .btn-submit:hover { background: #43a047; }
+    .btn-submit:disabled { background: #aaa; cursor: not-allowed; }
+    .divider { border: none; border-top: 1px solid #eee; margin: 28px 0; }
+    .alert {
+      display: none;
+      padding: 14px 16px;
+      border-radius: 4px;
+      margin-top: 16px;
+      font-size: 14px;
+      text-align: center;
+    }
+    .alert-success { background: #e8f5e9; color: #2e7d32; }
+    .alert-error   { background: #ffebee; color: #c62828; }
+    @media (max-width: 600px) {
+      .form-row-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="form-container">
+  <h1>候補者登録フォーム</h1>
+
+  <form id="candidateForm">
+
+    <!-- 紹介 -->
+    <div class="form-row">
+      <div>
+        <label>事務所 <span class="required">*</span></label>
+        <select id="jimushoSelect" onchange="filtrarShokaisha()" required>
+          <option value="">選択してください</option>
+        </select>
+      </div>
+      <div>
+        <label>紹介者 <span class="required">*</span></label>
+        <select id="shokaishaSelect" name="shokai" required>
+          <option value="">事務所を先に選択</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 工場 / 面接日 -->
+    <div class="form-row">
+      <div>
+        <label>工場 <span class="required">*</span></label>
+        <select id="fabricaSelect" name="fabrica" required>
+          <option value="">選択してください</option>
+        </select>
+      </div>
+      <div>
+        <label>面接日</label>
+        <input type="date" name="dt_mensetsu">
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>面接時間</label>
+        <input type="time" name="mensetsu_hora">
+      </div>
+      <div></div>
+    </div>
+
+    <!-- 氏名 -->
+    <div class="form-group">
+      <label>氏名 <span class="required">*</span></label>
+      <input type="text" name="shimei" required placeholder="例：田中 太郎">
+    </div>
+
+    <!-- 電話 / 〒 -->
+    <div class="form-row">
+      <div>
+        <label>電話番号 <span class="required">*</span></label>
+        <input type="tel" name="telefone" required placeholder="090-1234-5678">
+      </div>
+      <div>
+        <label>〒</label>
+        <input type="text" name="postal_code" placeholder="123-4567">
+      </div>
+    </div>
+
+    <!-- 都道府県 / 市区町村 -->
+    <div class="form-row">
+      <div>
+        <label>都道府県 <span class="required">*</span></label>
+        <input type="text" name="prefecture" required placeholder="例：愛知県">
+      </div>
+      <div>
+        <label>市区町村 <span class="required">*</span></label>
+        <input type="text" name="city" required placeholder="例：安城市">
+      </div>
+    </div>
+
+    <!-- 年齢 / 性別 / 生年月日 -->
+    <div class="form-row-3">
+      <div>
+        <label>年齢 <span class="required">*</span></label>
+        <input type="number" name="idade" required placeholder="30" min="16" max="99">
+      </div>
+      <div>
+        <label>性別 <span class="required">*</span></label>
+        <select name="sexo" required>
+          <option value="">選択してください</option>
+          <option value="男性">男性</option>
+          <option value="女性">女性</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div>
+        <label>生年月日</label>
+        <input type="date" name="data_nascimento">
+      </div>
+    </div>
+
+    <!-- 国籍 / ビザ -->
+    <div class="form-row">
+      <div>
+        <label>国籍 <span class="required">*</span></label>
+        <input type="text" name="nacionalidade" required placeholder="例：ブラジル">
+      </div>
+      <div>
+        <label>ビザ <span class="required">*</span></label>
+        <select name="visa" required>
+          <option value="">選択してください</option>
+          <option value="永住者">永住者</option>
+          <option value="日本人の配偶者">日本人の配偶者</option>
+          <option value="永住者の配偶者または子">永住者の配偶者または子</option>
+          <option value="定住者（1・3・5年）">定住者（1・3・5年）</option>
+          <option value="家族滞在">家族滞在</option>
+          <option value="留学">留学</option>
+          <option value="日本国籍">日本国籍</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- アパート / 引っ越し / 車 -->
+    <div class="form-row-3">
+      <div>
+        <label>アパート必要</label>
+        <select name="precisa_apartamento">
+          <option value="true">必要</option>
+          <option value="false">不要</option>
+        </select>
+      </div>
+      <div>
+        <label>引っ越し可能か</label>
+        <select name="pode_mudar">
+          <option value="true">可能</option>
+          <option value="false">不可</option>
+        </select>
+      </div>
+      <div>
+        <label>車の所有</label>
+        <select name="tem_carro">
+          <option value="false">なし</option>
+          <option value="true">あり</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 現在仕事中 / 可能な直 -->
+    <div class="form-row">
+      <div>
+        <label>現在仕事中</label>
+        <select name="esta_empregado">
+          <option value="在職中">在職中</option>
+          <option value="離職中">離職中</option>
+          <option value="アルバイト中">アルバイト中</option>
+          <option value="退職予定（予告期間中）">退職予定（予告期間中）</option>
+        </select>
+      </div>
+      <div>
+        <label>可能な直</label>
+        <div class="checkbox-group" style="margin-top:4px">
+          <label><input type="checkbox" name="turnos_possiveis" value="二交代"> 二交代</label>
+          <label><input type="checkbox" name="turnos_possiveis" value="早番遅番"> 早番遅番</label>
+          <label><input type="checkbox" name="turnos_possiveis" value="二直三班"> 二直三班</label>
+          <label><input type="checkbox" name="turnos_possiveis" value="昼勤のみ"> 昼勤のみ</label>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- 免許 -->
+    <div class="form-group">
+      <p class="section-title">免許・資格</p>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="habilitacao" value="所持なし"> 所持なし</label>
+        <label><input type="checkbox" name="habilitacao" value="普通自動車"> 普通自動車</label>
+        <label><input type="checkbox" name="habilitacao" value="バイク"> バイク</label>
+        <label><input type="checkbox" name="habilitacao" value="フォークリフト"> フォークリフト</label>
+        <label><input type="checkbox" name="habilitacao" value="玉掛け"> 玉掛け</label>
+        <label><input type="checkbox" name="habilitacao" value="クレーン"> クレーン</label>
+        <label><input type="checkbox" name="habilitacao" value="溶接"> 溶接</label>
+      </div>
+    </div>
+
+
+    <hr class="divider">
+
+    <!-- 工場経験 -->
+    <div class="form-group">
+      <p class="section-title">工場経験</p>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="experiencia" value="経験なし"> 経験なし</label>
+        <label><input type="checkbox" name="experiencia" value="組み立て（くみたて）"> 組み立て（くみたて）</label>
+        <label><input type="checkbox" name="experiencia" value="自動車部品"> 自動車部品</label>
+        <label><input type="checkbox" name="experiencia" value="食品"> 食品</label>
+        <label><input type="checkbox" name="experiencia" value="電子部品"> 電子部品</label>
+        <label><input type="checkbox" name="experiencia" value="フォークリフト"> フォークリフト</label>
+        <label><input type="checkbox" name="experiencia" value="玉掛け"> 玉掛け</label>
+        <label><input type="checkbox" name="experiencia" value="検査"> 検査（けんさ）</label>
+        <label><input type="checkbox" name="experiencia" value="梱包"> 梱包（こんぽ）</label>
+        <label><input type="checkbox" name="experiencia" value="プレス"> プレス</label>
+        <label><input type="checkbox" name="experiencia" value="溶接"> 溶接（ようせつ）</label>
+        <label><input type="checkbox" name="experiencia" value="塗装"> 塗装（とそう）</label>
+        <label><input type="checkbox" name="experiencia" value="建設"> 建設（けんせつ）</label>
+        <label><input type="checkbox" name="experiencia" value="物流"> 物流（ぶつりゅう）</label>
+        <label><input type="checkbox" name="experiencia" value="コンビニ"> コンビニ</label>
+        <label><input type="checkbox" name="experiencia" value="スーパー"> スーパー</label>
+        <label><input type="checkbox" name="experiencia" value="ホテル"> ホテル</label>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- 日本語力 -->
+    <div class="form-group">
+      <label>日本語力</label>
+      <select name="nivel_japones">
+        <option value="0%（日本語不可）">0%（日本語不可）</option>
+        <option value="N5 10%〜（少し話せる）">N5 10%〜（少し話せる）</option>
+        <option value="N4 30%〜（基本会話）">N4 30%〜（基本会話）</option>
+        <option value="N3 50%〜（日常会話）">N3 50%〜（日常会話）</option>
+        <option value="N2 60%〜（中級会話）">N2 60%〜（中級会話）</option>
+        <option value="N1 80%〜（上級会話）">N1 80%〜（上級会話）</option>
+      </select>
+    </div>
+
+    <!-- ひらがな / カタカナ / 英語 -->
+    <div class="form-row-3">
+      <div>
+        <label>ひらがな</label>
+        <select name="hiragana">
+          <option value="読み書きできる">読み書きできる</option>
+          <option value="読めるのみ">読めるのみ</option>
+          <option value="できない">できない</option>
+        </select>
+      </div>
+      <div>
+        <label>カタカナ</label>
+        <select name="katakana">
+          <option value="読み書きできる">読み書きできる</option>
+          <option value="読めるのみ">読めるのみ</option>
+          <option value="できない">できない</option>
+        </select>
+      </div>
+      <div>
+        <label>英語会話</label>
+        <select name="fala_ingles">
+          <option value="false">できない</option>
+          <option value="true">できる</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- コメント -->
+    <div class="form-group">
+      <label>コメント・備考</label>
+      <textarea name="comentario" rows="4" placeholder="候補者に関するメモや備考を入力してください"></textarea>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submitBtn">登録する</button>
+
+    <div class="alert alert-success" id="successMsg">
+      ✅ 登録が完了しました。<br><br>
+      <strong>ありがとうございます！</strong><br>
+      候補者情報が正常に登録されました。<br>
+      担当者より追ってご連絡いたします。
+    </div>
+    <div class="alert alert-error"   id="errorMsg">❌ エラーが発生しました。もう一度お試しください。</div>
+
+  </form>
+</div>
+
+<script>
+  const { createClient } = supabase
+
+  const sb = createClient(
+    'https://xzxfwrbebkwagnropgfb.supabase.co',
+    'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE'
+  )
+
+  async function carregarFabricas() {
+    const { data, error } = await sb.from('locations').select('nome').eq('tipo', '工場').order('nome')
+    if (error || !data) return
+    const sel = document.getElementById('fabricaSelect')
+    data.forEach(f => {
+      const opt = document.createElement('option')
+      opt.value = f.nome
+      opt.textContent = f.nome
+      sel.appendChild(opt)
+    })
+  }
+
+  let todosShokaishas = []
+
+  async function carregarShokaisha() {
+    const { data, error } = await sb.from('shokaisha').select('jimusho, nome').order('jimusho').order('nome')
+    if (error || !data) return
+    todosShokaishas = data
+
+    const jimushos = [...new Set(data.map(s => s.jimusho))]
+    const jimushoSelect = document.getElementById('jimushoSelect')
+    jimushos.forEach(j => {
+      const opt = document.createElement('option')
+      opt.value = j
+      opt.textContent = j
+      jimushoSelect.appendChild(opt)
+    })
+  }
+
+  function filtrarShokaisha() {
+    const jimusho = document.getElementById('jimushoSelect').value
+    const shokaishaSelect = document.getElementById('shokaishaSelect')
+    shokaishaSelect.innerHTML = '<option value="">選択してください</option>'
+
+    if (!jimusho) return
+    todosShokaishas
+      .filter(s => s.jimusho === jimusho)
+      .forEach(s => {
+        const opt = document.createElement('option')
+        opt.value = s.nome
+        opt.textContent = s.nome
+        shokaishaSelect.appendChild(opt)
+      })
+  }
+
+  carregarFabricas()
+  carregarShokaisha()
+
+  document.getElementById('candidateForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    const form = e.target
+    const btn  = document.getElementById('submitBtn')
+    const data = new FormData(form)
+
+    btn.disabled    = true
+    btn.textContent = '送信中...'
+
+    const habilitacao       = [...form.querySelectorAll('input[name="habilitacao"]:checked')].map(el => el.value)
+    const experiencia       = [...form.querySelectorAll('input[name="experiencia"]:checked')].map(el => el.value)
+    const turnos_possiveis  = [...form.querySelectorAll('input[name="turnos_possiveis"]:checked')].map(el => el.value)
+
+    const payload = {
+      shokai:               data.get('shokai')            || null,
+      fabrica:              data.get('fabrica')           || null,
+      dt_mensetsu:          data.get('dt_mensetsu')       || null,
+      mensetsu_hora:        data.get('mensetsu_hora')     || null,
+      shimei:               data.get('shimei'),
+      telefone:             data.get('telefone'),
+      postal_code:          data.get('postal_code'),
+      prefecture:           data.get('prefecture'),
+      city:                 data.get('city'),
+      data_nascimento:      data.get('data_nascimento')   || null,
+      idade:                parseInt(data.get('idade')),
+      sexo:                 data.get('sexo'),
+      nacionalidade:        data.get('nacionalidade'),
+      visa:                 data.get('visa'),
+      precisa_apartamento:  data.get('precisa_apartamento') === 'true',
+      pode_mudar:           data.get('pode_mudar')          === 'true',
+      tem_carro:            data.get('tem_carro')           === 'true',
+      esta_empregado:       data.get('esta_empregado'),
+      turnos_possiveis,
+      fala_ingles:          data.get('fala_ingles')         === 'true',
+      habilitacao,
+      experiencia,
+      nivel_japones:        data.get('nivel_japones'),
+      hiragana:             data.get('hiragana'),
+      katakana:             data.get('katakana'),
+      comentario:           data.get('comentario')          || null,
+    }
+
+    const { error } = await sb.from('candidates').insert([payload])
+
+    btn.disabled    = false
+    btn.textContent = '登録する'
+
+    if (error) {
+      console.error(error)
+      document.getElementById('errorMsg').style.display = 'block'
+      document.getElementById('errorMsg').textContent = '❌ ' + (error.message || JSON.stringify(error))
+      document.getElementById('successMsg').style.display = 'none'
+    } else {
+      document.getElementById('successMsg').style.display = 'block'
+      document.getElementById('errorMsg').style.display = 'none'
+      form.reset()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  })
+</script>
+</body>
+</html>

@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM 採用管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; display: flex; height: 100vh; overflow: hidden; }
+
+    /* SIDEBAR */
+    #sidebar { width: 210px; min-width: 210px; background: #1a1a2e; color: #fff; display: flex; flex-direction: column; overflow-y: auto; }
+    #sidebar h2 { padding: 14px 16px; font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; }
+    .sidebar-item { padding: 9px 16px; cursor: pointer; border-bottom: 1px solid #222; transition: background 0.15s; font-size: 13px; }
+    .sidebar-item:hover { background: #2d2d4e; }
+    .sidebar-item.active { background: #e8621a; }
+    .factory-name { font-weight: 600; }
+    .factory-count { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+    /* MAIN */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* TOPBAR */
+    #topbar { background: #fff; padding: 8px 16px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    #topbar h1 { font-size: 15px; color: #333; }
+    .tab-btn { padding: 5px 14px; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer; font-size: 13px; }
+    .tab-btn.active { background: #e8621a; color: white; border-color: #e8621a; }
+    #searchInput { padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 180px; }
+    .filter-select { padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: white; }
+    .btn-refresh { margin-left: auto; padding: 5px 12px; background: #e8621a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+
+    /* ALERT BAR */
+    #alertBar { background: #fff3e0; border-bottom: 2px solid #e8621a; padding: 6px 16px; font-size: 12px; display: none; align-items: center; gap: 8px; flex-wrap: wrap; }
+    #alertBar strong { color: #e8621a; }
+    .alert-chip { background: #e8621a; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; cursor: pointer; }
+
+    /* STATS */
+    #statsBar { display: flex; gap: 8px; padding: 8px 16px; background: white; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
+    .stat-card { background: #f5f5f5; border-radius: 6px; padding: 6px 12px; text-align: center; min-width: 70px; }
+    .stat-num { font-size: 18px; font-weight: 700; color: #333; }
+    .stat-label { font-size: 10px; color: #888; margin-top: 1px; }
+
+    /* PIPELINE */
+    #pipeline { flex: 1; overflow-y: auto; padding: 12px; display: none; }
+    .stage-section { margin-bottom: 10px; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .stage-header { padding: 8px 16px; color: white; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+    .stage-count { background: rgba(255,255,255,0.3); border-radius: 12px; padding: 1px 8px; font-size: 11px; }
+    .stage-body { background: white; }
+    .stage-empty { padding: 10px 16px; color: #aaa; font-size: 12px; font-style: italic; }
+    .col-header { display: grid; grid-template-columns: 160px 100px 120px 110px 60px 55px 110px 70px; gap: 6px; padding: 5px 16px; background: #f5f5f5; font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; }
+    .candidate-row { display: grid; grid-template-columns: 160px 100px 120px 110px 60px 55px 110px 70px; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; cursor: pointer; transition: background 0.1s; }
+    .candidate-row:hover { background: #f0f7ff; }
+    .candidate-row:last-child { border-bottom: none; }
+    .black-flag { color: #c62828; font-weight: 700; font-size: 10px; }
+    .dias-badge { background: #f5f5f5; border-radius: 10px; padding: 1px 6px; font-size: 10px; color: #888; }
+    .dias-badge.alert { background: #ffebee; color: #c62828; }
+
+    .stage-renrakumae .stage-header { background: #1e88e5; }
+    .stage-taiochu    .stage-header { background: #f57c00; }
+    .stage-mensetsu   .stage-header { background: #00897b; }
+    .stage-kengaku    .stage-header { background: #5e35b1; }
+    .stage-naitei     .stage-header { background: #2e7d32; }
+    .stage-nyusha     .stage-header { background: #7b1fa2; }
+    .stage-stock      .stage-header { background: #e91e8c; }
+    .stage-ng         .stage-header { background: #c62828; }
+    .stage-black      .stage-header { background: #212121; }
+
+    /* CALENDAR */
+    #calendarView { flex: 1; overflow-y: auto; padding: 12px; display: none; flex-direction: column; }
+
+    /* CHARTS */
+    #chartsView { flex: 1; overflow-y: auto; padding: 16px; display: none; flex-direction: column; gap: 16px; }
+    .chart-filter-bar { display: flex; align-items: center; gap: 12px; background: white; padding: 10px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .chart-filter-bar label { font-size: 13px; font-weight: 600; color: #555; }
+    .chart-filter-bar select { padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+    .charts-row { display: grid; gap: 16px; }
+    .charts-row-2 { grid-template-columns: 1fr 1fr; }
+    .charts-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .chart-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .chart-card h3 { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 12px; }
+    .chart-card canvas { max-height: 280px; }
+    .conversion-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .conv-card { background: white; border-radius: 8px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-align: center; }
+    .conv-pct { font-size: 28px; font-weight: 700; color: #1e88e5; }
+    .conv-label { font-size: 11px; color: #888; margin-top: 4px; }
+    .cal-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .cal-nav { display: flex; align-items: center; gap: 8px; }
+    .cal-nav button { padding: 5px 12px; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer; font-size: 13px; }
+    .cal-nav h2 { font-size: 16px; font-weight: 700; min-width: 120px; text-align: center; }
+    .cal-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-left: auto; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; }
+    .cal-day-header { background: #f5f5f5; padding: 6px; text-align: center; font-size: 11px; font-weight: 700; color: #666; }
+    .cal-day { background: white; min-height: 100px; padding: 4px; }
+    .cal-day.other-month { background: #fafafa; }
+    .cal-day.today { background: #fff8f0; }
+    .cal-day-num { font-size: 12px; color: #333; margin-bottom: 4px; font-weight: 600; }
+    .cal-day.today .cal-day-num { color: #e8621a; font-weight: 700; }
+    .cal-day.sunday .cal-day-num { color: #c62828; }
+    .cal-day.saturday .cal-day-num { color: #1565c0; }
+    .cal-event { padding: 2px 5px; border-radius: 3px; font-size: 10px; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; }
+    .cal-event.mensetsu { background: #1e88e5; }
+    .cal-event.kengaku  { background: #2e7d32; }
+    .cal-event.nyusha   { background: #7b1fa2; }
+    .cal-event.alerta   { background: #e8621a; }
+    .cal-filter { padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+
+    /* MODAL */
+    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; align-items: center; justify-content: center; }
+    #modalBox { background: white; border-radius: 8px; width: 700px; max-width: 96vw; max-height: 92vh; overflow-y: auto; }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: white; z-index: 1; }
+    .modal-header h2 { font-size: 16px; color: #333; }
+    .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: #888; }
+    .modal-body { padding: 20px; }
+    .modal-section { margin-bottom: 20px; }
+    .modal-section-title { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid #f0f0f0; }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .modal-field label { display: block; font-size: 11px; color: #888; margin-bottom: 3px; }
+    .modal-field input, .modal-field select, .modal-field textarea {
+      width: 100%; padding: 7px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; color: #333;
+    }
+    .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus { outline: none; border-color: #e8621a; }
+    .modal-checkbox-group { display: flex; flex-wrap: wrap; gap: 6px; }
+    .modal-checkbox-group label { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: normal; background: #f5f5f5; padding: 4px 10px; border-radius: 12px; cursor: pointer; white-space: nowrap; }
+    .date-with-btn { display: flex; gap: 4px; align-items: center; }
+    .date-with-btn input { flex: 1; }
+    .btn-hoje { padding: 6px 8px; background: #1e88e5; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap; }
+    .modal-footer { padding: 14px 20px; border-top: 1px solid #eee; display: flex; justify-content: space-between; gap: 8px; position: sticky; bottom: 0; background: white; }
+    .btn-save { padding: 8px 24px; background: #1e88e5; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .btn-delete { padding: 8px 16px; background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .btn-cancel { padding: 8px 16px; background: #f5f5f5; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .black-toggle { display: flex; align-items: center; gap: 8px; padding: 8px; background: #ffebee; border-radius: 4px; margin-bottom: 8px; }
+    .loading { padding: 40px; text-align: center; color: #aaa; font-size: 14px; }
+
+    /* FILTER PANEL */
+    #filterOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:150; }
+    #filterPanel { position:fixed; right:-340px; top:0; width:320px; height:100vh; background:white; z-index:160; box-shadow:-4px 0 20px rgba(0,0,0,0.2); display:flex; flex-direction:column; transition:right 0.25s ease; }
+    #filterPanel.open { right:0; }
+    .fp-header { padding:14px 16px; background:#4527a0; color:white; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    .fp-header h3 { font-size:15px; }
+    .fp-close { background:none; border:none; color:white; font-size:20px; cursor:pointer; }
+    .fp-body { flex:1; overflow-y:auto; padding:16px; }
+    .fp-section { margin-bottom:18px; }
+    .fp-section-title { font-size:12px; font-weight:700; color:#555; margin-bottom:8px; }
+    .fp-chips { display:flex; flex-wrap:wrap; gap:6px; }
+    .fp-chip { display:flex; align-items:center; gap:4px; background:#f0f0f0; border:1px solid #ddd; border-radius:16px; padding:4px 10px; font-size:12px; cursor:pointer; user-select:none; }
+    .fp-chip input[type="checkbox"] { width:13px; height:13px; cursor:pointer; }
+    .fp-chip.radio-chip input[type="radio"] { width:13px; height:13px; cursor:pointer; }
+    .fp-age { display:flex; align-items:center; gap:8px; font-size:13px; }
+    .fp-age input { width:70px; padding:5px 8px; border:1px solid #ddd; border-radius:4px; font-size:13px; }
+    .fp-footer { padding:12px 16px; border-top:1px solid #eee; display:flex; gap:8px; flex-shrink:0; }
+    .fp-footer button { flex:1; padding:9px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600; border:none; }
+    .btn-reset { background:#f5f5f5; color:#555; }
+    .btn-apply { background:#4527a0; color:white; }
+    .filter-badge { background:#c62828; color:white; border-radius:10px; padding:1px 6px; font-size:10px; margin-left:4px; display:none; }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h2>工場別</h2>
+  <div class="sidebar-item active" onclick="filtrarFabrica(null, this)">
+    <div class="factory-name">全体</div>
+    <div class="factory-count" id="totalCount">...</div>
+  </div>
+  <div id="sidebarFabricas"></div>
+</div>
+
+<div id="main">
+  <div id="topbar">
+    <h1>採用管理</h1>
+    <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
+    <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
+    <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
+    <input type="text" id="searchInput" placeholder="氏名・電話で検索" oninput="renderPipeline()">
+    <select class="filter-select" id="filterSexo" onchange="renderPipeline()">
+      <option value="">性別：全て</option>
+      <option value="男性">男性</option><option value="女性">女性</option>
+    </select>
+    <input type="number" id="filterIdade" class="filter-select" placeholder="年齢上限" style="width:90px" oninput="renderPipeline()">
+    <select class="filter-select" id="filterJP" onchange="renderPipeline()">
+      <option value="">日本語：全て</option>
+      <option value="0%（日本語不可）">0%</option>
+      <option value="N5 10%〜（少し話せる）">N5</option>
+      <option value="N4 30%〜（基本会話）">N4</option>
+      <option value="N3 50%〜（日常会話）">N3</option>
+      <option value="N2 60%〜（中級会話）">N2</option>
+      <option value="N1 80%〜（上級会話）">N1</option>
+    </select>
+    <div style="position:relative">
+      <button class="btn-refresh" style="background:#5e35b1" onclick="toggleStageFilter()">ステージ ▾</button>
+      <div id="stageFilterBox" style="display:none;position:absolute;top:32px;right:0;background:white;border:1px solid #ddd;border-radius:6px;padding:10px;z-index:50;min-width:160px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
+        <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px">表示ステージ</div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="renrakumae" checked onchange="renderPipeline()"> 連絡前</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="taiochu" checked onchange="renderPipeline()"> 対応中</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="mensetsu" checked onchange="renderPipeline()"> 面接</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="kengaku" checked onchange="renderPipeline()"> 見学</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="naitei" checked onchange="renderPipeline()"> 内定</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="nyusha" checked onchange="renderPipeline()"> 入社</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="stock" checked onchange="renderPipeline()"> ストック</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="ng" checked onchange="renderPipeline()"> NG</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="black" checked onchange="renderPipeline()"> ブラック</label>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <button onclick="selectAllStages(true)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;cursor:pointer">全選択</button>
+          <button onclick="selectAllStages(false)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;cursor:pointer">全解除</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn-refresh" style="background:#4527a0" onclick="abrirFilterPanel()">詳細フィルター<span class="filter-badge" id="filterBadge">0</span></button>
+    <button class="btn-refresh" style="background:#2e7d32" onclick="imprimirPDF()">PDF印刷</button>
+    <button class="btn-refresh" onclick="carregarDados()">更新</button>
+  </div>
+
+  <div id="alertBar"></div>
+
+  <div id="statsBar">
+    <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-label">総候補者</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-renraku">-</div><div class="stat-label">連絡前</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-taiochu">-</div><div class="stat-label">対応中</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-mensetsu">-</div><div class="stat-label">面接</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-naitei">-</div><div class="stat-label">内定</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-nyusha">-</div><div class="stat-label">入社</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-stock" style="color:#e91e8c">-</div><div class="stat-label">ストック</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-ng" style="color:#c62828">-</div><div class="stat-label">NG</div></div>
+  </div>
+
+  <div id="pipeline"><div class="loading">読み込み中...</div></div>
+
+  <div id="calendarView">
+    <div class="cal-topbar">
+      <div class="cal-nav">
+        <button onclick="calPrev()">←</button>
+        <h2 id="calTitle"></h2>
+        <button onclick="calNext()">→</button>
+        <button onclick="calToday()">今日</button>
+      </div>
+      <select class="cal-filter" id="calFabricaFilter" onchange="renderCalendar()">
+        <option value="">全工場</option>
+      </select>
+      <div class="cal-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1e88e5"></div>面接</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div>見学</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7b1fa2"></div>入社</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e8621a"></div>アラート</div>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <!-- CHARTS VIEW -->
+  <div id="chartsView">
+    <div class="chart-filter-bar">
+      <label>工場フィルター：</label>
+      <select id="chartFabrica" onchange="renderCharts()">
+        <option value="">全体</option>
+      </select>
+    </div>
+
+    <!-- Taxa de conversão -->
+    <div class="conversion-grid">
+      <div class="conv-card"><div class="conv-pct" id="cv-total">-</div><div class="conv-label">総候補者</div></div>
+      <div class="conv-card"><div class="conv-pct" id="cv-mens">-</div><div class="conv-label">応募→面接</div></div>
+      <div class="conv-card"><div class="conv-pct" id="cv-nait">-</div><div class="conv-label">面接→内定</div></div>
+      <div class="conv-card"><div class="conv-pct" id="cv-nyu">-</div><div class="conv-label">内定→入社</div></div>
+    </div>
+
+    <!-- Funil + Por fábrica -->
+    <div class="charts-row charts-row-2">
+      <div class="chart-card">
+        <h3>採用ファネル（候補者数）</h3>
+        <canvas id="chartFunil"></canvas>
+      </div>
+      <div class="chart-card" id="cardFabrica">
+        <h3>工場別 候補者数</h3>
+        <canvas id="chartFabrica"></canvas>
+      </div>
+    </div>
+
+    <!-- Entradas por mês + Ranking 紹介者 -->
+    <div class="charts-row charts-row-2">
+      <div class="chart-card">
+        <h3>月別 応募数</h3>
+        <canvas id="chartMes"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>紹介者 ランキング（上位10）</h3>
+        <canvas id="chartShokai"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FILTER PANEL -->
+<div id="filterOverlay" onclick="fecharFilterPanel()"></div>
+<div id="filterPanel">
+  <div class="fp-header">
+    <h3>● 詳細フィルター</h3>
+    <button class="fp-close" onclick="fecharFilterPanel()">✕</button>
+  </div>
+  <div class="fp-body">
+
+    <div class="fp-section">
+      <div class="fp-section-title">日本語レベル</div>
+      <div class="fp-chips">
+        <label class="fp-chip"><input type="checkbox" class="fp-jp" value="0%（日本語不可）"> 0%（話せない）</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-jp" value="N5 10%〜（少し話せる）"> N5（少し）</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-jp" value="N4 30%〜（基本会話）"> N4（基本）</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-jp" value="N3 50%〜（日常会話）"> N3（日常）</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-jp" value="N2 60%〜（中級会話）"> N2（中級）</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-jp" value="N1 80%〜（上級会話）"> N1（上級）</label>
+      </div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">年齢上限</div>
+      <div class="fp-age">〜 <input type="number" id="fp-age-max" placeholder="例: 45"> 歳</div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">状況</div>
+      <div class="fp-chips">
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="renrakumae"> 連絡前</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="taiochu"> 対応中</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="mensetsu"> 面接</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="kengaku"> 見学</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="naitei"> 内定</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="nyusha"> 入社</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="stock"> ストック</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="ng"> NG</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="black"> ブラック</label>
+      </div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">住居（アパート）</div>
+      <div class="fp-chips">
+        <label class="fp-chip radio-chip"><input type="radio" name="fp-apt" value="" checked> すべて</label>
+        <label class="fp-chip radio-chip"><input type="radio" name="fp-apt" value="true"> 必要</label>
+        <label class="fp-chip radio-chip"><input type="radio" name="fp-apt" value="false"> 不要</label>
+      </div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">就業状況</div>
+      <div class="fp-chips">
+        <label class="fp-chip"><input type="checkbox" class="fp-emp" value="離職中"> 未就業</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-emp" value="在職中"> 就業中</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-emp" value="退職予定（予告期間中）"> 内定期間中</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-emp" value="アルバイト中"> バイト中</label>
+      </div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">性別</div>
+      <div class="fp-chips">
+        <label class="fp-chip radio-chip"><input type="radio" name="fp-sexo" value="" checked> すべて</label>
+        <label class="fp-chip radio-chip"><input type="radio" name="fp-sexo" value="男性"> 男性</label>
+        <label class="fp-chip radio-chip"><input type="radio" name="fp-sexo" value="女性"> 女性</label>
+      </div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">国籍</div>
+      <div class="fp-chips" id="fp-nac-chips"></div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">都道府県</div>
+      <div class="fp-chips" id="fp-pref-chips"></div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">可能な直</div>
+      <div class="fp-chips">
+        <label class="fp-chip"><input type="checkbox" class="fp-turno" value="二交代"> 二交代</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-turno" value="早番遅番"> 早番遅番</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-turno" value="二直三班"> 二直三班</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-turno" value="昼勤のみ"> 昼勤のみ</label>
+      </div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">アパート引越し</div>
+      <div class="fp-chips">
+        <label class="fp-chip radio-chip"><input type="radio" name="fp-move" value="" checked> すべて</label>
+        <label class="fp-chip radio-chip"><input type="radio" name="fp-move" value="true"> 引越し可能</label>
+        <label class="fp-chip radio-chip"><input type="radio" name="fp-move" value="false"> 不可</label>
+      </div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">免許・資格</div>
+      <div class="fp-chips">
+        <label class="fp-chip"><input type="checkbox" class="fp-menkyo" value="普通自動車"> 普通自動車</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-menkyo" value="バイク"> バイク</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-menkyo" value="フォークリフト"> フォークリフト</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-menkyo" value="玉掛け"> 玉掛け</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-menkyo" value="クレーン"> クレーン</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-menkyo" value="溶接"> 溶接</label>
+      </div>
+    </div>
+
+    <div class="fp-section">
+      <div class="fp-section-title">工場経験</div>
+      <div class="fp-chips">
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="組み立て（くみたて）"> 組立</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="自動車部品"> 自動車部品</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="食品"> 食品</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="電子部品"> 電子部品</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="フォークリフト"> フォークリフト</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="玉掛け"> 玉掛け</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="検査"> 検査</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="梱包"> 梱包</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="プレス"> プレス</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="溶接"> 溶接</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="塗装"> 塗装</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="建設"> 建設</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="物流"> 物流</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="コンビニ"> コンビニ</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="スーパー"> スーパー</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-exp" value="ホテル"> ホテル</label>
+      </div>
+    </div>
+
+  </div>
+  <div class="fp-footer">
+    <button class="btn-reset" onclick="resetFilterPanel()">リセット</button>
+    <button class="btn-apply" onclick="aplicarFilterPanel()">適用する</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal" onclick="closeModalBg(event)">
+  <div id="modalBox">
+    <div class="modal-header">
+      <h2 id="modalTitle">候補者詳細</h2>
+      <button class="modal-close" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-delete" onclick="deletarCandidato()">削除</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="fecharModal()">キャンセル</button>
+        <button class="btn-save" onclick="salvarCandidato()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createClient } = supabase
+const sb = createClient('https://xzxfwrbebkwagnropgfb.supabase.co','sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE')
+
+let todosOsCandidatos = []
+let todasFabricas = []
+let fabricaAtiva = null
+let candidatoAtivo = null
+let calYear = new Date().getFullYear()
+let calMonth = new Date().getMonth()
+
+const STAGES = [
+  { key:'renrakumae', label:'連絡前',  cls:'stage-renrakumae' },
+  { key:'taiochu',   label:'対応中',  cls:'stage-taiochu'    },
+  { key:'mensetsu',  label:'面接',    cls:'stage-mensetsu'   },
+  { key:'kengaku',   label:'見学',    cls:'stage-kengaku'    },
+  { key:'naitei',    label:'内定',    cls:'stage-naitei'     },
+  { key:'nyusha',    label:'入社',    cls:'stage-nyusha'     },
+  { key:'stock',     label:'ストック', cls:'stage-stock'     },
+  { key:'ng',        label:'NG',      cls:'stage-ng'         },
+  { key:'black',     label:'ブラック', cls:'stage-black'     },
+]
+
+function getStage(c) {
+  if (c.is_blacklisted) return 'black'
+  if (c.dt_ng)          return 'ng'
+  if (c.dt_stock)       return 'stock'
+  if (c.dt_nyusha)      return 'nyusha'
+  if (c.dt_naitei)      return 'naitei'
+  if (c.dt_kengaku)     return 'kengaku'
+  if (c.dt_mensetsu)    return 'mensetsu'
+  if (c.dt_taiochu)     return 'taiochu'
+  return 'renrakumae'
+}
+
+function diasNaEtapa(c) {
+  const stage = getStage(c)
+  const dateMap = { renrakumae: c.created_at, taiochu: c.dt_taiochu, mensetsu: c.dt_mensetsu, kengaku: c.dt_kengaku, naitei: c.dt_naitei, nyusha: c.dt_nyusha, stock: c.dt_stock, ng: c.dt_ng, black: c.created_at }
+  const d = dateMap[stage]
+  if (!d) return { text: '—', alert: false }
+  const dias = Math.floor((Date.now() - new Date(d)) / 86400000)
+  return { text: dias === 0 ? '今日' : dias + '日', alert: dias >= 7 }
+}
+
+async function carregarDados() {
+  document.getElementById('pipeline').innerHTML = '<div class="loading">読み込み中...</div>'
+  const [res1, res2] = await Promise.all([
+    sb.from('candidates').select('*').order('created_at', { ascending: false }),
+    sb.from('locations').select('nome').eq('tipo', '工場').order('nome')
+  ])
+  todosOsCandidatos = res1.data || []
+  todasFabricas     = (res2.data || []).map(f => f.nome)
+  carregarSidebar()
+  carregarCalFabricaFilter()
+  carregarChartFabricaFilter()
+  renderAlerts()
+  renderPipeline()
+  renderCalendar()
+}
+
+function carregarSidebar() {
+  const fabricas = [...new Set(todosOsCandidatos.map(c => c.fabrica).filter(Boolean))].sort()
+  const container = document.getElementById('sidebarFabricas')
+  container.innerHTML = ''
+  document.getElementById('totalCount').textContent = todosOsCandidatos.length + '名'
+  fabricas.forEach(f => {
+    const count = todosOsCandidatos.filter(c => c.fabrica === f).length
+    const div = document.createElement('div')
+    div.className = 'sidebar-item'
+    div.innerHTML = `<div class="factory-name">${f}</div><div class="factory-count">${count}名</div>`
+    div.onclick = () => filtrarFabrica(f, div)
+    container.appendChild(div)
+  })
+}
+
+function carregarCalFabricaFilter() {
+  const sel = document.getElementById('calFabricaFilter')
+  sel.innerHTML = '<option value="">全工場</option>'
+  todasFabricas.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o) })
+}
+
+function filtrarFabrica(fabrica, el) {
+  fabricaAtiva = fabrica
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
+  if (el) el.classList.add('active')
+  // sincroniza filtros do calendário e gráficos
+  const calSel = document.getElementById('calFabricaFilter')
+  const chSel  = document.getElementById('chartFabrica')
+  if (calSel) calSel.value = fabrica || ''
+  if (chSel)  chSel.value  = fabrica || ''
+  renderPipeline()
+  renderCalendar()
+  renderCharts()
+}
+
+// ─── FILTER PANEL ────────────────────────────────────────────
+let activeFilters = {}
+
+function abrirFilterPanel() {
+  // popula nacionaidades e prefeituras dinamicamente
+  const nacs  = [...new Set(todosOsCandidatos.map(c => c.nacionalidade).filter(Boolean))].sort()
+  const prefs = [...new Set(todosOsCandidatos.map(c => c.prefecture).filter(Boolean))].sort()
+
+  const nacDiv  = document.getElementById('fp-nac-chips')
+  const prefDiv = document.getElementById('fp-pref-chips')
+  if (!nacDiv.children.length) {
+    nacs.forEach(n => {
+      const l = document.createElement('label'); l.className = 'fp-chip'
+      l.innerHTML = `<input type="checkbox" class="fp-nac" value="${n}"> ${n}`
+      nacDiv.appendChild(l)
+    })
+  }
+  if (!prefDiv.children.length) {
+    prefs.forEach(p => {
+      const l = document.createElement('label'); l.className = 'fp-chip'
+      l.innerHTML = `<input type="checkbox" class="fp-pref" value="${p}"> ${p}`
+      prefDiv.appendChild(l)
+    })
+  }
+  document.getElementById('filterPanel').classList.add('open')
+  document.getElementById('filterOverlay').style.display = 'block'
+}
+
+function fecharFilterPanel() {
+  document.getElementById('filterPanel').classList.remove('open')
+  document.getElementById('filterOverlay').style.display = 'none'
+}
+
+function resetFilterPanel() {
+  document.querySelectorAll('.fp-jp, .fp-stage, .fp-emp, .fp-nac, .fp-pref, .fp-turno, .fp-menkyo, .fp-exp').forEach(c => c.checked = false)
+  document.querySelector('input[name="fp-apt"][value=""]').checked = true
+  document.querySelector('input[name="fp-sexo"][value=""]').checked = true
+  document.querySelector('input[name="fp-move"][value=""]').checked = true
+  document.getElementById('fp-age-max').value = ''
+  activeFilters = {}
+  atualizarBadge()
+  renderPipeline()
+}
+
+function aplicarFilterPanel() {
+  activeFilters = {
+    jp:     [...document.querySelectorAll('.fp-jp:checked')].map(c => c.value),
+    stage:  [...document.querySelectorAll('.fp-stage:checked')].map(c => c.value),
+    emp:    [...document.querySelectorAll('.fp-emp:checked')].map(c => c.value),
+    nac:    [...document.querySelectorAll('.fp-nac:checked')].map(c => c.value),
+    pref:   [...document.querySelectorAll('.fp-pref:checked')].map(c => c.value),
+    turno:  [...document.querySelectorAll('.fp-turno:checked')].map(c => c.value),
+    menkyo: [...document.querySelectorAll('.fp-menkyo:checked')].map(c => c.value),
+    exp:    [...document.querySelectorAll('.fp-exp:checked')].map(c => c.value),
+    apt:    document.querySelector('input[name="fp-apt"]:checked').value,
+    sexo:   document.querySelector('input[name="fp-sexo"]:checked').value,
+    move:   document.querySelector('input[name="fp-move"]:checked').value,
+    ageMax: parseInt(document.getElementById('fp-age-max').value) || null,
+  }
+  atualizarBadge()
+  fecharFilterPanel()
+  renderPipeline()
+}
+
+function atualizarBadge() {
+  const f = activeFilters
+  const count = (f.jp?.length||0) + (f.stage?.length||0) + (f.emp?.length||0) +
+    (f.nac?.length||0) + (f.pref?.length||0) + (f.turno?.length||0) +
+    (f.apt ? 1 : 0) + (f.sexo ? 1 : 0) + (f.move ? 1 : 0) + (f.ageMax ? 1 : 0)
+  const badge = document.getElementById('filterBadge')
+  badge.textContent = count
+  badge.style.display = count > 0 ? 'inline' : 'none'
+}
+
+function toggleStageFilter() {
+  const box = document.getElementById('stageFilterBox')
+  box.style.display = box.style.display === 'none' ? 'block' : 'none'
+}
+
+function selectAllStages(val) {
+  document.querySelectorAll('.stage-chk').forEach(c => c.checked = val)
+  renderPipeline()
+}
+
+function getStagesVisiveis() {
+  const chks = [...document.querySelectorAll('.stage-chk:checked')].map(c => c.value)
+  return chks.length > 0 ? chks : STAGES.map(s => s.key)
+}
+
+function imprimirPDF() {
+  const fab = fabricaAtiva ? `【${fabricaAtiva}】` : '【全体】'
+  const candidatos = getFiltrados()
+  const stagesVisiveis = getStagesVisiveis()
+
+  const linhas = STAGES
+    .filter(s => stagesVisiveis.includes(s.key))
+    .map(stage => {
+      const list = candidatos.filter(c => getStage(c) === stage.key)
+      if (!list.length) return ''
+      return `<tr class="stage-row"><td colspan="7">${stage.label}（${list.length}名）</td></tr>` +
+        list.map((c, i) => `<tr class="${i%2===0?'even':''}">
+          <td>${c.shimei||'—'}</td>
+          <td>${c.telefone||'—'}</td>
+          <td>${c.fabrica||'—'}</td>
+          <td>${c.shokai||'—'}</td>
+          <td>${c.nivel_japones?.split('〜')[0]||'—'}</td>
+          <td>${c.prefecture||'—'}</td>
+          <td>${c.city||'—'}</td>
+        </tr>`).join('')
+    }).join('')
+
+  const w = window.open('', '_blank')
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>候補者リスト</title>
+    <style>
+      body { font-family: 'Helvetica Neue', sans-serif; font-size: 11px; padding: 20px; color: #333; }
+      h2 { font-size: 15px; margin-bottom: 4px; }
+      p { font-size: 12px; color: #666; margin-bottom: 12px; }
+      table { width: 100%; border-collapse: collapse; }
+      th { background: #333; color: white; padding: 6px 8px; text-align: left; font-size: 11px; }
+      td { padding: 5px 8px; border-bottom: 1px solid #eee; }
+      tr.even td { background: #f9f9f9; }
+      tr.stage-row td { background: #e8f0fe; font-weight: 700; font-size: 12px; padding: 6px 8px; color: #1a237e; }
+      @media print { button { display: none } }
+    </style>
+    </head><body>
+    <h2>候補者リスト ${fab}</h2>
+    <p>出力日：${new Date().toLocaleDateString('ja-JP')}　総候補者: ${candidatos.length}名</p>
+    <button onclick="window.print()" style="margin-bottom:14px;padding:7px 18px;background:#1e88e5;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px">印刷 / PDF保存</button>
+    <table>
+      <thead><tr><th>氏名</th><th>電話番号</th><th>工場</th><th>紹介者</th><th>日本語</th><th>都道府県</th><th>市区町村</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table></body></html>`)
+  w.document.close()
+}
+
+function getFiltrados() {
+  const search = document.getElementById('searchInput').value.toLowerCase()
+  const sexo   = document.getElementById('filterSexo').value
+  const jp     = document.getElementById('filterJP').value
+  const idade  = parseInt(document.getElementById('filterIdade').value) || null
+  const f = activeFilters
+
+  return todosOsCandidatos.filter(c => {
+    if (fabricaAtiva && c.fabrica !== fabricaAtiva) return false
+    if (sexo   && c.sexo !== sexo)                                            return false
+    if (jp     && c.nivel_japones !== jp)                                     return false
+    if (idade  && c.idade > idade)                                            return false
+    if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
+    // filtros do painel
+    if (f.jp?.length    && !f.jp.includes(c.nivel_japones))     return false
+    if (f.stage?.length && !f.stage.includes(getStage(c)))       return false
+    if (f.emp?.length   && !f.emp.includes(c.esta_empregado))    return false
+    if (f.nac?.length   && !f.nac.includes(c.nacionalidade))     return false
+    if (f.pref?.length  && !f.pref.includes(c.prefecture))       return false
+    if (f.turno?.length  && !(c.turnos_possiveis||[]).some(t => f.turno.includes(t)))   return false
+    if (f.menkyo?.length && !(c.habilitacao||[]).some(m => f.menkyo.includes(m)))       return false
+    if (f.exp?.length    && !(c.experiencia||[]).some(e => f.exp.includes(e)))          return false
+    if (f.apt            && String(c.precisa_apartamento) !== f.apt)                    return false
+    if (f.sexo           && c.sexo !== f.sexo)                                          return false
+    if (f.move           && String(c.pode_mudar) !== f.move)                            return false
+    if (f.ageMax         && (c.idade > f.ageMax))                                       return false
+    return true
+  })
+}
+
+function renderAlerts() {
+  const hoje = new Date().toISOString().split('T')[0]
+  const alerts = todosOsCandidatos.filter(c => c.alerta_data && c.alerta_data.startsWith(hoje))
+  const bar = document.getElementById('alertBar')
+  if (!alerts.length) { bar.style.display = 'none'; return }
+  bar.style.display = 'flex'
+  bar.innerHTML = `<strong>アラート ${alerts.length}件</strong>` +
+    alerts.map(c => `<span class="alert-chip" onclick="abrirModal('${c.id}')">${c.shimei}</span>`).join('')
+}
+
+function renderPipeline() {
+  const candidatos = getFiltrados()
+  const grouped = {}
+  STAGES.forEach(s => grouped[s.key] = [])
+  candidatos.forEach(c => grouped[getStage(c)].push(c))
+
+  document.getElementById('s-total').textContent    = candidatos.length
+  document.getElementById('s-renraku').textContent  = grouped.renrakumae.length
+  document.getElementById('s-taiochu').textContent  = grouped.taiochu.length
+  document.getElementById('s-mensetsu').textContent = grouped.mensetsu.length
+  document.getElementById('s-naitei').textContent   = grouped.naitei.length
+  document.getElementById('s-nyusha').textContent   = grouped.nyusha.length
+  document.getElementById('s-stock').textContent    = grouped.stock.length
+  document.getElementById('s-ng').textContent       = grouped.ng.length
+
+  window._grouped = grouped
+
+  const stagesVisiveis = getStagesVisiveis()
+  document.getElementById('pipeline').innerHTML = STAGES.filter(s => stagesVisiveis.includes(s.key)).map(stage => {
+    const list = grouped[stage.key]
+    const show = list._expanded ? list : list.slice(0, 5)
+    const hasMore = list.length > 5 && !list._expanded
+
+    const rowsHtml = list.length === 0
+      ? `<div class="stage-empty">候補者なし</div>`
+      : `<div class="col-header"><span>氏名</span><span>紹介者</span><span>電話番号</span><span>工場</span><span>国籍</span><span>性別</span><span>日本語</span><span>経過</span></div>` +
+        show.map(c => {
+          const d = diasNaEtapa(c)
+          return `<div class="candidate-row" onclick="abrirModal('${c.id}')">
+            <span>${c.is_blacklisted ? '<span class="black-flag">⚠</span> ' : ''}${c.shimei || '—'}</span>
+            <span style="font-size:11px;color:#666">${c.shokai || '—'}</span>
+            <span>${c.telefone || '—'}</span>
+            <span style="font-size:11px">${c.fabrica || '—'}</span>
+            <span style="font-size:11px">${c.nacionalidade || '—'}</span>
+            <span>${c.sexo === '男性' ? 'M' : c.sexo === '女性' ? 'F' : '—'}</span>
+            <span style="font-size:11px">${c.nivel_japones?.split('（')[0] || '—'}</span>
+            <span class="dias-badge ${d.alert ? 'alert' : ''}">${d.text}</span>
+          </div>`
+        }).join('') +
+        (hasMore ? `<div style="padding:7px 16px;font-size:12px;color:#1e88e5;cursor:pointer" onclick="expandStage('${stage.key}')">+ さらに ${list.length - 5} 件</div>` : '')
+
+    return `<div class="stage-section ${stage.cls}">
+      <div class="stage-header" onclick="toggleStage('${stage.key}')">
+        ${stage.label} <span class="stage-count">${list.length}</span>
+      </div>
+      <div class="stage-body" id="body-${stage.key}">${rowsHtml}</div>
+    </div>`
+  }).join('')
+}
+
+function toggleStage(key) { const b = document.getElementById('body-'+key); b.style.display = b.style.display === 'none' ? '' : 'none' }
+function expandStage(key)  { window._grouped[key]._expanded = true; renderPipeline() }
+
+// ─── CALENDAR ─────────────────────────────────────────────────
+function calPrev()  { calMonth--; if (calMonth < 0)  { calMonth = 11; calYear-- } renderCalendar() }
+function calNext()  { calMonth++; if (calMonth > 11) { calMonth = 0;  calYear++ } renderCalendar() }
+function calToday() { calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); renderCalendar() }
+
+function renderCalendar() {
+  const fabFilter = document.getElementById('calFabricaFilter').value
+  const today = new Date()
+  const firstDay = new Date(calYear, calMonth, 1)
+  const lastDay  = new Date(calYear, calMonth + 1, 0)
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+  document.getElementById('calTitle').textContent = calYear + '年 ' + months[calMonth]
+
+  const events = {}
+  const addEvent = (dateStr, tipo, nome) => {
+    if (!dateStr) return
+    const d = dateStr.split('T')[0]
+    if (!events[d]) events[d] = []
+    events[d].push({ tipo, nome })
+  }
+
+  todosOsCandidatos
+    .filter(c => !fabFilter || c.fabrica === fabFilter)
+    .forEach(c => {
+      addEvent(c.dt_mensetsu, 'mensetsu', '面接：' + (c.shimei || ''))
+      addEvent(c.dt_kengaku,  'kengaku',  '見学：' + (c.shimei || ''))
+      addEvent(c.dt_nyusha,   'nyusha',   '入社：' + (c.shimei || ''))
+      if (c.alerta_data) addEvent(c.alerta_data, 'alerta', 'アラート：' + (c.shimei || ''))
+    })
+
+  const grid = document.getElementById('calGrid')
+  const days = ['日','月','火','水','木','金','土']
+  let html = days.map(d => `<div class="cal-day-header">${d}</div>`).join('')
+
+  let startDow = firstDay.getDay()
+  for (let i = 0; i < startDow; i++) {
+    const d = new Date(calYear, calMonth, -startDow + i + 1)
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d.getDate()}</div></div>`
+  }
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const date = new Date(calYear, calMonth, d)
+    const dow = date.getDay()
+    const dateStr = date.toISOString().split('T')[0]
+    const isToday = dateStr === today.toISOString().split('T')[0]
+    const cls = ['cal-day', isToday ? 'today' : '', dow === 0 ? 'sunday' : '', dow === 6 ? 'saturday' : ''].filter(Boolean).join(' ')
+    const evs = (events[dateStr] || []).map(e => `<div class="cal-event ${e.tipo}" title="${e.nome}">${e.nome}</div>`).join('')
+    html += `<div class="${cls}"><div class="cal-day-num">${d}</div>${evs}</div>`
+  }
+
+  const totalCells = startDow + lastDay.getDate()
+  const remaining = 7 - (totalCells % 7)
+  if (remaining < 7) {
+    for (let d = 1; d <= remaining; d++) html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`
+  }
+
+  grid.innerHTML = html
+}
+
+// ─── MODAL EDITAR ─────────────────────────────────────────────
+function abrirModal(id) {
+  const c = todosOsCandidatos.find(x => x.id == id)
+  if (!c) return
+  candidatoAtivo = c
+  document.getElementById('modalTitle').textContent = (c.shimei || '候補者詳細') + (c.telefone ? '  (' + c.telefone + ')' : '')
+
+  const chk = (arr, val) => (arr || []).includes(val) ? 'checked' : ''
+  const sel = (opts, val) => opts.map(o => `<option ${o===val?'selected':''}>${o}</option>`).join('')
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-section">
+      <div class="modal-section-title">基本情報</div>
+      <div class="modal-grid">
+        <div class="modal-field"><label>氏名</label><input id="f_shimei" value="${c.shimei||''}"></div>
+        <div class="modal-field"><label>電話番号</label><input id="f_telefone" value="${c.telefone||''}"></div>
+        <div class="modal-field"><label>国籍</label><input id="f_nac" value="${c.nacionalidade||''}"></div>
+        <div class="modal-field"><label>年齢</label><input type="number" id="f_idade" value="${c.idade||''}"></div>
+        <div class="modal-field"><label>生年月日</label><input type="date" id="f_nasc" value="${c.data_nascimento||''}"></div>
+        <div class="modal-field"><label>性別</label><select id="f_sexo"><option value="">—</option>${sel(['男性','女性','その他'],c.sexo)}</select></div>
+        <div class="modal-field"><label>都道府県</label><input id="f_pref" value="${c.prefecture||''}"></div>
+        <div class="modal-field"><label>市区町村</label><input id="f_city" value="${c.city||''}"></div>
+        <div class="modal-field"><label>〒</label><input id="f_cep" value="${c.postal_code||''}"></div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">仕事情報</div>
+      <div class="modal-grid">
+        <div class="modal-field"><label>ビザ</label><select id="f_visa"><option value="">—</option>${sel(['永住者','日本人の配偶者','永住者の配偶者または子','定住者（1・3・5年）','家族滞在','留学','日本国籍'],c.visa)}</select></div>
+        <div class="modal-field"><label>工場</label><input id="f_fab" value="${c.fabrica||''}"></div>
+        <div class="modal-field"><label>工場２</label><input id="f_fab2" value="${c.fabrica2||''}"></div>
+        <div class="modal-field"><label>紹介者</label><input id="f_shokai" value="${c.shokai||''}"></div>
+        <div class="modal-field"><label>就業状況</label><select id="f_emp"><option value="">—</option>${sel(['在職中','離職中','アルバイト中','退職予定（予告期間中）'],c.esta_empregado)}</select></div>
+        <div class="modal-field"><label>アパート</label><select id="f_apt"><option value="false">不要</option><option value="true" ${c.precisa_apartamento?'selected':''}>必要</option></select></div>
+        <div class="modal-field"><label>引っ越し</label><select id="f_move"><option value="false">不可</option><option value="true" ${c.pode_mudar?'selected':''}>可能</option></select></div>
+        <div class="modal-field"><label>車</label><select id="f_car"><option value="false">なし</option><option value="true" ${c.tem_carro?'selected':''}>あり</option></select></div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">スキル</div>
+      <div class="modal-field" style="margin-bottom:10px">
+        <label>日本語力</label>
+        <select id="f_jp">${sel(['0%（日本語不可）','N5 10%〜（少し話せる）','N4 30%〜（基本会話）','N3 50%〜（日常会話）','N2 60%〜（中級会話）','N1 80%〜（上級会話）'],c.nivel_japones)}</select>
+      </div>
+      <div class="modal-grid" style="margin-bottom:10px">
+        <div class="modal-field"><label>ひらがな</label><select id="f_hira">${sel(['読み書きできる','読めるのみ','できない'],c.hiragana)}</select></div>
+        <div class="modal-field"><label>カタカナ</label><select id="f_kata">${sel(['読み書きできる','読めるのみ','できない'],c.katakana)}</select></div>
+      </div>
+      <div class="modal-field" style="margin-bottom:10px">
+        <label>免許・資格</label>
+        <div class="modal-checkbox-group">
+          ${['所持なし','普通自動車','バイク','フォークリフト','玉掛け','クレーン','溶接'].map(v=>`<label><input type="checkbox" name="hab" value="${v}" ${chk(c.habilitacao,v)}> ${v}</label>`).join('')}
+        </div>
+      </div>
+      <div class="modal-field" style="margin-bottom:10px">
+        <label>可能な直</label>
+        <div class="modal-checkbox-group">
+          ${['二交代','早番遅番','二直三班','昼勤のみ'].map(v=>`<label><input type="checkbox" name="turno" value="${v}" ${chk(c.turnos_possiveis,v)}> ${v}</label>`).join('')}
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>工場経験</label>
+        <div class="modal-checkbox-group">
+          ${['経験なし','組み立て（くみたて）','自動車部品','食品','電子部品','フォークリフト','玉掛け','検査','梱包','プレス','溶接','塗装','建設','物流','コンビニ','スーパー','ホテル'].map(v=>`<label><input type="checkbox" name="exp" value="${v}" ${chk(c.experiencia,v)}> ${v}</label>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">パイプライン日付</div>
+      <div class="modal-grid-3">
+        <div class="modal-field"><label>応募日</label><div class="date-with-btn"><input type="date" id="f_oubo" value="${c.dt_oubo||''}"><button class="btn-hoje" onclick="hoje('f_oubo')">今日</button></div></div>
+        <div class="modal-field"><label>対応中</label><div class="date-with-btn"><input type="date" id="f_taio" value="${c.dt_taiochu||''}"><button class="btn-hoje" onclick="hoje('f_taio')">今日</button></div></div>
+        <div class="modal-field"><label>面接日</label><div class="date-with-btn"><input type="date" id="f_mens" value="${c.dt_mensetsu||''}"><button class="btn-hoje" onclick="hoje('f_mens')">今日</button></div></div>
+        <div class="modal-field"><label>面接時間</label><input type="time" id="f_menshora" value="${c.mensetsu_hora||''}"></div>
+        <div class="modal-field"><label>見学日</label><div class="date-with-btn"><input type="date" id="f_keng" value="${c.dt_kengaku||''}"><button class="btn-hoje" onclick="hoje('f_keng')">今日</button></div></div>
+        <div class="modal-field"><label>内定日</label><div class="date-with-btn"><input type="date" id="f_nait" value="${c.dt_naitei||''}"><button class="btn-hoje" onclick="hoje('f_nait')">今日</button></div></div>
+        <div class="modal-field"><label>入社日</label><div class="date-with-btn"><input type="date" id="f_nyu" value="${c.dt_nyusha||''}"><button class="btn-hoje" onclick="hoje('f_nyu')">今日</button></div></div>
+        <div class="modal-field"><label>ストック日</label><div class="date-with-btn"><input type="date" id="f_stock" value="${c.dt_stock||''}"><button class="btn-hoje" onclick="hoje('f_stock')">今日</button></div></div>
+        <div class="modal-field"><label>NG日</label><div class="date-with-btn"><input type="date" id="f_ng" value="${c.dt_ng||''}"><button class="btn-hoje" onclick="hoje('f_ng')">今日</button></div></div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">アラート・メモ</div>
+      <div class="modal-grid" style="margin-bottom:10px">
+        <div class="modal-field"><label>アラート日時</label><input type="datetime-local" id="f_alert" value="${c.alerta_data ? c.alerta_data.slice(0,16) : ''}"></div>
+        <div class="modal-field"><label>アラート内容</label><input id="f_alertnota" value="${c.alerta_nota||''}"></div>
+      </div>
+      <div class="modal-field" style="margin-bottom:8px"><label>コメント</label><textarea id="f_com" rows="3">${c.comentario||''}</textarea></div>
+      <div class="modal-field"><label>担当者コメント</label><textarea id="f_tancom" rows="2">${c.tantousha_comentario||''}</textarea></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">ブラックリスト</div>
+      ${c.is_blacklisted
+        ? `<div class="black-toggle">⚠️ ブラック登録済み &nbsp;<label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="f_black" checked> 解除する</label></div>`
+        : `<label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:8px;border:1px solid #eee;border-radius:4px"><input type="checkbox" id="f_black"> ブラック登録する</label>`}
+      ${c.is_blacklisted || `<div class="modal-field" style="margin-top:8px"><label>ブラック理由</label><input id="f_blackmotivo" value="${c.blacklist_motivo||''}"></div>`}
+    </div>
+  `
+  document.getElementById('modal').style.display = 'flex'
+}
+
+async function salvarCandidato() {
+  if (!candidatoAtivo) return
+  const g = id => document.getElementById(id)
+  const chks = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value)
+
+  const payload = {
+    is_blacklisted:       g('f_black')?.checked || false,
+    blacklist_motivo:     g('f_blackmotivo')?.value || null,
+    shimei:               g('f_shimei').value,
+    telefone:             g('f_telefone').value,
+    nacionalidade:        g('f_nac').value,
+    idade:                parseInt(g('f_idade').value) || null,
+    data_nascimento:      g('f_nasc').value  || null,
+    sexo:                 g('f_sexo').value,
+    prefecture:           g('f_pref').value,
+    city:                 g('f_city').value,
+    postal_code:          g('f_cep').value,
+    visa:                 g('f_visa').value,
+    fabrica:              g('f_fab').value,
+    fabrica2:             g('f_fab2').value  || null,
+    shokai:               g('f_shokai').value || null,
+    esta_empregado:       g('f_emp').value,
+    precisa_apartamento:  g('f_apt').value === 'true',
+    pode_mudar:           g('f_move').value === 'true',
+    tem_carro:            g('f_car').value  === 'true',
+    nivel_japones:        g('f_jp').value,
+    hiragana:             g('f_hira').value,
+    katakana:             g('f_kata').value,
+    habilitacao:          chks('hab'),
+    turnos_possiveis:     chks('turno'),
+    experiencia:          chks('exp'),
+    dt_oubo:              g('f_oubo').value    || null,
+    dt_taiochu:           g('f_taio').value    || null,
+    dt_mensetsu:          g('f_mens').value    || null,
+    mensetsu_hora:        g('f_menshora').value || null,
+    dt_kengaku:           g('f_keng').value    || null,
+    dt_naitei:            g('f_nait').value    || null,
+    dt_nyusha:            g('f_nyu').value     || null,
+    dt_stock:             g('f_stock').value   || null,
+    dt_ng:                g('f_ng').value      || null,
+    alerta_data:          g('f_alert').value   || null,
+    alerta_nota:          g('f_alertnota').value || null,
+    comentario:           g('f_com').value     || null,
+    tantousha_comentario: g('f_tancom').value  || null,
+  }
+
+  const { error } = await sb.from('candidates').update(payload).eq('id', candidatoAtivo.id)
+  if (error) { alert('エラー: ' + error.message); return }
+  fecharModal()
+  await carregarDados()
+}
+
+async function deletarCandidato() {
+  if (!candidatoAtivo) return
+  if (!confirm(`「${candidatoAtivo.shimei}」を削除しますか？`)) return
+  const { error } = await sb.from('candidates').delete().eq('id', candidatoAtivo.id)
+  if (error) { alert('エラー: ' + error.message); return }
+  fecharModal()
+  await carregarDados()
+}
+
+function hoje(id) { document.getElementById(id).value = new Date().toISOString().split('T')[0] }
+function fecharModal() { document.getElementById('modal').style.display = 'none'; candidatoAtivo = null }
+function closeModalBg(e) { if (e.target.id === 'modal') fecharModal() }
+
+function showTab(tab, btn) {
+  document.getElementById('pipeline').style.display     = tab === 'pipeline' ? 'block' : 'none'
+  document.getElementById('calendarView').style.display = tab === 'calendar' ? 'flex'  : 'none'
+  document.getElementById('chartsView').style.display   = tab === 'charts'   ? 'flex'  : 'none'
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+  if (btn) btn.classList.add('active')
+  if (tab === 'calendar') renderCalendar()
+  if (tab === 'charts')   renderCharts()
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────
+let chartInstances = {}
+
+function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id] } }
+
+function renderCharts() {
+  const fab = document.getElementById('chartFabrica').value
+  const dados = fab ? todosOsCandidatos.filter(c => c.fabrica === fab) : todosOsCandidatos
+
+  // Esconde/mostra gráfico de fábricas quando filtrado
+  document.getElementById('cardFabrica').style.display = fab ? 'none' : ''
+
+  // Conversões
+  const total   = dados.length
+  const comMens = dados.filter(c => c.dt_mensetsu).length
+  const comNait = dados.filter(c => c.dt_naitei).length
+  const comNyu  = dados.filter(c => c.dt_nyusha).length
+  const pct = (a, b) => b === 0 ? '—' : Math.round(a / b * 100) + '%'
+  document.getElementById('cv-total').textContent = total
+  document.getElementById('cv-mens').textContent  = pct(comMens, total)
+  document.getElementById('cv-nait').textContent  = pct(comNait, comMens)
+  document.getElementById('cv-nyu').textContent   = pct(comNyu, comNait)
+
+  // Funil
+  const stageLabels = ['連絡前','対応中','面接','見学','内定','入社','ストック','NG','ブラック']
+  const stageKeys   = ['renrakumae','taiochu','mensetsu','kengaku','naitei','nyusha','stock','ng','black']
+  const stageCounts = stageKeys.map(k => dados.filter(c => getStage(c) === k).length)
+  const stageColors = ['#1e88e5','#f57c00','#00897b','#5e35b1','#2e7d32','#7b1fa2','#e91e8c','#c62828','#212121']
+
+  destroyChart('chartFunil')
+  chartInstances['chartFunil'] = new Chart(document.getElementById('chartFunil'), {
+    type: 'bar',
+    data: { labels: stageLabels, datasets: [{ data: stageCounts, backgroundColor: stageColors, borderRadius: 4 }] },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+  })
+
+  // Por fábrica (só geral)
+  if (!fab) {
+    const fabMap = {}
+    todosOsCandidatos.forEach(c => { if (c.fabrica) fabMap[c.fabrica] = (fabMap[c.fabrica] || 0) + 1 })
+    const fabLabels = Object.keys(fabMap).sort((a,b) => fabMap[b] - fabMap[a])
+    const fabCounts = fabLabels.map(f => fabMap[f])
+    destroyChart('chartFabrica')
+    chartInstances['chartFabrica'] = new Chart(document.getElementById('chartFabrica'), {
+      type: 'bar',
+      data: { labels: fabLabels, datasets: [{ data: fabCounts, backgroundColor: '#1e88e5', borderRadius: 4 }] },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    })
+  }
+
+  // Por mês
+  const mesMap = {}
+  dados.forEach(c => {
+    const m = c.created_at?.slice(0, 7)
+    if (m) mesMap[m] = (mesMap[m] || 0) + 1
+  })
+  const mesLabels = Object.keys(mesMap).sort()
+  destroyChart('chartMes')
+  chartInstances['chartMes'] = new Chart(document.getElementById('chartMes'), {
+    type: 'line',
+    data: { labels: mesLabels, datasets: [{ data: mesLabels.map(m => mesMap[m]), borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.1)', fill: true, tension: 0.3, pointRadius: 4 }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  })
+
+  // Ranking 紹介者
+  const shMap = {}
+  dados.forEach(c => { if (c.shokai) shMap[c.shokai] = (shMap[c.shokai] || 0) + 1 })
+  const shLabels = Object.keys(shMap).sort((a,b) => shMap[b] - shMap[a]).slice(0, 10)
+  destroyChart('chartShokai')
+  chartInstances['chartShokai'] = new Chart(document.getElementById('chartShokai'), {
+    type: 'bar',
+    data: { labels: shLabels, datasets: [{ data: shLabels.map(s => shMap[s]), backgroundColor: '#e8621a', borderRadius: 4 }] },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+  })
+}
+
+function carregarChartFabricaFilter() {
+  const sel = document.getElementById('chartFabrica')
+  sel.innerHTML = '<option value="">全体</option>'
+  todasFabricas.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o) })
+}
+
+document.addEventListener('click', e => {
+  const box = document.getElementById('stageFilterBox')
+  if (box && !e.target.closest('#stageFilterBox') && !e.target.closest('[onclick="toggleStageFilter()"]')) {
+    box.style.display = 'none'
+  }
+})
+
+showTab('pipeline')
+carregarDados()
+</script>
+</body>
+</html>
