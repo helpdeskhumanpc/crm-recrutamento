@@ -138,10 +138,12 @@
     }
 
     /* MODAL */
-    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; align-items: center; justify-content: center; }
+    #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; align-items: center; justify-content: center; }
     #modalBox { background: white; border-radius: 8px; width: 700px; max-width: 96vw; max-height: 92vh; overflow-y: auto; }
-    .modal-header { padding: 16px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: white; z-index: 1; }
-    .modal-header h2 { font-size: 16px; color: #333; }
+    .modal-header { padding: 14px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: white; z-index: 1; gap: 8px; }
+    .modal-header h2 { font-size: 15px; color: #333; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-call { padding: 6px 12px; background: #1e88e5; color: white; border-radius: 4px; text-decoration: none; font-size: 13px; white-space: nowrap; }
+    .btn-wa   { padding: 6px 12px; background: #25d366; color: white; border-radius: 4px; text-decoration: none; font-size: 13px; white-space: nowrap; }
     .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: #888; }
     .modal-body { padding: 20px; }
     .modal-section { margin-bottom: 20px; }
@@ -562,6 +564,8 @@
   <div id="modalBox">
     <div class="modal-header">
       <h2 id="modalTitle">候補者詳細</h2>
+      <a id="btnCall" href="#" class="btn-call">📞 電話</a>
+      <a id="btnWA"   href="#" class="btn-wa" target="_blank">💬 WhatsApp</a>
       <button class="modal-close" onclick="fecharModal()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
@@ -1004,6 +1008,10 @@ function abrirModal(id) {
   if (!c) return
   candidatoAtivo = c
   document.getElementById('modalTitle').textContent = (c.shimei || '候補者詳細') + (c.telefone ? '  (' + c.telefone + ')' : '')
+  const tel = (c.telefone || '').replace(/\D/g, '')
+  const wa  = tel.startsWith('0') ? '81' + tel.slice(1) : tel
+  document.getElementById('btnCall').href = tel ? `tel:${tel}` : '#'
+  document.getElementById('btnWA').href   = tel ? `https://wa.me/${wa}` : '#'
 
   const chk = (arr, val) => (arr || []).includes(val) ? 'checked' : ''
   const sel = (opts, val) => opts.map(o => `<option ${o===val?'selected':''}>${o}</option>`).join('')
