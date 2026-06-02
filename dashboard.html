@@ -136,6 +136,80 @@
     .black-toggle { display: flex; align-items: center; gap: 8px; padding: 8px; background: #ffebee; border-radius: 4px; margin-bottom: 8px; }
     .loading { padding: 40px; text-align: center; color: #aaa; font-size: 14px; }
 
+    /* MOBILE */
+    .btn-hamburger { display:none; background:none; border:none; font-size:22px; cursor:pointer; color:#333; padding:0 4px; }
+    #sidebarOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:290; }
+    #bottomNav { display:none; }
+
+    @media (max-width: 768px) {
+      body { overflow: hidden; }
+
+      /* Sidebar vira drawer */
+      #sidebar { position:fixed; left:0; top:0; height:100vh; z-index:300; transform:translateX(-100%); transition:transform 0.25s ease; }
+      #sidebar.mobile-open { transform:translateX(0); }
+
+      /* Main ocupa tela toda */
+      #main { width:100%; }
+
+      /* Topbar compacto */
+      #topbar { flex-wrap:nowrap; gap:6px; padding:8px 10px; }
+      #topbar h1 { display:none; }
+      .tab-btn { display:none; }
+      .btn-hamburger { display:block; }
+      #filterSexo, #filterIdade, #filterJP { display:none; }
+      #searchInput { flex:1; min-width:0; }
+      .btn-refresh[onclick="carregarDados()"] { display:none; }
+      div[style*="position:relative"] { display:none; } /* ステージ dropdown */
+
+      /* Stats bar compacto */
+      #statsBar { gap:5px; padding:6px 10px; overflow-x:auto; flex-wrap:nowrap; }
+      .stat-card { min-width:56px; padding:4px 8px; flex-shrink:0; }
+      .stat-num { font-size:15px; }
+      .stat-label { font-size:9px; }
+
+      /* Pipeline — 3 colunas */
+      .col-header { grid-template-columns: 1fr 105px 42px !important; padding:4px 10px; }
+      .candidate-row { grid-template-columns: 1fr 105px 42px !important; padding:7px 10px; }
+      .candidate-row > span:nth-child(2),
+      .candidate-row > span:nth-child(4),
+      .candidate-row > span:nth-child(5),
+      .candidate-row > span:nth-child(6),
+      .candidate-row > span:nth-child(7),
+      .col-header > span:nth-child(2),
+      .col-header > span:nth-child(4),
+      .col-header > span:nth-child(5),
+      .col-header > span:nth-child(6),
+      .col-header > span:nth-child(7) { display:none; }
+
+      /* Espaço para bottom nav */
+      #pipeline, #calendarView, #chartsView { padding-bottom: 65px; }
+
+      /* Modal tela cheia */
+      #modal { align-items:flex-end; }
+      #modalBox { width:100vw; max-width:100vw; max-height:92vh; border-radius:12px 12px 0 0; }
+
+      /* Bottom nav */
+      #bottomNav {
+        display:flex; position:fixed; bottom:0; left:0; right:0;
+        background:white; border-top:1px solid #ddd; z-index:200;
+        height:56px;
+      }
+      .bnav-btn {
+        flex:1; display:flex; flex-direction:column; align-items:center;
+        justify-content:center; gap:2px; border:none; background:none;
+        cursor:pointer; font-size:10px; color:#888; padding:6px 0;
+      }
+      .bnav-btn.active { color:#e8621a; }
+      .bnav-btn .bnav-icon { font-size:20px; line-height:1; }
+
+      /* Form row-3 no mobile */
+      .modal-grid-3 { grid-template-columns:1fr 1fr !important; }
+
+      /* Charts no mobile */
+      .charts-row-2 { grid-template-columns:1fr !important; }
+      .conversion-grid { grid-template-columns:1fr 1fr !important; }
+    }
+
     /* FILTER PANEL */
     #filterOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:150; }
     #filterPanel { position:fixed; right:-340px; top:0; width:320px; height:100vh; background:white; z-index:160; box-shadow:-4px 0 20px rgba(0,0,0,0.2); display:flex; flex-direction:column; transition:right 0.25s ease; }
@@ -161,6 +235,7 @@
 </head>
 <body>
 
+<div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div id="sidebar">
   <h2>工場別</h2>
   <div class="sidebar-item active" onclick="filtrarFabrica(null, this)">
@@ -172,6 +247,7 @@
 
 <div id="main">
   <div id="topbar">
+    <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
     <h1>採用管理</h1>
     <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
@@ -294,6 +370,22 @@
   </div>
 
 </div>
+
+<!-- BOTTOM NAV (mobile only) -->
+<nav id="bottomNav">
+  <button class="bnav-btn active" onclick="showTab('pipeline', null); setBottomNav(this)">
+    <span class="bnav-icon">📋</span>状況
+  </button>
+  <button class="bnav-btn" onclick="showTab('calendar', null); setBottomNav(this)">
+    <span class="bnav-icon">📅</span>カレンダー
+  </button>
+  <button class="bnav-btn" onclick="showTab('charts', null); setBottomNav(this)">
+    <span class="bnav-icon">📊</span>グラフ
+  </button>
+  <button class="bnav-btn" onclick="abrirFilterPanel()">
+    <span class="bnav-icon">⚙️</span>フィルター
+  </button>
+</nav>
 
 <!-- FILTER PANEL -->
 <div id="filterOverlay" onclick="fecharFilterPanel()"></div>
@@ -1103,6 +1195,28 @@ document.addEventListener('click', e => {
     box.style.display = 'none'
   }
 })
+
+function toggleSidebar() {
+  const sidebar  = document.getElementById('sidebar')
+  const overlay  = document.getElementById('sidebarOverlay')
+  const isOpen   = sidebar.classList.toggle('mobile-open')
+  overlay.style.display = isOpen ? 'block' : 'none'
+}
+
+function setBottomNav(btn) {
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'))
+  if (btn) btn.classList.add('active')
+}
+
+// Fecha sidebar ao clicar em fábrica no mobile
+const origFiltrar = filtrarFabrica
+filtrarFabrica = function(fabrica, el) {
+  origFiltrar(fabrica, el)
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('mobile-open')
+    document.getElementById('sidebarOverlay').style.display = 'none'
+  }
+}
 
 showTab('pipeline')
 carregarDados()
