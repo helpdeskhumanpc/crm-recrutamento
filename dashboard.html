@@ -635,13 +635,16 @@ async function carregarDados() {
   renderCalendar()
 }
 
+// 工場２が設定されている場合はそちらを優先
+function fabricaEfetiva(c) { return c.fabrica2 || c.fabrica }
+
 function carregarSidebar() {
-  const fabricas = [...new Set(todosOsCandidatos.map(c => c.fabrica).filter(Boolean))].sort()
+  const fabricas = [...new Set(todosOsCandidatos.map(c => fabricaEfetiva(c)).filter(Boolean))].sort()
   const container = document.getElementById('sidebarFabricas')
   container.innerHTML = ''
   document.getElementById('totalCount').textContent = todosOsCandidatos.length + '名'
   fabricas.forEach(f => {
-    const count = todosOsCandidatos.filter(c => c.fabrica === f).length
+    const count = todosOsCandidatos.filter(c => fabricaEfetiva(c) === f).length
     const div = document.createElement('div')
     div.className = 'sidebar-item'
     div.innerHTML = `<div class="factory-name">${f}</div><div class="factory-count">${count}名</div>`
@@ -813,7 +816,7 @@ function getFiltrados() {
   const f = activeFilters
 
   return todosOsCandidatos.filter(c => {
-    if (fabricaAtiva && c.fabrica !== fabricaAtiva) return false
+    if (fabricaAtiva && fabricaEfetiva(c) !== fabricaAtiva) return false
     if (sexo   && c.sexo !== sexo)                                            return false
     if (jp     && c.nivel_japones !== jp)                                     return false
     if (idade  && c.idade > idade)                                            return false
@@ -933,7 +936,7 @@ function renderCalendar() {
   }
 
   todosOsCandidatos
-    .filter(c => !fabFilter || c.fabrica === fabFilter)
+    .filter(c => !fabFilter || fabricaEfetiva(c) === fabFilter)
     .forEach(c => {
       add(c.dt_mensetsu, 'mensetsu', c.shimei, c.fabrica, c.id)
       add(c.dt_kengaku,  'kengaku',  c.shimei, c.fabrica, c.id)
@@ -1183,7 +1186,7 @@ function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy
 
 function renderCharts() {
   const fab = document.getElementById('chartFabrica').value
-  const dados = fab ? todosOsCandidatos.filter(c => c.fabrica === fab) : todosOsCandidatos
+  const dados = fab ? todosOsCandidatos.filter(c => fabricaEfetiva(c) === fab) : todosOsCandidatos
 
   // Esconde/mostra gráfico de fábricas quando filtrado
   document.getElementById('cardFabrica').style.display = fab ? 'none' : ''
@@ -1215,7 +1218,7 @@ function renderCharts() {
   // Por fábrica (só geral)
   if (!fab) {
     const fabMap = {}
-    todosOsCandidatos.forEach(c => { if (c.fabrica) fabMap[c.fabrica] = (fabMap[c.fabrica] || 0) + 1 })
+    todosOsCandidatos.forEach(c => { const f = fabricaEfetiva(c); if (f) fabMap[f] = (fabMap[f] || 0) + 1 })
     const fabLabels = Object.keys(fabMap).sort((a,b) => fabMap[b] - fabMap[a])
     const fabCounts = fabLabels.map(f => fabMap[f])
     destroyChart('chartFabrica')
