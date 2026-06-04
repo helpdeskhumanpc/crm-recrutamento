@@ -17,15 +17,60 @@ Elimina o caos de planilhas e WhatsApp no processo seletivo por fábrica.
 
 ---
 
+## Sistema de Autenticação (em implementação)
+
+### Substituição do sistema atual
+- **Antes:** senha única `0246` no Express → acesso total para todos
+- **Depois:** Supabase Auth (email + senha individual) → acesso filtrado por cargo
+
+### Tabelas envolvidas
+- `auth.users` (Supabase Auth) → gerencia email + senha. Visível em **Authentication → Users** no painel
+- `profiles` (nova) → dados extras: cargo, fábricas, escritório
+- `shokaisha` → **mantida** (formulário lê dela para dropdown)
+- `tantoushas` → **remover** após migração (substituída por `profiles`)
+
+### Tabela `profiles`
+
+```sql
+id          uuid PK references auth.users(id)
+nome        text
+jimusho     text        -- escritório (ex: 刈谷事務所)
+fabricas    text[]      -- fábricas que gerencia (pode ter várias)
+role        text        -- admin | jimusho | tantousha | shokaisha
+shokai_nome text        -- para role=shokaisha: nome na tabela shokaisha
+created_at  timestamp
+```
+
+### Cargos e regras de acesso
+
+| Cargo | Vê no dashboard |
+|-------|----------------|
+| `admin` | Todos os candidatos de todas as fábricas |
+| `jimusho` | Todos os candidatos das fábricas do seu escritório (fabricas[]) |
+| `tantousha` | Candidatos das suas fábricas (fabricas[]) + todos que ele indicou (shokai = shokai_nome) |
+| `shokaisha` | Apenas candidatos que ele indicou (shokai = shokai_nome) |
+
+### Regras especiais
+- Um usuário pode gerenciar **múltiplas fábricas** — campo `fabricas` é um array
+- A diferença entre `jimusho` e `tantousha` é só a quantidade de fábricas no array — o admin define
+- `shokaisha` não precisa de fábrica — filtra só pelo nome no campo `shokai` dos candidatos
+- Formulário público (WordPress) **não muda** — continua lendo `shokaisha` table para o dropdown
+
+### Fluxo de criação de usuário
+1. Admin cria em **Supabase → Authentication → Users → Add user** (email + senha)
+2. Supabase gera um UUID para o usuário
+3. Admin preenche a tabela `profiles` com o UUID + cargo + fábricas
+
+---
+
 ## Usuários
 
 | Perfil | Acesso | Responsabilidade |
 |--------|--------|-----------------|
-| Admin | Total | Visão geral de todas as fábricas |
-| 担当者 (Recrutador) | Sua fábrica | Gerenciar candidatos da sua fábrica |
-| Candidato | Nenhum | Só preenche formulário público no site |
-
-**Hierarquia:** flat — cada 担当者 cuida da sua fábrica de forma autônoma.
+| `admin` | Total | Todos os candidatos, todas as fábricas |
+| `jimusho` | Seu escritório | Todas as fábricas do seu escritório |
+| `tantousha` | Suas fábricas + indicados | Candidatos das fábricas que gerencia |
+| `shokaisha` | Só seus indicados | Ver candidatos que indicou |
 
 ---
 

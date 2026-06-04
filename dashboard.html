@@ -8,6 +8,18 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    #loginScreen { display:flex; position:fixed; inset:0; background:#1a1a2e; z-index:999; align-items:center; justify-content:center; }
+    .login-card { background:white; border-radius:12px; padding:40px 36px; width:340px; box-shadow:0 8px 40px rgba(0,0,0,0.4); }
+    .login-card h1 { font-size:20px; color:#e8621a; margin-bottom:4px; }
+    .login-card p { font-size:13px; color:#888; margin-bottom:28px; }
+    .login-card label { font-size:12px; font-weight:700; color:#555; display:block; margin-bottom:5px; }
+    .login-card input { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:4px; font-size:14px; margin-bottom:14px; }
+    .login-card input:focus { outline:none; border-color:#e8621a; }
+    .login-card button { width:100%; padding:12px; background:#e8621a; color:white; border:none; border-radius:4px; font-size:15px; font-weight:600; cursor:pointer; }
+    .login-card button:disabled { background:#aaa; cursor:not-allowed; }
+    .login-err { color:#c62828; font-size:12px; margin-top:10px; text-align:center; min-height:18px; }
+    .user-info { display:flex; align-items:center; gap:8px; margin-left:auto; font-size:13px; color:#555; }
+    .btn-logout { padding:4px 12px; border:1px solid #ddd; border-radius:4px; background:white; cursor:pointer; font-size:12px; color:#666; }
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; display: flex; height: 100vh; overflow: hidden; }
 
     /* SIDEBAR */
@@ -266,6 +278,20 @@
 </head>
 <body>
 
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>CRM 採用管理</h1>
+    <p>メールアドレスとパスワードでログインしてください</p>
+    <label>メールアドレス</label>
+    <input type="email" id="loginEmail" placeholder="email@example.com" autocomplete="email">
+    <label>パスワード</label>
+    <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter') fazerLogin()">
+    <button id="loginBtn" onclick="fazerLogin()">ログイン</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
 <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div id="sidebar">
   <h2>工場別</h2>
@@ -320,6 +346,10 @@
     <button class="btn-refresh" style="background:#4527a0" onclick="abrirFilterPanel()">詳細フィルター<span class="filter-badge" id="filterBadge">0</span></button>
     <button class="btn-refresh" style="background:#2e7d32" onclick="imprimirPDF()">PDF印刷</button>
     <button class="btn-refresh" onclick="carregarDados()">更新</button>
+    <div class="user-info">
+      <span id="userNome"></span>
+      <button class="btn-logout" onclick="fazerLogout()">ログアウト</button>
+    </div>
   </div>
 
   <div id="alertBar"></div>
@@ -1298,8 +1328,68 @@ filtrarFabrica = function(fabrica, el) {
   }
 }
 
-showTab('pipeline')
-carregarDados()
+let currentProfile = null
+
+async function fazerLogin() {
+  const email = document.getElementById('loginEmail').value.trim()
+  const pass  = document.getElementById('loginPass').value
+  const btn   = document.getElementById('loginBtn')
+  const err   = document.getElementById('loginErr')
+
+  if (!email || !pass) { err.textContent = 'メールとパスワードを入力してください'; return }
+
+  btn.disabled = true
+  btn.textContent = 'ログイン中...'
+  err.textContent = ''
+
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass })
+
+  btn.disabled = false
+  btn.textContent = 'ログイン'
+
+  if (error) {
+    err.textContent = 'メールまたはパスワードが違います'
+    return
+  }
+  await iniciarDashboard()
+}
+
+async function fazerLogout() {
+  await sb.auth.signOut()
+  currentProfile = null
+  document.getElementById('loginScreen').style.display = 'flex'
+  document.getElementById('userNome').textContent = ''
+}
+
+async function iniciarDashboard() {
+  const { data: { user } } = await sb.auth.getUser()
+  if (!user) return
+
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single()
+  currentProfile = profile
+
+  document.getElementById('loginScreen').style.display = 'none'
+  document.getElementById('userNome').textContent = profile?.nome || user.email
+
+  showTab('pipeline')
+  await carregarDados()
+}
+
+// Verifica sessão ao carregar
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) {
+    iniciarDashboard()
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex'
+  }
+})
+
+// Escuta mudanças de auth
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    document.getElementById('loginScreen').style.display = 'flex'
+  }
+})
 </script>
 </body>
 </html>
