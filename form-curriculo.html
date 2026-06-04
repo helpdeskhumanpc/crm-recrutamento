@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Currículo / Applicant Resume</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    .form-container { max-width: 860px; margin: 0 auto; }
+    .form-card { background: white; border-radius: 8px; padding: 28px 32px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .form-card h2 { font-size: 15px; color: white; background: #e8621a; margin: -28px -32px 24px; padding: 12px 20px; border-radius: 8px 8px 0 0; }
+    .form-title { font-size: 24px; color: #e8621a; font-weight: 700; margin-bottom: 4px; }
+    .form-subtitle { font-size: 13px; color: #888; }
+    .form-group { margin-bottom: 18px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+    label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; color: #333; }
+    .required { color: red; margin-left: 2px; }
+    input[type="text"], input[type="tel"], input[type="date"],
+    input[type="number"], input[type="email"], select, textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid #ddd;
+      border-radius: 4px; font-size: 14px; color: #333; background: white;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #e8621a; }
+    .radio-group, .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .radio-group label, .checkbox-group label {
+      display: flex; align-items: center; gap: 6px; font-weight: normal;
+      background: #f5f5f5; padding: 6px 12px; border-radius: 16px;
+      cursor: pointer; font-size: 13px; white-space: nowrap;
+    }
+    .radio-group input, .checkbox-group input { width: auto; }
+    .level-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; align-items: center; }
+    .level-group label { display: flex; align-items: center; gap: 4px; font-weight: normal; font-size: 13px; cursor: pointer; background: #f5f5f5; padding: 5px 10px; border-radius: 12px; }
+    .divider { border: none; border-top: 1px solid #eee; margin: 4px 0 20px; }
+    .consent-box { background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px; padding: 16px; font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 16px; }
+    .btn-submit { width: 100%; padding: 14px; background: #4caf50; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .btn-submit:disabled { background: #aaa; cursor: not-allowed; }
+    #successPopup { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; }
+    .success-box { background:white; border-radius:12px; padding:40px 32px; text-align:center; max-width:340px; width:90%; }
+    .success-box .check { font-size:52px; margin-bottom:12px; }
+    .success-box h2 { font-size:18px; color:#2e7d32; margin-bottom:8px; }
+    .success-box p { font-size:14px; color:#555; margin-bottom:24px; }
+    .success-box button { padding:10px 32px; background:#4caf50; color:white; border:none; border-radius:4px; font-size:15px; font-weight:600; cursor:pointer; }
+    .alert-error { display:none; background:#ffebee; color:#c62828; padding:12px; border-radius:4px; margin-top:12px; font-size:13px; }
+    @media (max-width: 600px) {
+      .form-row, .form-row-3 { grid-template-columns: 1fr; }
+      .form-card { padding: 20px; }
+      .form-card h2 { margin: -20px -20px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="form-container">
+
+  <div class="form-card" style="text-align:center;padding:32px">
+    <div class="form-title">Currículo do Candidato</div>
+    <div style="font-size:16px;color:#888;margin-top:4px">Applicant Resume</div>
+    <p class="form-subtitle" style="margin-top:10px">Please fill in all fields accurately / Preencha todos os campos com precisão</p>
+  </div>
+
+  <form id="curriculoForm">
+
+  <!-- PRIVACY -->
+  <div class="form-card">
+    <h2>Privacy Policy / Política de Privacidade</h2>
+    <div class="consent-box">
+      By submitting your resume, you agree that we may collect, use, and store your personal information for recruitment and selection purposes, in accordance with our Privacy Policy. Your data will be kept secure and can be accessed, corrected, or deleted at any time.<br><br>
+      Ao enviar seu currículo, você concorda que colete, utilize e armazene suas informações pessoais para fins de recrutamento e seleção, conforme nossa Política de Privacidade. Seus dados serão mantidos em segurança e poderão ser acessados, corrigidos ou excluídos a qualquer momento.
+    </div>
+    <label><input type="checkbox" id="consentimento" required> &nbsp;I have read and agree. / Li e estou de acordo. <span class="required">*</span></label>
+  </div>
+
+  <!-- PERSONAL INFO -->
+  <div class="form-card">
+    <h2>Personal Information / Informações Pessoais</h2>
+
+    <div class="form-group">
+      <label>Full Name / Nome Completo <span class="required">*</span></label>
+      <input type="text" name="nome_completo" required placeholder="Ex: Silva Roberto Tanaka">
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Family Name in Furigana / Sobrenome em Furigana</label>
+        <input type="text" name="furigana_sei" placeholder="Ex: シルバ">
+      </div>
+      <div>
+        <label>First Name in Furigana / Nome em Furigana</label>
+        <input type="text" name="furigana_mei" placeholder="Ex: ロベルト">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Roman Name / ローマ字 <span class="required">*</span></label>
+      <input type="text" name="roman_name" required placeholder="Ex: SILVA ROBERTO TANAKA">
+    </div>
+
+    <div class="form-row-3">
+      <div>
+        <label>Date of Birth / Data de Nascimento <span class="required">*</span></label>
+        <input type="date" name="data_nascimento" required>
+      </div>
+      <div>
+        <label>Age / Idade <span class="required">*</span></label>
+        <input type="number" name="idade" required placeholder="30" min="16" max="80">
+      </div>
+      <div>
+        <label>Gender / Sexo <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="sexo" value="Male / Homem" required> Male / Homem</label>
+          <label><input type="radio" name="sexo" value="Female / Mulher"> Female / Mulher</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Nationality / Nacionalidade <span class="required">*</span></label>
+        <input type="text" name="nacionalidade" required placeholder="Ex: Brazilian / Brasileiro">
+      </div>
+      <div>
+        <label>Visa / Visto <span class="required">*</span></label>
+        <select name="visto" required>
+          <option value="">Select / Selecione</option>
+          <option>Permanent Resident / Residente Permanente</option>
+          <option>Long-term Resident / Residente de Longa Permanência</option>
+          <option>Japanese Spouse / Cônjuge Japonês</option>
+          <option>Engineer / Engenheiro</option>
+          <option>Specific Activities / Atividades Específicas</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>在留カードNo. / Residence Card No. <span class="required">*</span></label>
+        <input type="text" name="zairyu_card_no" required placeholder="Ex: AB12345678CD">
+      </div>
+      <div>
+        <label>在留期限 / Card Expiry Date <span class="required">*</span></label>
+        <input type="date" name="zairyu_expire" required>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Phone Number / Telefone <span class="required">*</span></label>
+        <input type="tel" name="telefone" required placeholder="090-1234-5678">
+      </div>
+      <div>
+        <label>Postal Code / Código Postal</label>
+        <input type="text" name="cep" placeholder="123-4567">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Address / Endereço</label>
+      <input type="text" name="endereco" placeholder="Ex: Aichi-ken, Nagoya-shi...">
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>通勤方法 / Commute method</label>
+        <select name="tsukin_method">
+          <option value="">Select / Selecione</option>
+          <option value="自転車">自転車 / Bicycle</option>
+          <option value="車">車 / Car</option>
+          <option value="バイク">バイク / Motorcycle</option>
+          <option value="徒歩">徒歩 / Walking</option>
+          <option value="電車">電車 / Train</option>
+          <option value="バス">バス / Bus</option>
+        </select>
+      </div>
+      <div>
+        <label>通勤時間 / Commute time</label>
+        <input type="text" name="tsukinkikan" placeholder="Ex: 約30分">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Civil Status / Estado Civil <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="estado_civil" value="Single / Solteiro" required> Single / Solteiro</label>
+          <label><input type="radio" name="estado_civil" value="Married / Casado"> Married / Casado</label>
+          <label><input type="radio" name="estado_civil" value="Divorced / Divorciado"> Divorced / Divorciado</label>
+        </div>
+      </div>
+      <div>
+        <label>Number of Children / Quantidade de Filhos</label>
+        <input type="number" name="qtd_filhos" placeholder="0" min="0" max="10">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div><label>Age of 1st Child / Idade do 1° Filho</label><input type="number" name="filho1_idade" placeholder="Ex: 5" min="0"></div>
+      <div><label>Age of 2nd Child / Idade do 2° Filho</label><input type="number" name="filho2_idade" placeholder="Ex: 3" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Age of 3rd Child / Idade do 3° Filho</label><input type="number" name="filho3_idade" placeholder="Ex: 1" min="0"></div>
+      <div><label>Age of 4th Child / Idade do 4° Filho</label><input type="number" name="filho4_idade" placeholder="Ex: 0" min="0"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Referral Person / Pessoa que Indicou</label>
+      <input type="text" name="indicacao" placeholder="Name of who referred you / Nome de quem te indicou">
+    </div>
+  </div>
+
+  <!-- EMERGENCY CONTACT -->
+  <div class="form-card">
+    <h2>Emergency Contact / Contato de Emergência</h2>
+    <div class="form-row">
+      <div>
+        <label>Contact Name / Nome do Contato <span class="required">*</span></label>
+        <input type="text" name="emergencia_nome" required placeholder="Full name / Nome completo">
+      </div>
+      <div>
+        <label>Contact Phone / Telefone do Contato</label>
+        <input type="tel" name="emergencia_tel" placeholder="090-1234-5678">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Relationship / Parentesco</label>
+      <input type="text" name="emergencia_parentesco" placeholder="Ex: Wife, Mother, Father...">
+    </div>
+  </div>
+
+  <!-- HEALTH -->
+  <div class="form-card">
+    <h2>Health Information / Informações de Saúde</h2>
+
+    <div class="form-row-3">
+      <div>
+        <label>Height / Altura (cm) <span class="required">*</span></label>
+        <input type="number" name="altura" required placeholder="170" min="100" max="230">
+      </div>
+      <div>
+        <label>Weight / Peso (kg) <span class="required">*</span></label>
+        <input type="number" name="peso" required placeholder="65" min="30" max="200">
+      </div>
+      <div>
+        <label>Blood Type / Tipo Sanguíneo</label>
+        <select name="tipo_sanguineo">
+          <option value="">—</option>
+          <option>A</option><option>B</option><option>O</option><option>AB</option>
+          <option>Unknown / Desconhecido</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row-3">
+      <div>
+        <label>Shirt Size / Tamanho Blusa</label>
+        <select name="tam_blusa">
+          <option value="">—</option>
+          <option>SS</option><option>S</option><option>M</option><option>L</option>
+          <option>XL</option><option>XXL</option><option>3L</option><option>4L</option>
+        </select>
+      </div>
+      <div>
+        <label>Pants Size / Tamanho Calça</label>
+        <input type="text" name="tam_calca" placeholder="Ex: 76cm or M">
+      </div>
+      <div>
+        <label>Shoe Size / Tamanho Sapato (cm)</label>
+        <input type="text" name="tam_sapato" placeholder="Ex: 27.5">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label>Health Status (last 3 months) / Estado de Saúde (últimos 3 meses) <span class="required">*</span></label>
+      <div class="radio-group">
+        <label><input type="radio" name="saude_estado" value="Healthy / Saudável" required> Healthy / Saudável</label>
+        <label><input type="radio" name="saude_estado" value="Minor injury or illness / Lesão ou doença leve"> Minor injury / Lesão leve</label>
+        <label><input type="radio" name="saude_estado" value="Took time off / Ficou afastado"> Took time off / Ficou afastado</label>
+      </div>
+    </div>
+
+    <div id="doencaFields" style="display:none">
+      <div class="form-row">
+        <div>
+          <label>Name of illness/injury / Nome da doença/lesão</label>
+          <input type="text" name="doenca_nome" placeholder="Ex: Back pain / Dor nas costas">
+        </div>
+        <div>
+          <label>How long were you off / Período afastado</label>
+          <input type="text" name="doenca_periodo" placeholder="Ex: 2 weeks / 2 semanas">
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-row">
+      <div>
+        <label>Psychological issues / Problema psicológico <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="psicologico" value="No / Não" required> No / Não</label>
+          <label><input type="radio" name="psicologico" value="Yes / Sim"> Yes / Sim</label>
+        </div>
+      </div>
+      <div>
+        <label>Type and cause / Tipo e causa</label>
+        <input type="text" name="psicologico_detalhe" placeholder="If yes, describe / Se sim, descreva">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label>Allergy / Alergia <span class="required">*</span></label>
+      <div class="radio-group">
+        <label><input type="radio" name="alergia" value="No / Não" required> No / Não</label>
+        <label><input type="radio" name="alergia" value="Yes / Sim"> Yes / Sim</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Pollen / Polen — Level 1: Weak → 5: Strong</label>
+      <div class="level-group">
+        <label><input type="radio" name="kafunsho" value="None"> None / Não tenho</label>
+        <label><input type="radio" name="kafunsho" value="Level 1"> Lv 1</label>
+        <label><input type="radio" name="kafunsho" value="Level 2"> Lv 2</label>
+        <label><input type="radio" name="kafunsho" value="Level 3"> Lv 3</label>
+        <label><input type="radio" name="kafunsho" value="Level 4"> Lv 4</label>
+        <label><input type="radio" name="kafunsho" value="Level 5"> Lv 5</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Dust / Pó ou poeira</label>
+      <div class="level-group">
+        <label><input type="radio" name="po_poeira" value="None"> None / Não tenho</label>
+        <label><input type="radio" name="po_poeira" value="Level 1"> Lv 1</label>
+        <label><input type="radio" name="po_poeira" value="Level 2"> Lv 2</label>
+        <label><input type="radio" name="po_poeira" value="Level 3"> Lv 3</label>
+        <label><input type="radio" name="po_poeira" value="Level 4"> Lv 4</label>
+        <label><input type="radio" name="po_poeira" value="Level 5"> Lv 5</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Thinner smell / Cheiro de Tiner</label>
+      <div class="level-group">
+        <label><input type="radio" name="tiner" value="None"> None / Não tenho</label>
+        <label><input type="radio" name="tiner" value="Level 1"> Lv 1</label>
+        <label><input type="radio" name="tiner" value="Level 2"> Lv 2</label>
+        <label><input type="radio" name="tiner" value="Level 3"> Lv 3</label>
+        <label><input type="radio" name="tiner" value="Level 4"> Lv 4</label>
+        <label><input type="radio" name="tiner" value="Level 5"> Lv 5</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Industrial oil / Óleo industrial</label>
+      <div class="level-group">
+        <label><input type="radio" name="oleo" value="None"> None / Não tenho</label>
+        <label><input type="radio" name="oleo" value="Level 1"> Lv 1</label>
+        <label><input type="radio" name="oleo" value="Level 2"> Lv 2</label>
+        <label><input type="radio" name="oleo" value="Level 3"> Lv 3</label>
+        <label><input type="radio" name="oleo" value="Level 4"> Lv 4</label>
+        <label><input type="radio" name="oleo" value="Level 5"> Lv 5</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Other allergies / Outras alergias</label>
+      <input type="text" name="outras_alergias" placeholder="Describe if any / Descreva se houver">
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-row">
+      <div>
+        <label>Smoker / Fumante <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="fumante" value="No / Não" required> No / Não</label>
+          <label><input type="radio" name="fumante" value="Yes / Sim"> Yes / Sim</label>
+        </div>
+      </div>
+      <div>
+        <label>Under medical treatment / Em tratamento médico <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="tratamento" value="No / Não" required> No / Não</label>
+          <label><input type="radio" name="tratamento" value="Yes / Sim"> Yes / Sim</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Treatment name / Nome do tratamento</label>
+        <input type="text" name="tratamento_nome" placeholder="If yes, which? / Se sim, qual?">
+      </div>
+      <div>
+        <label>Treatment period / Período do tratamento</label>
+        <input type="text" name="tratamento_periodo" placeholder="Ex: 6 months / 6 meses">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label>Medical history / Histórico médico <span class="required">*</span></label>
+      <div class="radio-group">
+        <label><input type="radio" name="historico" value="No / Não" required> No / Não</label>
+        <label><input type="radio" name="historico" value="Yes / Sim"> Yes / Sim</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>If yes, check all that apply / Se sim, marque quais</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="historico_itens" value="Cholesterol / Colesterol"> Cholesterol / Colesterol</label>
+        <label><input type="checkbox" name="historico_itens" value="Diabetes"> Diabetes</label>
+        <label><input type="checkbox" name="historico_itens" value="High blood pressure / Pressão alta"> High blood pressure</label>
+        <label><input type="checkbox" name="historico_itens" value="Low blood pressure / Pressão baixa"> Low blood pressure</label>
+        <label><input type="checkbox" name="historico_itens" value="Hernia / Hérnia"> Hernia / Hérnia</label>
+        <label><input type="checkbox" name="historico_itens" value="Other / Outro"> Other / Outro</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- SKILLS & PROFILE -->
+  <div class="form-card">
+    <h2>Skills & Profile / Habilidades e Perfil</h2>
+
+    <div class="form-group">
+      <label>Japanese Level / Nível de Japonês <span class="required">*</span></label>
+      <div class="radio-group">
+        <label><input type="radio" name="nivel_japones" value="0% - Cannot speak / Não falo" required> 0% - None / Nenhum</label>
+        <label><input type="radio" name="nivel_japones" value="N5 10%~ - A little / Pouco"> N5 - A little / Pouco</label>
+        <label><input type="radio" name="nivel_japones" value="N4 30%~ - Basic / Básico"> N4 - Basic / Básico</label>
+        <label><input type="radio" name="nivel_japones" value="N3 50%~ - Daily / Diário"> N3 - Daily / Diário</label>
+        <label><input type="radio" name="nivel_japones" value="N2 60%~ - Intermediate"> N2 - Intermediate</label>
+        <label><input type="radio" name="nivel_japones" value="N1 80%~ - Advanced"> N1 - Advanced</label>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label>Licenses & Qualifications / Habilitação e Qualificações</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="habilitacao" value="None / Não possuo"> None / Não possuo</label>
+        <label><input type="checkbox" name="habilitacao" value="Car / Carro"> Car / Carro</label>
+        <label><input type="checkbox" name="habilitacao" value="Motorcycle / Moto"> Motorcycle / Moto</label>
+        <label><input type="checkbox" name="habilitacao" value="Truck / Caminhão"> Truck / Caminhão</label>
+        <label><input type="checkbox" name="habilitacao" value="Forklift / Empilhadeira"> Forklift / Empilhadeira</label>
+        <label><input type="checkbox" name="habilitacao" value="Crane / Guindaste"> Crane / Guindaste</label>
+        <label><input type="checkbox" name="habilitacao" value="Tamakake / 玉掛け"> Tamakake</label>
+        <label><input type="checkbox" name="habilitacao" value="Welding / Solda"> Welding / Solda</label>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label>Available shifts / Turnos disponíveis <span class="required">*</span></label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="turnos" value="Morning / Manhã"> Morning / Manhã</label>
+        <label><input type="checkbox" name="turnos" value="Afternoon / Tarde"> Afternoon / Tarde</label>
+        <label><input type="checkbox" name="turnos" value="Night / Noite"> Night / Noite</label>
+        <label><input type="checkbox" name="turnos" value="Dawn / Madrugada"> Dawn / Madrugada</label>
+        <label><input type="checkbox" name="turnos" value="Any / Qualquer"> Any / Qualquer</label>
+        <label><input type="checkbox" name="turnos" value="二交代"> 二交代</label>
+        <label><input type="checkbox" name="turnos" value="早番遅番"> 早番遅番</label>
+        <label><input type="checkbox" name="turnos" value="二直三班"> 二直三班</label>
+        <label><input type="checkbox" name="turnos" value="昼勤のみ"> 昼勤のみ</label>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-row">
+      <div>
+        <label>Dominant hand / Mão dominante <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="lateralidade" value="Right-handed / Destro" required> Right / Destro</label>
+          <label><input type="radio" name="lateralidade" value="Left-handed / Canhoto"> Left / Canhoto</label>
+          <label><input type="radio" name="lateralidade" value="Both / Ambidestro"> Both / Ambidestro</label>
+        </div>
+      </div>
+      <div>
+        <label>Glasses / Óculos <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="usa_oculos" value="No / Não" required> No / Não</label>
+          <label><input type="radio" name="usa_oculos" value="Yes, glasses / Sim, óculos"> Glasses / Óculos</label>
+          <label><input type="radio" name="usa_oculos" value="Yes, contacts / Sim, lentes"> Contacts / Lentes</label>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-row">
+      <div>
+        <label>Tattoo / Tatuagem <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="tatuagem" value="No / Não" required> No / Não</label>
+          <label><input type="radio" name="tatuagem" value="Yes / Sim"> Yes / Sim</label>
+        </div>
+      </div>
+      <div>
+        <label>If yes, where? / Se sim, onde?</label>
+        <input type="text" name="tatuagem_local" placeholder="Ex: Arm / Braço, Back / Costas...">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-row-3">
+      <div>
+        <label>Needs apartment / Precisa de apartamento <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="precisa_apartamento" value="No / Não" required> No / Não</label>
+          <label><input type="radio" name="precisa_apartamento" value="Yes / Sim"> Yes / Sim</label>
+        </div>
+      </div>
+      <div>
+        <label>Has pets / Possui pet <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="possui_pet" value="No / Não" required> No / Não</label>
+          <label><input type="radio" name="possui_pet" value="Yes / Sim"> Yes / Sim</label>
+        </div>
+      </div>
+      <div>
+        <label>Desired salary / Salário desejado</label>
+        <input type="text" name="salario_desejado" placeholder="Ex: ¥200,000 / mês">
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTOMOBILE -->
+  <div class="form-card">
+    <h2>Automobile / Automóvel</h2>
+    <div class="form-row">
+      <div>
+        <label>Do you have a car? / Tem carro? <span class="required">*</span></label>
+        <div class="radio-group">
+          <label><input type="radio" name="tem_carro" value="Yes / Tenho" required> Yes / Tenho</label>
+          <label><input type="radio" name="tem_carro" value="No / Não tenho"> No / Não tenho</label>
+        </div>
+      </div>
+      <div>
+        <label>Car insurance / Seguro do carro</label>
+        <div class="radio-group">
+          <label><input type="radio" name="seguro_carro" value="Yes / Tenho"> Yes / Tenho</label>
+          <label><input type="radio" name="seguro_carro" value="No / Não tenho"> No / Não tenho</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVAILABILITY -->
+  <div class="form-card">
+    <h2>Availability / Disponibilidade</h2>
+    <div class="form-group">
+      <label>When can you start? / Quando pode iniciar? <span class="required">*</span></label>
+      <input type="date" name="data_inicio" required>
+    </div>
+  </div>
+
+  <!-- WORK HISTORY -->
+  <div class="form-card">
+    <h2>Work History / Histórico de Trabalho (últimos 3 empregos)</h2>
+
+    <p style="font-size:13px;color:#555;margin-bottom:20px">
+      Please fill in your last 3 jobs (most recent first) / Preencha seus últimos 3 empregos (mais recente primeiro)
+    </p>
+
+    <!-- Job 1 -->
+    <p style="font-weight:700;font-size:13px;margin-bottom:12px;color:#e8621a">1st Job / 1° Emprego (most recent / mais recente)</p>
+    <div class="form-row-3" style="margin-bottom:18px">
+      <div>
+        <label>Start / Início</label>
+        <input type="month" id="t1_inicio">
+      </div>
+      <div>
+        <label>End / Término</label>
+        <input type="month" id="t1_fim">
+      </div>
+      <div>
+        <label>Company / Factory / Empresa / Fábrica</label>
+        <input type="text" name="trabalho1_empresa" placeholder="Ex: Toyota, Denso...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>Role / What you did / Função / O que fazia</label>
+        <input type="text" name="trabalho1_funcao" placeholder="Ex: Assembly / Montagem, Inspection / Inspeção...">
+      </div>
+      <div>
+        <label>Reason for leaving / Motivo de saída</label>
+        <input type="text" name="trabalho1_motivo_saida" placeholder="Ex: Contract ended / Contrato encerrou...">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Job 2 -->
+    <p style="font-weight:700;font-size:13px;margin-bottom:12px;color:#e8621a">2nd Job / 2° Emprego</p>
+    <div class="form-row-3" style="margin-bottom:18px">
+      <div>
+        <label>Start / Início</label>
+        <input type="month" id="t2_inicio">
+      </div>
+      <div>
+        <label>End / Término</label>
+        <input type="month" id="t2_fim">
+      </div>
+      <div>
+        <label>Company / Factory / Empresa / Fábrica</label>
+        <input type="text" name="trabalho2_empresa" placeholder="Ex: Honda, Aisin...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>Role / What you did / Função / O que fazia</label>
+        <input type="text" name="trabalho2_funcao" placeholder="Ex: Forklift / Empilhadeira...">
+      </div>
+      <div>
+        <label>Reason for leaving / Motivo de saída</label>
+        <input type="text" name="trabalho2_motivo_saida" placeholder="Ex: Relocated / Mudança de cidade...">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Job 3 -->
+    <p style="font-weight:700;font-size:13px;margin-bottom:12px;color:#e8621a">3rd Job / 3° Emprego</p>
+    <div class="form-row-3" style="margin-bottom:18px">
+      <div>
+        <label>Start / Início</label>
+        <input type="month" id="t3_inicio">
+      </div>
+      <div>
+        <label>End / Término</label>
+        <input type="month" id="t3_fim">
+      </div>
+      <div>
+        <label>Company / Factory / Empresa / Fábrica</label>
+        <input type="text" name="trabalho3_empresa" placeholder="Ex: Yazaki, Sumitomo...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>Role / What you did / Função / O que fazia</label>
+        <input type="text" name="trabalho3_funcao" placeholder="Ex: Quality control / Controle de qualidade...">
+      </div>
+      <div>
+        <label>Reason for leaving / Motivo de saída</label>
+        <input type="text" name="trabalho3_motivo_saida" placeholder="Ex: Better opportunity / Melhor oportunidade...">
+      </div>
+    </div>
+  </div>
+
+  <!-- FOTO -->
+  <div class="form-card">
+    <h2>Photo / Foto</h2>
+    <p style="font-size:13px;color:#555;margin-bottom:16px;line-height:1.6">
+      Please take a photo with a <strong>neutral background (white, beige or grey)</strong>, facing forward, clearly showing your face.<br>
+      Tire uma foto com <strong>fundo neutro (branco, bege ou cinza)</strong>, de frente, mostrando claramente o rosto.
+    </p>
+    <div class="form-group">
+      <label>Select photo / Selecionar foto <span class="required">*</span></label>
+      <input type="file" id="fotoInput" accept="image/*" onchange="previewFoto(this)" required style="padding:6px">
+      <p style="font-size:11px;color:#aaa;margin-top:4px">Max 10MB — será comprimida automaticamente / will be compressed automatically</p>
+    </div>
+    <div id="fotoPreview" style="display:none;margin-top:12px">
+      <img id="fotoImg" style="max-width:200px;max-height:260px;border-radius:6px;border:2px solid #ddd;display:block">
+      <p id="fotoInfo" style="font-size:11px;color:#888;margin-top:6px"></p>
+    </div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="form-card">
+    <button type="submit" class="btn-submit" id="submitBtn">Submit / Enviar</button>
+    <div class="alert-error" id="errorMsg"></div>
+  </div>
+
+  </form>
+</div>
+
+<!-- SUCCESS POPUP -->
+<div id="successPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+  <div class="success-box">
+    <div class="check">✅</div>
+    <h2>Successfully submitted!</h2>
+    <p>Thank you! Your resume has been successfully submitted.<br><br>Obrigado! Currículo enviado com sucesso.</p>
+    <button onclick="fecharPopup()">Close / Fechar</button>
+  </div>
+</div>
+
+<script>
+  const { createClient } = supabase
+  const sb = createClient(
+    'https://xzxfwrbebkwagnropgfb.supabase.co',
+    'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE'
+  )
+
+  function fecharPopup() { document.getElementById('successPopup').style.display = 'none' }
+
+  // Mostra campos de doença só quando marcou que ficou afastado
+  document.querySelectorAll('input[name="saude_estado"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const afastado = r.value.includes('Took time off')
+      document.getElementById('doencaFields').style.display = afastado ? 'block' : 'none'
+    })
+  })
+
+  function formatarMes(id) {
+    const v = document.getElementById(id)?.value
+    if (!v) return null
+    const [y, m] = v.split('-')
+    return `${y}/${m}`
+  }
+
+  function previewFoto(input) {
+    const file = input.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      document.getElementById('fotoImg').src = e.target.result
+      document.getElementById('fotoPreview').style.display = 'block'
+      document.getElementById('fotoInfo').textContent =
+        `Original: ${(file.size / 1024).toFixed(0)}KB — será comprimida antes do envio`
+    }
+    reader.readAsDataURL(file)
+  }
+
+  async function comprimirImagem(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const MAX = 800
+          let w = img.width, h = img.height
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+          canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.8)
+        }
+        img.src = e.target.result
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  document.getElementById('curriculoForm').addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    if (!document.getElementById('consentimento').checked) {
+      alert('Please accept the Privacy Policy.\nPor favor, aceite a Política de Privacidade.')
+      return
+    }
+
+    const form = e.target
+    const btn  = document.getElementById('submitBtn')
+    const data = new FormData(form)
+    btn.disabled = true
+    btn.textContent = 'Submitting... / Enviando...'
+
+    // Upload da foto
+    let foto_url = null
+    const fotoFile = document.getElementById('fotoInput').files[0]
+    if (fotoFile) {
+      const blob = await comprimirImagem(fotoFile)
+      const nome = `foto_${Date.now()}.jpg`
+      const { data: uploadData, error: uploadError } = await sb.storage
+        .from('fotos-curriculos')
+        .upload(nome, blob, { contentType: 'image/jpeg' })
+      if (uploadError) {
+        btn.disabled = false
+        btn.textContent = 'Submit / Enviar'
+        document.getElementById('errorMsg').style.display = 'block'
+        document.getElementById('errorMsg').textContent = '❌ Erro ao enviar foto: ' + uploadError.message
+        return
+      }
+      foto_url = sb.storage.from('fotos-curriculos').getPublicUrl(uploadData.path).data.publicUrl
+    }
+
+    const historico_itens = [...form.querySelectorAll('input[name="historico_itens"]:checked')].map(e => e.value)
+
+    const payload = {
+      nome_completo:         data.get('nome_completo'),
+      roman_name:            data.get('roman_name')            || null,
+      furigana_sei:          data.get('furigana_sei')          || null,
+      furigana_mei:          data.get('furigana_mei')          || null,
+      zairyu_card_no:        data.get('zairyu_card_no')        || null,
+      zairyu_expire:         data.get('zairyu_expire')         || null,
+      tsukin_method:         data.get('tsukin_method')         || null,
+      tsukinkikan:           data.get('tsukinkikan')           || null,
+      boushi_size:           'F',
+      data_nascimento:       data.get('data_nascimento')       || null,
+      idade:                 parseInt(data.get('idade'))       || null,
+      sexo:                  data.get('sexo'),
+      nacionalidade:         data.get('nacionalidade'),
+      visto:                 data.get('visto'),
+      telefone:              data.get('telefone'),
+      cep:                   data.get('cep')                   || null,
+      endereco:              data.get('endereco')              || null,
+      estado_civil:          data.get('estado_civil'),
+      qtd_filhos:            parseInt(data.get('qtd_filhos'))  || 0,
+      filho1_idade:          parseInt(data.get('filho1_idade')) || null,
+      filho2_idade:          parseInt(data.get('filho2_idade')) || null,
+      filho3_idade:          parseInt(data.get('filho3_idade')) || null,
+      filho4_idade:          parseInt(data.get('filho4_idade')) || null,
+      indicacao:             data.get('indicacao')             || null,
+      emergencia_nome:       data.get('emergencia_nome'),
+      emergencia_tel:        data.get('emergencia_tel')        || null,
+      emergencia_parentesco: data.get('emergencia_parentesco') || null,
+      emergencia_hospital:   data.get('emergencia_hospital')   || null,
+      altura:                parseInt(data.get('altura'))      || null,
+      peso:                  parseInt(data.get('peso'))        || null,
+      tipo_sanguineo:        data.get('tipo_sanguineo')        || null,
+      tam_blusa:             data.get('tam_blusa')             || null,
+      tam_calca:             data.get('tam_calca')             || null,
+      tam_sapato:            data.get('tam_sapato')            || null,
+      saude_estado:          data.get('saude_estado'),
+      doenca_nome:           data.get('doenca_nome')           || null,
+      doenca_periodo:        data.get('doenca_periodo')        || null,
+      psicologico:           data.get('psicologico'),
+      psicologico_detalhe:   data.get('psicologico_detalhe')   || null,
+      alergia:               data.get('alergia'),
+      kafunsho:              data.get('kafunsho')              || null,
+      po_poeira:             data.get('po_poeira')             || null,
+      tiner:                 data.get('tiner')                 || null,
+      oleo:                  data.get('oleo')                  || null,
+      outras_alergias:       data.get('outras_alergias')       || null,
+      fumante:               data.get('fumante'),
+      tratamento:            data.get('tratamento'),
+      tratamento_nome:       data.get('tratamento_nome')       || null,
+      tratamento_periodo:    data.get('tratamento_periodo')    || null,
+      historico:             data.get('historico'),
+      historico_itens:       historico_itens.length ? historico_itens : null,
+      tem_carro:             data.get('tem_carro'),
+      seguro_carro:          data.get('seguro_carro')          || null,
+      data_inicio:           data.get('data_inicio')           || null,
+      nivel_japones:         data.get('nivel_japones')         || null,
+      habilitacao:           [...form.querySelectorAll('input[name="habilitacao"]:checked')].map(e => e.value),
+      turnos:                [...form.querySelectorAll('input[name="turnos"]:checked')].map(e => e.value),
+      lateralidade:          data.get('lateralidade')          || null,
+      usa_oculos:            data.get('usa_oculos')            || null,
+      tatuagem:              data.get('tatuagem')              || null,
+      tatuagem_local:        data.get('tatuagem_local')        || null,
+      precisa_apartamento:   data.get('precisa_apartamento')   || null,
+      possui_pet:            data.get('possui_pet')            || null,
+      salario_desejado:      data.get('salario_desejado')      || null,
+      trabalho1_periodo: [formatarMes('t1_inicio'), formatarMes('t1_fim')].filter(Boolean).join(' ~ ') || null,
+      trabalho1_empresa:     data.get('trabalho1_empresa')     || null,
+      trabalho1_funcao:      data.get('trabalho1_funcao')      || null,
+      trabalho1_motivo_saida: data.get('trabalho1_motivo_saida') || null,
+      trabalho2_periodo: [formatarMes('t2_inicio'), formatarMes('t2_fim')].filter(Boolean).join(' ~ ') || null,
+      trabalho2_empresa:     data.get('trabalho2_empresa')     || null,
+      trabalho2_funcao:      data.get('trabalho2_funcao')      || null,
+      trabalho2_motivo_saida: data.get('trabalho2_motivo_saida') || null,
+      trabalho3_periodo: [formatarMes('t3_inicio'), formatarMes('t3_fim')].filter(Boolean).join(' ~ ') || null,
+      trabalho3_empresa:     data.get('trabalho3_empresa')     || null,
+      trabalho3_funcao:      data.get('trabalho3_funcao')      || null,
+      trabalho3_motivo_saida: data.get('trabalho3_motivo_saida') || null,
+      foto_url,
+    }
+
+    const { error } = await sb.from('curriculos').insert([payload])
+
+    btn.disabled = false
+    btn.textContent = 'Submit / Enviar'
+
+    if (error) {
+      const msg = document.getElementById('errorMsg')
+      msg.style.display = 'block'
+      msg.textContent = '❌ ' + (error.message || JSON.stringify(error))
+    } else {
+      form.reset()
+      document.getElementById('successPopup').style.display = 'flex'
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  })
+</script>
+</body>
+</html>
