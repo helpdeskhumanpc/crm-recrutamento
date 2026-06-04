@@ -81,8 +81,8 @@
       .ss-hist-head th { background:#1a237e !important; color:white !important; font-size:8.5pt; text-align:center; border-color:#1a237e; }
 
       /* PHOTO */
-      .ss-photo { width:52mm; height:70mm; object-fit:cover; border:1.5px solid #ccc; display:block; border-radius:2px; }
-      .ss-photo-empty { width:52mm; height:70mm; border:2px dashed #ccc; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:8pt; color:#aaa; text-align:center; }
+      .ss-photo { width:32mm; height:42mm; object-fit:cover; border:1.5px solid #ccc; display:block; border-radius:2px; }
+      .ss-photo-empty { width:32mm; height:42mm; border:2px dashed #ccc; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:8pt; color:#aaa; text-align:center; }
 
       /* STARS */
       .ss-star-on  { color:#f39c12; font-size:11pt; }
@@ -129,13 +129,15 @@
   <div class="ss-row2">
     <div class="ss-col-60">
       <div class="ss-sec ss-sec-wrap">
-        <div class="ss-sec-title">📋 1. 基本情報</div>
-        <div style="display:flex;gap:5px">
+        <div class="ss-sec-title">■ 1. 基本情報</div>
+        <div style="display:flex;gap:5px;padding:4px">
           <div id="p_foto_box" style="flex-shrink:0"></div>
           <table class="ss-t" style="flex:1">
-            <tr><th>登録名</th><td id="p_nome"></td></tr>
             <tr><th>フリガナ</th><td id="p_furigana"></td></tr>
-            <tr><th>生年月日</th><td><span id="p_nasc"></span>　年齢 <span id="p_idade"></span>歳　性別 <span id="p_sexo"></span></td></tr>
+            <tr><th>氏名</th><td id="p_nome"></td></tr>
+            <tr><th>生年月日</th><td id="p_nasc"></td></tr>
+            <tr><th>年齢</th><td id="p_idade"></td></tr>
+            <tr><th>性別</th><td id="p_sexo"></td></tr>
             <tr><th>国籍</th><td id="p_nac"></td></tr>
             <tr><th>在留資格</th><td id="p_visto"></td></tr>
             <tr><th>現住所</th><td id="p_addr"></td></tr>
@@ -146,7 +148,7 @@
     </div>
     <div class="ss-col-40">
       <div class="ss-sec ss-sec-wrap">
-        <div class="ss-sec-title">💼 2. 就労条件・希望</div>
+        <div class="ss-sec-title">■ 2. 就労条件・希望</div>
         <table class="ss-t">
           <tr><th>勤務開始可能日</th><td id="p_inicio"></td></tr>
           <tr><th>希望シフト</th><td id="p_turnos"></td></tr>
@@ -162,27 +164,30 @@
   <div class="ss-row2">
     <div class="ss-col-50">
       <div class="ss-sec ss-sec-wrap">
-        <div class="ss-sec-title">❤ 3. 身体情報・日本語能力</div>
-        <div style="display:flex;gap:5px">
+        <div class="ss-sec-title">■ 3. 身体情報・日本語能力</div>
+        <div style="display:flex;gap:5px;padding:4px">
           <table class="ss-t" style="flex:1">
-            <tr><th>身長</th><td id="p_altura"></td><th>体重</th><td id="p_peso"></td></tr>
-            <tr><th>靴サイズ</th><td id="p_sapato"></td><th>作業服</th><td id="p_blusa"></td></tr>
-            <tr><th>血液型</th><td id="p_sangue"></td><th>眼鏡</th><td id="p_oculos"></td></tr>
-            <tr><th>利き手</th><td id="p_lateral"></td><th>タトゥー</th><td id="p_tatu"></td></tr>
+            <tr><th>身長</th><td id="p_altura"></td></tr>
+            <tr><th>体重</th><td id="p_peso"></td></tr>
+            <tr><th>靴サイズ</th><td id="p_sapato"></td></tr>
+            <tr><th>作業服サイズ</th><td id="p_blusa"></td></tr>
+            <tr><th>血液型</th><td id="p_sangue"></td></tr>
+            <tr><th>眼鏡</th><td id="p_oculos"></td></tr>
+            <tr><th>利き手</th><td id="p_lateral"></td></tr>
+            <tr><th>タトゥー</th><td id="p_tatu"></td></tr>
           </table>
-          <table class="ss-t" style="width:95px">
+          <table class="ss-t" style="width:105px">
             <tr><th colspan="2" style="text-align:center;background:#1a237e !important;color:white !important">日本語能力</th></tr>
-            <tr><td style="font-size:7pt">日本語会話</td><td id="p_jp_conv" style="white-space:nowrap"></td></tr>
-            <tr><td style="font-size:7pt">ひらがな</td><td id="p_hira"></td></tr>
-            <tr><td style="font-size:7pt">カタカナ</td><td id="p_kata"></td></tr>
-            <tr><td style="font-size:7pt">母国語</td><td id="p_nac2"></td></tr>
+            <tr><td style="font-size:7.5pt">日本語会話</td><td id="p_jp_conv" style="white-space:nowrap"></td></tr>
+            <tr><td style="font-size:7.5pt">ひらがな</td><td id="p_hira"></td></tr>
+            <tr><td style="font-size:7.5pt">カタカナ</td><td id="p_kata"></td></tr>
           </table>
         </div>
       </div>
     </div>
     <div class="ss-col-50">
       <div class="ss-sec ss-sec-wrap">
-        <div class="ss-sec-title">🏆 4. 保有資格・免許</div>
+        <div class="ss-sec-title">■ 4. 保有資格・免許</div>
         <table class="ss-cb-table">
           <thead><tr><th style="width:18px">取得</th><th>免許種類</th></tr></thead>
           <tbody id="p_licencas"></tbody>
@@ -193,7 +198,7 @@
 
   <!-- 5. 職歴 -->
   <div class="ss-sec ss-sec-wrap">
-    <div class="ss-sec-title">📅 5. 職歴（近の職歴順）</div>
+    <div class="ss-sec-title">■ 5. 職歴（近の職歴順）</div>
     <table class="ss-t" style="width:100%">
       <thead class="ss-hist-head"><tr><th style="width:22%">期間</th><th style="width:30%">勤務先</th><th>仕事内容</th><th style="width:16%">退職理由</th></tr></thead>
       <tbody id="p_hist"></tbody>
@@ -204,7 +209,7 @@
   <div class="ss-row2">
     <div class="ss-col-60">
       <div class="ss-sec ss-sec-wrap">
-        <div class="ss-sec-title">⭐ 6. アピールポイント・備考</div>
+        <div class="ss-sec-title">■ 6. アピールポイント・備考</div>
         <div class="ss-box-label">アピールポイント</div>
         <div id="p_appeal" class="ss-box" style="min-height:55px;margin-bottom:4px"></div>
         <div class="ss-box-label">備考</div>
@@ -213,7 +218,7 @@
     </div>
     <div class="ss-col-40">
       <div class="ss-sec ss-sec-wrap">
-        <div class="ss-sec-title">📊 その他情報</div>
+        <div class="ss-sec-title">■ その他情報</div>
         <table class="ss-t">
           <tr><th>健康状態</th><td id="p_saude"></td></tr>
           <tr><th>アレルギー</th><td id="p_alergia"></td></tr>
@@ -428,9 +433,9 @@ function gerarPDF() {
   document.getElementById('p_hoje').textContent = todayStr
   document.getElementById('p_nome').textContent = c.nome_completo || ''
   document.getElementById('p_furigana').textContent = [c.furigana_sei, c.furigana_mei].filter(Boolean).join(' ')
-  document.getElementById('p_nasc').textContent = c.data_nascimento || '—'
-  document.getElementById('p_idade').textContent = c.idade || '—'
-  document.getElementById('p_sexo').textContent = ja(c.sexo)
+  document.getElementById('p_nasc').textContent  = c.data_nascimento || '—'
+  document.getElementById('p_idade').textContent = c.idade ? c.idade + '歳' : '—'
+  document.getElementById('p_sexo').textContent  = ja(c.sexo)
   document.getElementById('p_nac').textContent = c.nacionalidade || '—'
   document.getElementById('p_nac2').textContent = c.nacionalidade || '—'
   document.getElementById('p_visto').textContent = ja(c.visto)
