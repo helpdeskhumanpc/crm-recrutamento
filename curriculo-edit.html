@@ -267,10 +267,15 @@ async function carregar() {
   const telBusca = normTel(params.get('tel') || '')
   if (!telBusca) { document.getElementById('screenContent').innerHTML = '<div class="not-found">Telefone não informado.</div>'; return }
 
-  const ultimos8 = telBusca.slice(-8)
-  const { data, error } = await sb.from('curriculos').select('*').ilike('telefone', `%${ultimos8}%`).limit(1)
+  // Busca pelos últimos 4 dígitos (não tem traço no meio)
+  const ultimos4 = telBusca.slice(-4)
+  const { data, error } = await sb.from('curriculos').select('*').ilike('telefone', `%${ultimos4}`)
 
-  if (error || !data?.length) {
+  // Filtra normalizando ambos os lados
+  const match = (data || []).find(row => normTel(row.telefone) === telBusca)
+  const finalData = match ? [match] : (data?.length === 1 ? data : [])
+
+  if (error || !finalData.length) {
     document.getElementById('screenContent').innerHTML = `
       <div class="not-found">
         <p>Currículo não encontrado para: ${params.get('tel')}</p>
@@ -279,7 +284,7 @@ async function carregar() {
     return
   }
 
-  curriculoData = data[0]
+  curriculoData = finalData[0]
   curriculoId = curriculoData.id
   renderScreen(curriculoData)
 }
