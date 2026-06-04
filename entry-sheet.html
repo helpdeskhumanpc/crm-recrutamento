@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>エントリーシート</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'MS Gothic',Arial,sans-serif; background:#f0f0f0; padding:20px; }
+    .topbar { max-width:800px; margin:0 auto 16px; display:flex; gap:10px; align-items:center; background:white; padding:12px 16px; border-radius:6px; }
+    .topbar h1 { font-size:16px; flex:1; }
+    .btn { padding:8px 16px; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600; }
+    .btn-print { background:#e8621a; color:white; }
+    .btn-back  { background:#f5f5f5; color:#555; border:1px solid #ddd; }
+    .loading { text-align:center; padding:40px; color:#888; }
+    .not-found { text-align:center; padding:40px; color:#c62828; }
+
+    /* ── ENTRY SHEET ────────────────────────────── */
+    #entrySheet { max-width:800px; margin:0 auto; background:white; padding:20px 24px; }
+
+    /* HEADER */
+    .es-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+    .es-title { font-size:28pt; font-weight:900; letter-spacing:2px; }
+    .es-logo { width:80px; height:80px; border:2px solid #1565c0; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+    .es-logo-a { font-size:20pt; font-weight:900; color:#1565c0; line-height:1; }
+    .es-logo-t { font-size:7pt; color:#1565c0; letter-spacing:1px; }
+    .es-meta { display:flex; justify-content:space-between; font-size:10pt; margin-bottom:8px; }
+
+    /* TABLES */
+    .es-t { width:100%; border-collapse:collapse; font-size:9pt; margin-bottom:4px; }
+    .es-t td, .es-t th { border:1px solid #333; padding:3px 6px; vertical-align:middle; }
+    .es-t .lbl { background:#b8d4f0; font-weight:700; white-space:nowrap; text-align:center; }
+    .es-t .lbl2 { background:#ddeeff; font-weight:700; white-space:nowrap; text-align:center; }
+    .bold { font-weight:900; font-size:11pt; }
+
+    /* PHOTO */
+    .photo-cell { width:90px; text-align:center; vertical-align:top; }
+    .photo-cell img { width:85px; height:110px; object-fit:cover; border:1px solid #999; }
+    .photo-empty { width:85px; height:110px; border:1px solid #999; display:flex; align-items:center; justify-content:center; font-size:8pt; color:#aaa; text-align:center; margin:0 auto; }
+
+    /* JP LEVEL */
+    .jp-table { width:100%; border-collapse:collapse; font-size:8.5pt; }
+    .jp-table td { border:1px solid #333; padding:3px 6px; }
+    .jp-table .jp-lbl { background:#b8d4f0; font-weight:700; text-align:center; width:80px; vertical-align:middle; }
+    .jp-table .jp-row { vertical-align:middle; }
+    .jp-table .jp-pct { text-align:right; width:65px; white-space:nowrap; }
+    .jp-table .jp-hantei { background:#b8d4f0; font-weight:700; text-align:center; width:45px; vertical-align:middle; }
+    .jp-circle { width:28px; height:28px; border:2px solid #333; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:11pt; }
+    .jp-circle.active { background:#1565c0; color:white; border-color:#1565c0; }
+
+    /* HISTORY */
+    .hist-t { width:100%; border-collapse:collapse; font-size:9pt; }
+    .hist-t td, .hist-t th { border:1px solid #333; padding:3px 6px; }
+    .hist-t .hist-lbl { background:#b8d4f0; font-weight:700; text-align:center; width:70px; vertical-align:middle; }
+
+    /* APPEAL */
+    .appeal-t { width:100%; border-collapse:collapse; font-size:9pt; }
+    .appeal-t td { border:1px solid #333; padding:4px 6px; vertical-align:top; }
+    .appeal-t .ap-lbl { background:#b8d4f0; font-weight:700; text-align:center; width:70px; }
+
+    /* BOTTOM */
+    .bottom-t { width:100%; border-collapse:collapse; font-size:9pt; }
+    .bottom-t td { border:1px solid #333; padding:3px 6px; vertical-align:middle; }
+    .bottom-t .lbl { background:#b8d4f0; font-weight:700; text-align:center; }
+
+    /* PRINT */
+    @media print {
+      * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+      body { background:white; padding:0; }
+      .topbar { display:none; }
+      #entrySheet { max-width:100%; padding:6mm 8mm; }
+      .es-title { font-size:22pt; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>📋 エントリーシート ヒューマン</h1>
+  <button class="btn btn-back" onclick="history.back()">← Voltar</button>
+  <button class="btn btn-print" onclick="window.print()">🖨 PDF印刷</button>
+</div>
+
+<div id="entrySheet">
+  <div class="loading">読み込み中...</div>
+</div>
+
+<script>
+const { createClient } = supabase
+const sb = createClient(
+  'https://xzxfwrbebkwagnropgfb.supabase.co',
+  'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE'
+)
+
+function normTel(t) {
+  if (!t) return ''
+  let n = t.replace(/\D/g,'')
+  if (n.startsWith('81')) n = '0' + n.slice(2)
+  return n
+}
+
+function v(x) { return x || '' }
+
+function jaVisto(v) {
+  const map = {
+    'Permanent Resident':'永住者','Residente Permanente':'永住者',
+    'Long-term Resident':'定住者','Residente de Longa':'定住者',
+    'Japanese Spouse':'日本人の配偶者','Cônjuge Japonês':'日本人の配偶者',
+    'Engineer':'エンジニア','Engenheiro':'エンジニア',
+    'Specific Activities':'特定活動','Atividades Específicas':'特定活動',
+  }
+  for (const [k,jp] of Object.entries(map)) { if ((v||'').includes(k)) return jp }
+  return v || ''
+}
+
+function jaSexo(v) {
+  if ((v||'').includes('Male') || (v||'').includes('Homem')) return '男性'
+  if ((v||'').includes('Female') || (v||'').includes('Mulher')) return '女性'
+  return v || ''
+}
+
+function jaFumante(v) {
+  if ((v||'').includes('No') || (v||'').includes('Não')) return '非喫煙者'
+  if ((v||'').includes('Yes') || (v||'').includes('Sim')) return '喫煙者'
+  return v || ''
+}
+
+function jaSaude(v) {
+  if ((v||'').includes('Healthy') || (v||'').includes('Saudável')) return '良好'
+  return v || '良好'
+}
+
+function jpLevel(nivel) {
+  if (!nivel) return 0
+  if (nivel.includes('N1') || nivel.includes('80%')) return 5
+  if (nivel.includes('N2') || nivel.includes('60%')) return 4
+  if (nivel.includes('N3') || nivel.includes('50%')) return 3
+  if (nivel.includes('N4') || nivel.includes('30%')) return 2
+  if (nivel.includes('N5') || nivel.includes('10%')) return 1
+  return 0
+}
+
+function circle(n, level) {
+  return `<span class="jp-circle ${n === level ? 'active' : ''}">⑤①②③④⑤`.split('')[n] + '</span>'
+}
+
+function formatDate(d) {
+  if (!d) return ''
+  return d.replace(/-/g, '年').replace(/(\d{4})年(\d{2})年(\d{2})/, '$1年$2月$3日')
+}
+
+function formatYM(periodo) {
+  if (!periodo) return ''
+  return periodo.replace(/(\d{4})\/(\d{2})/g, '$1年$2月')
+}
+
+function hasCar(hab) {
+  return (hab||[]).some(h => h.toLowerCase().includes('car') || h.toLowerCase().includes('carro'))
+}
+
+function hasInsurance(v) {
+  if ((v||'').includes('Yes') || (v||'').includes('Tenho')) return 'あり'
+  if ((v||'').includes('No') || (v||'').includes('Não')) return 'なし'
+  return 'なし'
+}
+
+function turnos(arr) {
+  if (!arr?.length) return ''
+  const map = {'Morning / Manhã':'日勤','Afternoon / Tarde':'遅番','Night / Noite':'夜勤',
+    'Dawn / Madrugada':'深夜','Any / Qualquer':'可'}
+  return arr.map(t => map[t] || t).join('・')
+}
+
+async function carregar() {
+  const params = new URLSearchParams(location.search)
+  const telBusca = normTel(params.get('tel') || '')
+
+  if (!telBusca) {
+    document.getElementById('entrySheet').innerHTML = '<div class="not-found">Telefone não informado.</div>'
+    return
+  }
+
+  const ultimos4 = telBusca.slice(-4)
+  const { data, error } = await sb.from('curriculos').select('*').ilike('telefone', `%${ultimos4}`)
+  const match = (data||[]).find(r => normTel(r.telefone) === telBusca)
+
+  if (error || !match) {
+    document.getElementById('entrySheet').innerHTML = `
+      <div class="not-found">
+        <p>Currículo não encontrado para: ${params.get('tel')}</p>
+        <p style="margin-top:8px;font-size:12px;color:#888">O candidato ainda não preencheu o formulário.</p>
+      </div>`
+    return
+  }
+
+  renderEntrySheet(match)
+}
+
+function renderEntrySheet(c) {
+  const lvl = jpLevel(c.nivel_japones)
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`
+  const kirokuStr = c.kiroku_date ? formatDate(c.kiroku_date) : todayStr
+
+  const html = `
+  <!-- HEADER -->
+  <div class="es-header">
+    <div>
+      <div class="es-title">エントリーシート</div>
+    </div>
+    <div class="es-logo">
+      <div class="es-logo-a">A</div>
+      <div class="es-logo-t">human</div>
+    </div>
+  </div>
+
+  <div class="es-meta">
+    <span>No.&nbsp;&nbsp;<strong>${v(c.numero_id)}</strong></span>
+    <span>${kirokuStr}</span>
+  </div>
+
+  <!-- SECTION 1: 基本情報 + PHOTO -->
+  <table class="es-t" style="margin-bottom:4px">
+    <tr>
+      <td class="lbl" style="width:70px">フリガナ</td>
+      <td colspan="3">${v(c.furigana_sei)}&nbsp;&nbsp;${v(c.furigana_mei)}</td>
+      <td class="photo-cell" rowspan="6" style="border:1px solid #333;padding:4px">
+        ${c.foto_url
+          ? `<img src="${c.foto_url}">`
+          : '<div class="photo-empty">写真</div>'}
+      </td>
+    </tr>
+    <tr>
+      <td class="lbl">氏&nbsp;&nbsp;&nbsp;名</td>
+      <td colspan="3" class="bold">${v(c.nome_completo)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">ローマ字</td>
+      <td colspan="3">${v(c.roman_name)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">生年月日</td>
+      <td>${formatDate(c.data_nascimento)}</td>
+      <td class="lbl" style="width:40px">年齢</td>
+      <td style="width:60px">${v(c.idade)}歳</td>
+    </tr>
+    <tr>
+      <td class="lbl">性別</td>
+      <td style="width:80px">${jaSexo(c.sexo)}</td>
+      <td class="lbl">国籍</td>
+      <td>${v(c.nacionalidade)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">身長</td>
+      <td>${v(c.altura)} cm</td>
+      <td class="lbl">体重</td>
+      <td>${v(c.peso)} kg</td>
+    </tr>
+  </table>
+
+  <!-- SECTION 2: 在留・住所 -->
+  <table class="es-t" style="margin-bottom:4px">
+    <tr>
+      <td class="lbl" style="width:70px">在留資格</td>
+      <td style="width:80px">${jaVisto(c.visto)}</td>
+      <td class="lbl" style="width:80px">在留カードNo.</td>
+      <td style="width:110px">${v(c.zairyu_card_no)}</td>
+      <td class="lbl" style="width:35px">期限</td>
+      <td>${formatDate(c.zairyu_expire)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">現住所</td>
+      <td colspan="2">${v(c.endereco)}</td>
+      <td class="lbl">通勤方法</td>
+      <td class="lbl" style="width:50px">通勤時間</td>
+      <td>${v(c.tsukin_method || c.tsukinkikan)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">通勤方法</td>
+      <td>${v(c.tsukin_method)}</td>
+      <td class="lbl">通勤時間</td>
+      <td colspan="3">${v(c.tsukinkikan)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">作業服</td>
+      <td style="font-size:8.5pt">上&nbsp;<strong>${v(c.tam_blusa)}</strong>&nbsp;&nbsp;下&nbsp;<strong>${v(c.tam_calca)}</strong>&nbsp;&nbsp;帽子&nbsp;<strong>${v(c.boushi_size)||'F'}</strong>&nbsp;&nbsp;靴&nbsp;<strong>${v(c.tam_sapato)}</strong></td>
+      <td class="lbl">電話番号</td>
+      <td colspan="3">${v(c.telefone)}</td>
+    </tr>
+  </table>
+
+  <!-- SECTION 3: 日本語能力 -->
+  <table class="jp-table" style="margin-bottom:4px">
+    <tr>
+      <td class="jp-lbl" rowspan="5">日本語能力<br><small style="font-weight:normal">(判定基準)</small></td>
+      <td class="jp-row">①初心者-基本的な単語や表現を理解。</td>
+      <td class="jp-pct">0〜20%</td>
+      <td class="jp-hantei" rowspan="5">判定</td>
+      <td style="text-align:center;vertical-align:middle;width:50px" rowspan="5">
+        <span class="jp-circle ${lvl===1?'active':''}" style="font-size:14pt">①</span><br>
+        <span class="jp-circle ${lvl===2?'active':''}" style="font-size:14pt">②</span><br>
+        <span class="jp-circle ${lvl===3?'active':''}" style="font-size:14pt">③</span><br>
+        <span class="jp-circle ${lvl===4?'active':''}" style="font-size:14pt">④</span><br>
+        <span class="jp-circle ${lvl===5?'active':''}" style="font-size:14pt">⑤</span>
+      </td>
+    </tr>
+    <tr><td>②初級-単語な会話や文を理解</td><td class="jp-pct">20〜40%</td></tr>
+    <tr><td>③中級-一般的な会話や文章を理解</td><td class="jp-pct">40〜60%</td></tr>
+    <tr><td>④上級-自由に会話や文章を作成、高度な表現も理解</td><td class="jp-pct">60〜80%</td></tr>
+    <tr><td>⑤ネイティブレベル-母国語話者と同等の理解力、自然な表現が可能</td><td class="jp-pct">80〜100%</td></tr>
+  </table>
+
+  <!-- SECTION 4: 職歴 -->
+  <table class="hist-t" style="margin-bottom:4px">
+    <tr>
+      <td class="hist-lbl" rowspan="${[c.trabalho1_empresa,c.trabalho2_empresa,c.trabalho3_empresa].filter(Boolean).length + 1}">職歴等</td>
+      <th style="background:#ddeeff;width:130px;text-align:center">期間</th>
+      <th style="background:#ddeeff;text-align:center">勤務先</th>
+      <th style="background:#ddeeff;text-align:center">仕事内容</th>
+    </tr>
+    ${[1,2,3].map(n => c[`trabalho${n}_empresa`] ? `
+    <tr>
+      <td style="text-align:center;font-size:8.5pt">${formatYM(c[`trabalho${n}_periodo`])}</td>
+      <td>${v(c[`trabalho${n}_empresa`])}</td>
+      <td>${v(c[`trabalho${n}_funcao`])}</td>
+    </tr>` : '').join('')}
+  </table>
+
+  <!-- SECTION 5: 免許 -->
+  <table class="hist-t" style="margin-bottom:4px">
+    <tr>
+      <td class="hist-lbl" rowspan="3">免許/<br>資格</td>
+      <td class="lbl2" style="width:110px;text-align:center">自動車免許有無</td>
+      <td style="width:80px;text-align:center">${hasCar(c.habilitacao) ? 'あり' : '無し'}</td>
+      <td class="lbl2" style="width:60px;text-align:center">各種保険</td>
+      <td>${hasInsurance(c.seguro_carro)}</td>
+    </tr>
+    <tr>
+      <td class="lbl2" style="text-align:center">特殊免許①</td>
+      <td>${(c.habilitacao||[]).filter(h=>!h.toLowerCase().includes('car')&&!h.toLowerCase().includes('carro')&&!h.toLowerCase().includes('none')&&!h.toLowerCase().includes('não')).slice(0,1).map(h=>h.split('/')[0].trim()).join('')}</td>
+      <td class="lbl2" style="text-align:center">取得年月</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td class="lbl2" style="text-align:center">特殊免許②</td>
+      <td>${(c.habilitacao||[]).filter(h=>!h.toLowerCase().includes('car')&&!h.toLowerCase().includes('carro')&&!h.toLowerCase().includes('none')&&!h.toLowerCase().includes('não')).slice(1,2).map(h=>h.split('/')[0].trim()).join('')}</td>
+      <td class="lbl2" style="text-align:center">取得年月</td>
+      <td></td>
+    </tr>
+  </table>
+
+  <!-- SECTION 6: アピール -->
+  <table class="appeal-t" style="margin-bottom:4px">
+    <tr>
+      <td class="ap-lbl" rowspan="1">アピール<br>ポイント</td>
+      <td style="min-height:80px;white-space:pre-line;font-size:9pt">${v(c.appeal_points)}</td>
+    </tr>
+  </table>
+
+  <!-- SECTION 7: 勤務 -->
+  <table class="bottom-t">
+    <tr>
+      <td class="lbl" style="width:80px">交代勤務等</td>
+      <td>${turnos(c.turnos)}</td>
+      <td class="lbl" style="width:65px">健康状態</td>
+      <td style="width:80px">${jaSaude(c.saude_estado)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">勤務開始可能日</td>
+      <td>${c.data_inicio ? formatDate(c.data_inicio) : '即日'}</td>
+      <td class="lbl">タバコ</td>
+      <td>${jaFumante(c.fumante)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">備考</td>
+      <td colspan="3" style="min-height:40px;white-space:pre-line">${v(c.biko)}</td>
+    </tr>
+  </table>
+
+  <!-- FOOTER -->
+  <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:9pt;border-top:1px solid #999;padding-top:6px">
+    <span>記入日: ${kirokuStr}</span>
+    <span>担当者: ${v(c.tantousha_nome)}</span>
+    <span style="font-weight:700">株式会社 HUMAN HELPDESK</span>
+  </div>
+  `
+
+  document.getElementById('entrySheet').innerHTML = html
+}
+
+carregar()
+</script>
+</body>
+</html>

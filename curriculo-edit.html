@@ -111,6 +111,7 @@
     <button class="btn btn-back" onclick="history.back()">← Voltar</button>
     <button class="btn btn-save" onclick="salvar()">💾 保存</button>
     <button class="btn btn-pdf"  onclick="gerarPDF()">🖨 スキルシート PDF</button>
+    <button class="btn btn-pdf" style="background:#1565c0" onclick="abrirEntrySheet()">📋 エントリーシート PDF</button>
   </div>
   <div id="screenContent"><div class="loading">読み込み中... / Carregando...</div></div>
 </div>
@@ -448,6 +449,12 @@ async function salvar() {
   if (error) { alert('Erro: ' + error.message); return }
   Object.assign(curriculoData, payload)
   alert('✅ 保存完了!')
+}
+
+function abrirEntrySheet() {
+  if (!curriculoData) return
+  const tel = (curriculoData.telefone || '').replace(/\D/g,'')
+  window.open(`entry-sheet.html?tel=${tel}`, '_blank')
 }
 
 function gerarPDF() {
