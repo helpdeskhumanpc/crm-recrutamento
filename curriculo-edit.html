@@ -66,34 +66,36 @@
       .ss-col-40    { flex:0 0 39%; }
       .ss-col-50    { flex:1; }
 
+      /* SECTION WRAPPER */
+      .ss-sec-wrap { border:2px solid #1a237e; border-radius:4px; overflow:hidden; margin-bottom:6px; }
+      .ss-sec-title { background:#1a237e !important; color:white !important; font-size:8.5pt; font-weight:700; padding:4px 10px; display:flex; align-items:center; gap:4px; margin-bottom:0; }
+
       /* TABLES */
-      .ss-t { width:100%; border-collapse:collapse; font-size:8pt; }
-      .ss-t td,.ss-t th { border:1px solid #999; padding:2px 5px; vertical-align:middle; }
-      .ss-t th {
-        background:#e8eaf6 !important; color:#1a237e !important;
-        font-weight:700; white-space:nowrap; text-align:left; width:38%;
-      }
-      .ss-t td { word-break:break-word; }
+      .ss-t { width:100%; border-collapse:collapse; font-size:8.5pt; }
+      .ss-t td,.ss-t th { border:1.5px solid #ccc; padding:4px 7px; vertical-align:middle; }
+      .ss-t th { background:#e8eaf6 !important; color:#1a237e !important; font-weight:700; white-space:nowrap; text-align:left; width:40%; }
+      .ss-t td { word-break:break-word; line-height:1.4; }
+      .ss-t tr:first-child td, .ss-t tr:first-child th { border-top:none; }
 
       /* WORK HISTORY TABLE */
-      .ss-hist-head th { background:#1a237e !important; color:white !important; font-size:8pt; text-align:center; }
+      .ss-hist-head th { background:#1a237e !important; color:white !important; font-size:8.5pt; text-align:center; border-color:#1a237e; }
 
       /* PHOTO */
-      .ss-photo { width:55mm; height:73mm; object-fit:cover; border:1px solid #999; display:block; }
-      .ss-photo-empty { width:55mm; height:73mm; border:2px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:8pt; color:#aaa; text-align:center; }
+      .ss-photo { width:52mm; height:70mm; object-fit:cover; border:1.5px solid #ccc; display:block; border-radius:2px; }
+      .ss-photo-empty { width:52mm; height:70mm; border:2px dashed #ccc; border-radius:2px; display:flex; align-items:center; justify-content:center; font-size:8pt; color:#aaa; text-align:center; }
 
       /* STARS */
-      .ss-star-on  { color:#f39c12; font-size:10pt; }
-      .ss-star-off { color:#ddd;    font-size:10pt; }
+      .ss-star-on  { color:#f39c12; font-size:11pt; }
+      .ss-star-off { color:#ddd;    font-size:11pt; }
 
       /* LICENSE CHECKBOXES */
-      .ss-cb-table { width:100%; border-collapse:collapse; font-size:7.5pt; }
-      .ss-cb-table td { border:1px solid #999; padding:2px 5px; }
-      .ss-cb-table th { background:#e8eaf6 !important; color:#1a237e !important; font-weight:700; text-align:center; border:1px solid #999; padding:2px 4px; font-size:7pt; }
+      .ss-cb-table { width:100%; border-collapse:collapse; font-size:8pt; }
+      .ss-cb-table td { border:1.5px solid #ccc; padding:3px 6px; line-height:1.5; }
+      .ss-cb-table th { background:#e8eaf6 !important; color:#1a237e !important; font-weight:700; text-align:center; border:1.5px solid #ccc; padding:3px 5px; font-size:8pt; }
 
       /* APPEAL BOX */
-      .ss-box { border:1px solid #999; min-height:50px; padding:4px 6px; font-size:8pt; white-space:pre-line; }
-      .ss-box-label { font-size:7pt; font-weight:700; color:#1a237e; margin-bottom:2px; }
+      .ss-box { border:1.5px solid #ccc; border-radius:2px; min-height:52px; padding:5px 7px; font-size:8.5pt; white-space:pre-line; line-height:1.5; }
+      .ss-box-label { font-size:7.5pt; font-weight:700; color:#1a237e; margin-bottom:3px; margin-top:4px; }
 
       /* FOOTER */
       .ss-footer { border-top:2px solid #1a237e; margin-top:5px; padding-top:4px; display:flex; justify-content:space-between; align-items:center; font-size:8pt; }
@@ -126,7 +128,7 @@
   <!-- ROW 1: 基本情報(60%) + 就労条件(40%) -->
   <div class="ss-row2">
     <div class="ss-col-60">
-      <div class="ss-sec">
+      <div class="ss-sec ss-sec-wrap">
         <div class="ss-sec-title">📋 1. 基本情報</div>
         <div style="display:flex;gap:5px">
           <div id="p_foto_box" style="flex-shrink:0"></div>
@@ -143,16 +145,13 @@
       </div>
     </div>
     <div class="ss-col-40">
-      <div class="ss-sec">
+      <div class="ss-sec ss-sec-wrap">
         <div class="ss-sec-title">💼 2. 就労条件・希望</div>
         <table class="ss-t">
           <tr><th>勤務開始可能日</th><td id="p_inicio"></td></tr>
           <tr><th>希望シフト</th><td id="p_turnos"></td></tr>
           <tr><th>通勤方法</th><td id="p_carro"></td></tr>
           <tr><th>通勤時間</th><td id="p_tsuki"></td></tr>
-          <tr><th>アパート必要</th><td id="p_apt"></td></tr>
-          <tr><th>ペット</th><td id="p_pet"></td></tr>
-          <tr><th>希望給与</th><td id="p_salario"></td></tr>
           <tr><th>タバコ</th><td id="p_tabaco"></td></tr>
         </table>
       </div>
@@ -162,7 +161,7 @@
   <!-- ROW 2: 身体情報(50%) + 免許(50%) -->
   <div class="ss-row2">
     <div class="ss-col-50">
-      <div class="ss-sec">
+      <div class="ss-sec ss-sec-wrap">
         <div class="ss-sec-title">❤ 3. 身体情報・日本語能力</div>
         <div style="display:flex;gap:5px">
           <table class="ss-t" style="flex:1">
@@ -182,7 +181,7 @@
       </div>
     </div>
     <div class="ss-col-50">
-      <div class="ss-sec">
+      <div class="ss-sec ss-sec-wrap">
         <div class="ss-sec-title">🏆 4. 保有資格・免許</div>
         <table class="ss-cb-table">
           <thead><tr><th style="width:18px">取得</th><th>免許種類</th></tr></thead>
@@ -193,7 +192,7 @@
   </div>
 
   <!-- 5. 職歴 -->
-  <div class="ss-sec">
+  <div class="ss-sec ss-sec-wrap">
     <div class="ss-sec-title">📅 5. 職歴（近の職歴順）</div>
     <table class="ss-t" style="width:100%">
       <thead class="ss-hist-head"><tr><th style="width:22%">期間</th><th style="width:30%">勤務先</th><th>仕事内容</th><th style="width:16%">退職理由</th></tr></thead>
@@ -204,7 +203,7 @@
   <!-- 6. アピールポイント + その他 -->
   <div class="ss-row2">
     <div class="ss-col-60">
-      <div class="ss-sec">
+      <div class="ss-sec ss-sec-wrap">
         <div class="ss-sec-title">⭐ 6. アピールポイント・備考</div>
         <div class="ss-box-label">アピールポイント</div>
         <div id="p_appeal" class="ss-box" style="min-height:55px;margin-bottom:4px"></div>
@@ -213,7 +212,7 @@
       </div>
     </div>
     <div class="ss-col-40">
-      <div class="ss-sec">
+      <div class="ss-sec ss-sec-wrap">
         <div class="ss-sec-title">📊 その他情報</div>
         <table class="ss-t">
           <tr><th>健康状態</th><td id="p_saude"></td></tr>
@@ -245,6 +244,38 @@ const sb = createClient(
 
 let curriculoId = null
 let curriculoData = null
+
+// Traduz respostas múltipla para japonês
+function ja(text) {
+  if (!text) return '—'
+  const map = {
+    'Yes / Tenho':'あり', 'No / Não tenho':'なし', 'Yes / Sim':'あり', 'No / Não':'なし',
+    'Male / Homem':'男性', 'Female / Mulher':'女性',
+    'Permanent Resident / Residente Permanente':'永住者',
+    'Long-term Resident / Residente de Longa Permanência':'定住者',
+    'Japanese Spouse / Cônjuge Japonês':'日本人の配偶者',
+    'Engineer / Engenheiro':'エンジニア',
+    'Specific Activities / Atividades Específicas':'特定活動',
+    'Single / Solteiro':'独身', 'Married / Casado':'既婚', 'Divorced / Divorciado':'離婚',
+    'Right-handed / Destro':'右利き', 'Left-handed / Canhoto':'左利き', 'Both / Ambidestro':'両利き',
+    'No / Não':'なし', 'Yes, glasses / Sim, óculos':'眼鏡あり', 'Yes, contacts / Sim, lentes':'コンタクトあり',
+    'Healthy / Saudável':'良好', 'Minor injury or illness / Lesão ou doença leve':'軽傷・軽度',
+    'Took time off / Ficou afastado':'休職経験あり',
+    'Morning / Manhã':'午前', 'Afternoon / Tarde':'午後', 'Night / Noite':'夜間',
+    'Dawn / Madrugada':'深夜', 'Any / Qualquer':'いつでも可',
+  }
+  // Substitui cada valor mapeado
+  let result = text
+  for (const [pt, jp] of Object.entries(map)) {
+    result = result.split(pt).join(jp)
+  }
+  return result
+}
+
+function jaArr(arr) {
+  if (!arr?.length) return '—'
+  return arr.map(v => ja(v)).join('、')
+}
 
 function normTel(t) {
   if (!t) return ''
@@ -399,33 +430,30 @@ function gerarPDF() {
   document.getElementById('p_furigana').textContent = [c.furigana_sei, c.furigana_mei].filter(Boolean).join(' ')
   document.getElementById('p_nasc').textContent = c.data_nascimento || '—'
   document.getElementById('p_idade').textContent = c.idade || '—'
-  document.getElementById('p_sexo').textContent = c.sexo || '—'
+  document.getElementById('p_sexo').textContent = ja(c.sexo)
   document.getElementById('p_nac').textContent = c.nacionalidade || '—'
   document.getElementById('p_nac2').textContent = c.nacionalidade || '—'
-  document.getElementById('p_visto').textContent = c.visto || '—'
+  document.getElementById('p_visto').textContent = ja(c.visto)
   document.getElementById('p_addr').textContent = [c.endereco, c.cep].filter(Boolean).join(' ') || '—'
   document.getElementById('p_tel').textContent = c.telefone || '—'
   document.getElementById('p_inicio').textContent = c.data_inicio || '即日可能'
-  document.getElementById('p_turnos').textContent = (c.turnos||[]).join(', ') || '—'
-  document.getElementById('p_carro').textContent = c.tem_carro || '—'
+  document.getElementById('p_turnos').textContent = jaArr(c.turnos)
+  document.getElementById('p_carro').textContent = ja(c.tem_carro)
   document.getElementById('p_tsuki').textContent = c.tsukinkikan || '—'
-  document.getElementById('p_apt').textContent = c.precisa_apartamento || '—'
-  document.getElementById('p_pet').textContent = c.possui_pet || '—'
-  document.getElementById('p_salario').textContent = c.salario_desejado || '—'
-  document.getElementById('p_tabaco').textContent = c.fumante || '—'
+  document.getElementById('p_tabaco').textContent = ja(c.fumante)
   document.getElementById('p_altura').textContent = c.altura ? c.altura + 'cm' : '—'
   document.getElementById('p_peso').textContent = c.peso ? c.peso + 'kg' : '—'
   document.getElementById('p_sapato').textContent = c.tam_sapato || '—'
   document.getElementById('p_blusa').textContent = c.tam_blusa || '—'
   document.getElementById('p_sangue').textContent = c.tipo_sanguineo || '—'
-  document.getElementById('p_oculos').textContent = c.usa_oculos || '—'
-  document.getElementById('p_lateral').textContent = c.lateralidade || '—'
-  document.getElementById('p_tatu').textContent = c.tatuagem === 'Yes / Sim' ? `Sim — ${c.tatuagem_local||''}` : 'Não'
+  document.getElementById('p_oculos').textContent = ja(c.usa_oculos)
+  document.getElementById('p_lateral').textContent = ja(c.lateralidade)
+  document.getElementById('p_tatu').textContent = (c.tatuagem||'').includes('Sim') ? `あり — ${c.tatuagem_local||''}` : 'なし'
   document.getElementById('p_jp_conv').textContent = stars(c.nivel_japones)
   document.getElementById('p_hira').textContent = c.hiragana || '—'
   document.getElementById('p_kata').textContent = c.katakana || '—'
-  document.getElementById('p_saude').textContent = c.saude_estado || '—'
-  document.getElementById('p_alergia').textContent = c.alergia || '—'
+  document.getElementById('p_saude').textContent = ja(c.saude_estado)
+  document.getElementById('p_alergia').textContent = ja(c.alergia)
   document.getElementById('p_fumante').textContent = c.fumante || '—'
   document.getElementById('p_appeal').textContent = c.appeal_points || ''
   document.getElementById('p_biko').textContent = c.biko || ''
