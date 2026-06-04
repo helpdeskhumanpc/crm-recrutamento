@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>履歴書 / Currículo</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    .topbar { display:flex; align-items:center; gap:12px; background:white; padding:14px 20px; border-radius:8px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,0.1); flex-wrap:wrap; }
+    .topbar h1 { font-size:18px; color:#5e35b1; flex:1; }
+    .btn { padding:8px 18px; border:none; border-radius:4px; cursor:pointer; font-size:13px; font-weight:600; }
+    .btn-save { background:#1e88e5; color:white; }
+    .btn-pdf  { background:#e8621a; color:white; }
+    .btn-back { background:#f5f5f5; color:#555; border:1px solid #ddd; }
+    .card { background:white; border-radius:8px; padding:24px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+    .card h2 { font-size:14px; font-weight:700; color:#5e35b1; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #ede7f6; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+    .field label { font-size:11px; color:#888; font-weight:600; display:block; margin-bottom:3px; }
+    .field .val { font-size:13px; color:#333; padding:7px 10px; background:#f9f9f9; border-radius:4px; min-height:34px; }
+    .field input, .field select, .field textarea {
+      width:100%; padding:7px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px; color:#333;
+    }
+    .field input:focus, .field textarea:focus { outline:none; border-color:#5e35b1; }
+    .field textarea { resize:vertical; }
+    .tag { display:inline-block; background:#ede7f6; color:#5e35b1; padding:2px 8px; border-radius:10px; font-size:11px; margin:2px; }
+    .foto-box { text-align:center; }
+    .foto-box img { max-width:140px; max-height:180px; border-radius:6px; border:1px solid #ddd; }
+    .foto-box .no-foto { width:140px; height:180px; background:#f5f5f5; border:2px dashed #ddd; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:12px; margin:0 auto; }
+    .section-edit { background:#f3f0ff; border:1px solid #d1c4e9; border-radius:6px; padding:16px; }
+    .section-edit h3 { font-size:13px; color:#5e35b1; margin-bottom:12px; }
+    .loading { text-align:center; padding:60px; color:#aaa; }
+    .not-found { text-align:center; padding:60px; color:#c62828; }
+    @media (max-width:600px) { .grid, .grid-3 { grid-template-columns:1fr; } }
+
+    /* PDF */
+    @media print {
+      body { background:white; padding:0; }
+      .topbar, .section-edit, .btn { display:none !important; }
+      .card { box-shadow:none; border:1px solid #ddd; page-break-inside:avoid; }
+      .container { max-width:100%; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="topbar">
+    <h1>📄 履歴書 / Currículo</h1>
+    <button class="btn btn-back" onclick="history.back()">← Voltar</button>
+    <button class="btn btn-save" onclick="salvar()">💾 保存 / Salvar</button>
+    <button class="btn btn-pdf" onclick="window.print()">🖨 PDF</button>
+  </div>
+
+  <div id="content"><div class="loading">Carregando... / 読み込み中...</div></div>
+</div>
+
+<script>
+const { createClient } = supabase
+const sb = createClient(
+  'https://xzxfwrbebkwagnropgfb.supabase.co',
+  'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE'
+)
+
+let curriculoId = null
+
+function normTel(t) {
+  if (!t) return ''
+  let n = t.replace(/\D/g, '')
+  if (n.startsWith('81')) n = '0' + n.slice(2)
+  return n
+}
+
+function tags(arr) {
+  if (!arr || !arr.length) return '<span style="color:#aaa">—</span>'
+  return arr.map(v => `<span class="tag">${v}</span>`).join('')
+}
+
+function val(v) {
+  return v || '<span style="color:#aaa">—</span>'
+}
+
+async function carregar() {
+  const params = new URLSearchParams(location.search)
+  const telBusca = normTel(params.get('tel') || '')
+
+  if (!telBusca) {
+    document.getElementById('content').innerHTML = '<div class="not-found">Telefone não informado.</div>'
+    return
+  }
+
+  // Busca pelos últimos 8 dígitos do telefone
+  const ultimos8 = telBusca.slice(-8)
+  const { data, error } = await sb.from('curriculos').select('*').ilike('telefone', `%${ultimos8}%`).limit(1)
+
+  if (error || !data?.length) {
+    document.getElementById('content').innerHTML = `
+      <div class="not-found">
+        <p>Currículo não encontrado para o telefone: ${params.get('tel')}</p>
+        <p style="margin-top:8px;font-size:13px;color:#888">O candidato ainda não preencheu o formulário de currículo.</p>
+      </div>`
+    return
+  }
+
+  const c = data[0]
+  curriculoId = c.id
+  renderizar(c)
+}
+
+function renderizar(c) {
+  document.getElementById('content').innerHTML = `
+
+    <!-- FOTO + INFO BÁSICA -->
+    <div class="card">
+      <h2>1. 基本情報 / Informações Pessoais</h2>
+      <div style="display:grid;grid-template-columns:150px 1fr;gap:20px;align-items:start">
+        <div class="foto-box">
+          ${c.foto_url
+            ? `<img src="${c.foto_url}" alt="foto">`
+            : '<div class="no-foto">Sem foto</div>'}
+        </div>
+        <div>
+          <div class="grid-3" style="margin-bottom:12px">
+            <div class="field"><label>Nome / 氏名</label><div class="val">${val(c.nome_completo)}</div></div>
+            <div class="field"><label>Furigana 姓</label><div class="val">${val(c.furigana_sei)}</div></div>
+            <div class="field"><label>Furigana 名</label><div class="val">${val(c.furigana_mei)}</div></div>
+          </div>
+          <div class="grid-3" style="margin-bottom:12px">
+            <div class="field"><label>Data Nasc / 生年月日</label><div class="val">${val(c.data_nascimento)}</div></div>
+            <div class="field"><label>Idade / 年齢</label><div class="val">${val(c.idade)}</div></div>
+            <div class="field"><label>Sexo / 性別</label><div class="val">${val(c.sexo)}</div></div>
+          </div>
+          <div class="grid" style="margin-bottom:12px">
+            <div class="field"><label>Telefone / 電話番号</label><div class="val">${val(c.telefone)}</div></div>
+            <div class="field"><label>Nacionalidade / 国籍</label><div class="val">${val(c.nacionalidade)}</div></div>
+          </div>
+          <div class="grid">
+            <div class="field"><label>Visto / ビザ</label><div class="val">${val(c.visto)}</div></div>
+            <div class="field"><label>Endereço / 住所</label><div class="val">${val(c.endereco)} ${val(c.cep)}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONDIÇÕES DE TRABALHO -->
+    <div class="card">
+      <h2>2. 就労条件・希望 / Condições de Trabalho</h2>
+      <div class="grid-3" style="margin-bottom:12px">
+        <div class="field"><label>Disponível em / 就業開始可能日</label><div class="val">${val(c.data_inicio)}</div></div>
+        <div class="field"><label>Salário desejado / 希望給与</label><div class="val">${val(c.salario_desejado)}</div></div>
+        <div class="field"><label>Carro / 車</label><div class="val">${val(c.tem_carro)}</div></div>
+      </div>
+      <div class="grid" style="margin-bottom:12px">
+        <div class="field"><label>Turnos / 可能な直</label><div class="val">${tags(c.turnos)}</div></div>
+        <div class="field"><label>Seguro do carro / 任意保険</label><div class="val">${val(c.seguro_carro)}</div></div>
+      </div>
+
+      <!-- Campos editáveis pelo tantousha -->
+      <div class="section-edit">
+        <h3>✏️ Campos do 担当者</h3>
+        <div class="grid">
+          <div class="field">
+            <label>通勤時間 / Tempo de deslocamento</label>
+            <input type="text" id="e_tsukinkikan" value="${c.tsukinkikan||''}" placeholder="Ex: 約30分、自転車">
+          </div>
+          <div class="field">
+            <label>Precisa apartamento / アパート必要</label>
+            <div class="val">${val(c.precisa_apartamento)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAÚDE + CORPO -->
+    <div class="card">
+      <h2>3. 身体情報・日本語能力 / Saúde e Japonês</h2>
+      <div class="grid-3" style="margin-bottom:12px">
+        <div class="field"><label>Altura / 身長</label><div class="val">${val(c.altura)} cm</div></div>
+        <div class="field"><label>Peso / 体重</label><div class="val">${val(c.peso)} kg</div></div>
+        <div class="field"><label>Tipo sanguíneo / 血液型</label><div class="val">${val(c.tipo_sanguineo)}</div></div>
+      </div>
+      <div class="grid-3" style="margin-bottom:12px">
+        <div class="field"><label>Blusa / ブルゾン</label><div class="val">${val(c.tam_blusa)}</div></div>
+        <div class="field"><label>Calça / ズボン</label><div class="val">${val(c.tam_calca)}</div></div>
+        <div class="field"><label>Sapato / 靴</label><div class="val">${val(c.tam_sapato)}</div></div>
+      </div>
+      <div class="grid-3" style="margin-bottom:12px">
+        <div class="field"><label>Japonês / 日本語力</label><div class="val">${val(c.nivel_japones)}</div></div>
+        <div class="field"><label>Hiragana</label><div class="val">${val(c.hiragana)}</div></div>
+        <div class="field"><label>Katakana</label><div class="val">${val(c.katakana)}</div></div>
+      </div>
+      <div class="grid-3">
+        <div class="field"><label>Óculos / 眼鏡</label><div class="val">${val(c.usa_oculos)}</div></div>
+        <div class="field"><label>Mão dominante / 利き手</label><div class="val">${val(c.lateralidade)}</div></div>
+        <div class="field"><label>Tatuagem / タトゥー</label><div class="val">${val(c.tatuagem)}${c.tatuagem_local ? ' — ' + c.tatuagem_local : ''}</div></div>
+      </div>
+    </div>
+
+    <!-- HABILITAÇÃO -->
+    <div class="card">
+      <h2>4. 保有資格・免許 / Habilitação e Qualificações</h2>
+      <div class="field"><div class="val">${tags(c.habilitacao)}</div></div>
+    </div>
+
+    <!-- HISTÓRICO DE TRABALHO -->
+    <div class="card">
+      <h2>5. 職歴 / Histórico de Trabalho</h2>
+      ${[1,2,3].map(n => c[`trabalho${n}_empresa`] ? `
+        <div style="margin-bottom:12px;padding:10px;background:#f9f9f9;border-radius:6px">
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <div class="field" style="min-width:120px"><label>Período</label><div class="val">${val(c[`trabalho${n}_periodo`])}</div></div>
+            <div class="field" style="flex:1"><label>Empresa / 勤務先</label><div class="val">${val(c[`trabalho${n}_empresa`])}</div></div>
+            <div class="field" style="flex:1"><label>Função / 仕事内容</label><div class="val">${val(c[`trabalho${n}_funcao`])}</div></div>
+            <div class="field" style="min-width:120px"><label>Motivo saída / 退職理由</label><div class="val">${val(c[`trabalho${n}_motivo_saida`])}</div></div>
+          </div>
+        </div>` : '').join('')}
+    </div>
+
+    <!-- APPEAL + NOTAS (editável) -->
+    <div class="card">
+      <h2>6. アピールポイント・備考 / Pontos de Destaque e Observações</h2>
+      <div class="section-edit">
+        <h3>✏️ Preenchido pelo 担当者</h3>
+        <div class="field" style="margin-bottom:12px">
+          <label>アピールポイント / Pontos de destaque</label>
+          <textarea id="e_appeal" rows="4" placeholder="Ex: 工場勤務経験あり、5Sを徹底...">${c.appeal_points||''}</textarea>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label>備考 / Observações</label>
+          <textarea id="e_biko" rows="3" placeholder="Ex: 長期就労を希望...">${c.biko||''}</textarea>
+        </div>
+        <div class="field">
+          <label>Notas internas / 担当者メモ</label>
+          <textarea id="e_notas" rows="2" placeholder="Notas internas que não aparecem no PDF...">${c.tantousha_notas||''}</textarea>
+        </div>
+      </div>
+    </div>
+
+  `
+}
+
+async function salvar() {
+  if (!curriculoId) return
+  const { error } = await sb.from('curriculos').update({
+    tsukinkikan:     document.getElementById('e_tsukinkikan').value || null,
+    appeal_points:   document.getElementById('e_appeal').value     || null,
+    biko:            document.getElementById('e_biko').value        || null,
+    tantousha_notas: document.getElementById('e_notas').value       || null,
+  }).eq('id', curriculoId)
+
+  if (error) { alert('Erro ao salvar: ' + error.message); return }
+  alert('✅ Salvo com sucesso! / 保存完了!')
+}
+
+carregar()
+</script>
+</body>
+</html>
