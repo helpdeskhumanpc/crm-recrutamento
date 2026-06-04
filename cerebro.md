@@ -1,7 +1,7 @@
 # Cérebro — CRM Recrutamento Japão
 
 > Documento de referência do projeto. Reflete o estado atual construído.
-> Última atualização: 2026-06-02
+> Última atualização: 2026-06-04
 
 ---
 
@@ -12,7 +12,7 @@ Elimina o caos de planilhas e WhatsApp no processo seletivo por fábrica.
 
 **Site público:** https://jobs-human.com/ (WordPress + Elementor)
 **CRM (dashboard):** https://crm-recrutamento-production.up.railway.app
-**Senha de acesso:** 0246
+**Login:** email + senha individual por usuário (Supabase Auth)
 **Repositório GitHub:** https://github.com/helpdeskhumanpc/crm-recrutamento
 
 ---
@@ -58,8 +58,33 @@ created_at  timestamp
 
 ### Fluxo de criação de usuário
 1. Admin cria em **Supabase → Authentication → Users → Add user** (email + senha)
-2. Supabase gera um UUID para o usuário
-3. Admin preenche a tabela `profiles` com o UUID + cargo + fábricas
+2. Trigger `on_auth_user_created` cria automaticamente uma linha em `profiles` com `role = tantousha`
+3. Admin edita em **Table Editor → profiles**: nome, role, jimusho, fabricas
+
+### Trigger automático (já criado)
+```sql
+-- Cria perfil automaticamente ao criar usuário no Auth
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.criar_perfil_automatico();
+```
+
+### Como preencher fabricas no Table Editor
+Campo `fabricas` é um array — formato JSON:
+```
+["アラコ","FTS"]
+```
+
+### jimusho nas locations
+- Tabela `locations` tem coluna `jimusho` para vincular cada fábrica ao seu escritório
+- Role `jimusho` filtra candidatos automaticamente por todas as fábricas do seu escritório
+- Preencher em **Table Editor → locations → coluna jimusho**
+
+### Políticas RLS ativas
+- `insert publico` — anon pode inserir (formulário público)
+- `select por cargo` — filtro por role (admin/jimusho/tantousha/shokaisha)
+- `update por cargo` — mesmo filtro do select
+- `anon select temp` — anon pode ler tudo (temporário, remover quando todos migrarem para login)
 
 ---
 
@@ -82,9 +107,9 @@ created_at  timestamp
 | Formulário de cadastro | HTML puro com Supabase JS SDK |
 | Banco de dados | Supabase (PostgreSQL) — free tier |
 | Dashboard CRM | HTML + CSS + JS vanilla (dashboard.html) |
-| Servidor | Express.js com autenticação por senha (server.js) |
+| Autenticação | Supabase Auth (email + senha individual por usuário) |
+| Servidor | Express.js — apenas serve arquivos estáticos (server.js) |
 | Deploy | Railway (auto-deploy via GitHub push) |
-| Senha | `0246` (configurável via variável `PASSWORD` no Railway) |
 
 ---
 
@@ -94,8 +119,8 @@ created_at  timestamp
 |---------|--------|
 | `dashboard.html` | CRM completo — pipeline, calendário, gráficos |
 | `form-candidato.html` | Formulário de cadastro de candidatos (japonês) |
-| `server.js` | Servidor Express com login por senha + static files |
-| `package.json` | Dependências: express, cookie-parser |
+| `server.js` | Servidor Express — serve arquivos estáticos |
+| `package.json` | Dependências: express |
 | `.gitignore` | Ignora node_modules |
 
 ---
@@ -170,17 +195,23 @@ created_at  timestamp with time zone default now()
 
 **Fábricas cadastradas:** アラコ, FTS, FTS田原, イビデン, コベルク富士松, コベルクいなべ, マルヤス, 三菱, 三菱重工, TBKいなべ, TBSK高浜, タチエス安城, 豊臣本社, 豊臣いなべ, ビューテック
 
-### `tantoushas` — recrutadores
+### `profiles` — perfis de acesso ao CRM
 
 ```sql
-id          uuid PK
-nome        text NOT NULL
-email       text (nullable)
-role        text default 'tantousha'
-location_id uuid FK → locations
-jimusho     text
-created_at  timestamp with time zone default now()
+id          uuid PK references auth.users(id)  -- vincula ao Supabase Auth
+nome        text
+jimusho     text        -- escritório (ex: 刈谷事務所)
+fabricas    text[]      -- fábricas que gerencia ex: ["アラコ","FTS"]
+role        text        -- admin | jimusho | tantousha | shokaisha
+shokai_nome text        -- para role=shokaisha: nome na tabela shokaisha
+created_at  timestamp
 ```
+
+> Criada automaticamente via trigger quando usuário é criado no Auth. Role padrão: `tantousha`.
+
+### `tantoushas` — DEPRECIADA
+
+Será removida após todos os usuários migrarem para `profiles`.
 
 ### `shokaisha` — lista de 紹介者 por escritório
 
@@ -199,17 +230,19 @@ created_at  timestamp with time zone default now()
 
 ```sql
 -- candidates
-alter table candidates enable row level security;
-create policy "permitir insert" on candidates for insert with check (true);
-create policy "permitir select" on candidates for select using (true);
-create policy "permitir update" on candidates for update using (true);
+create policy "insert publico"   on candidates for insert with check (true);
+create policy "select por cargo" on candidates for select using (...); -- filtro por role
+create policy "update por cargo" on candidates for update using (...); -- filtro por role
+create policy "anon select temp" on candidates for select using (auth.uid() is null and is_deleted = false);
+-- ⚠️ anon select temp: remover quando todos usuários estiverem usando login
+
+-- profiles
+create policy "ver proprio perfil" on profiles for select using (auth.uid() = id);
 
 -- shokaisha
-alter table shokaisha enable row level security;
 create policy "leitura publica" on shokaisha for select using (true);
 
 -- locations
-alter table locations enable row level security;
 create policy "leitura publica" on locations for select using (true);
 ```
 
@@ -391,7 +424,7 @@ git push
 ```
 
 **Variáveis de ambiente no Railway:**
-- `PASSWORD` — senha de acesso (padrão: 0246)
+- Nenhuma obrigatória — autenticação via Supabase Auth no browser
 
 **Para testar localmente:**
 ```bash
@@ -420,3 +453,11 @@ node server.js
 | 2026-06-02 | Layout mobile responsivo com bottom nav |
 | 2026-06-02 | Calendário: grid no desktop, agenda no mobile |
 | 2026-06-02 | locations.estado adicionado para registrar estado da fábrica |
+| 2026-06-04 | Supabase Auth implementado — login individual por email/senha |
+| 2026-06-04 | Tabela `profiles` criada com trigger automático de criação |
+| 2026-06-04 | RLS por cargo: admin / jimusho / tantousha / shokaisha |
+| 2026-06-04 | locations.jimusho adicionado — vincula fábrica ao escritório |
+| 2026-06-04 | Express simplificado — senha removida, auth via Supabase |
+| 2026-06-04 | Bug de fuso horário JST corrigido no calendário |
+| 2026-06-04 | Botões 📞 電話 e 💬 WhatsApp adicionados no modal do candidato |
+| 2026-06-04 | Formulário: tela de senha 0246 + popup de sucesso após cadastro |
