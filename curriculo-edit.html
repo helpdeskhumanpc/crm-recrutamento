@@ -233,8 +233,8 @@
   <!-- FOOTER -->
   <div class="ss-footer">
     <span>記入日: <strong id="p_hoje"></strong></span>
-    <span>担当者: _________________________</span>
-    <span style="font-weight:700">HUMAN HELPDESK　TEL: —</span>
+    <span>担当者: <strong id="p_tantousha"></strong></span>
+    <span style="font-weight:700">HUMAN HELPDESK</span>
   </div>
 
  </div>
@@ -334,6 +334,13 @@ async function carregar() {
   renderScreen(curriculoData)
 }
 
+function inp(id, val, type='text', placeholder='') {
+  return `<input type="${type}" id="${id}" value="${(val||'').toString().replace(/"/g,'&quot;')}" placeholder="${placeholder}" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px">`
+}
+function ta(id, val, rows=3) {
+  return `<textarea id="${id}" rows="${rows}" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;resize:vertical">${val||''}</textarea>`
+}
+
 function renderScreen(c) {
   document.getElementById('screenContent').innerHTML = `
     <div class="card">
@@ -342,126 +349,161 @@ function renderScreen(c) {
         <div>${c.foto_url ? `<img src="${c.foto_url}" style="max-width:140px;max-height:180px;border-radius:6px;border:1px solid #ddd">` : '<div class="no-foto">Sem foto</div>'}</div>
         <div>
           <div class="grid-3" style="margin-bottom:12px">
-            <div class="field"><label>Nome</label><div class="val">${v(c.nome_completo)}</div></div>
-            <div class="field"><label>Furigana 姓</label><div class="val">${v(c.furigana_sei)}</div></div>
-            <div class="field"><label>Furigana 名</label><div class="val">${v(c.furigana_mei)}</div></div>
+            <div class="field"><label>フリガナ 姓</label>${inp('e_furi_sei', c.furigana_sei)}</div>
+            <div class="field"><label>フリガナ 名</label>${inp('e_furi_mei', c.furigana_mei)}</div>
+            <div class="field"><label>氏名</label>${inp('e_nome', c.nome_completo)}</div>
           </div>
           <div class="grid-3" style="margin-bottom:12px">
-            <div class="field"><label>Nascimento</label><div class="val">${v(c.data_nascimento)}</div></div>
-            <div class="field"><label>Idade</label><div class="val">${v(c.idade)}</div></div>
-            <div class="field"><label>Sexo</label><div class="val">${v(c.sexo)}</div></div>
+            <div class="field"><label>生年月日</label>${inp('e_nasc', c.data_nascimento, 'date')}</div>
+            <div class="field"><label>年齢</label>${inp('e_idade', c.idade, 'number')}</div>
+            <div class="field"><label>性別</label>${inp('e_sexo', c.sexo)}</div>
+          </div>
+          <div class="grid-3" style="margin-bottom:12px">
+            <div class="field"><label>国籍</label>${inp('e_nac', c.nacionalidade)}</div>
+            <div class="field"><label>ビザ</label>${inp('e_visto', c.visto)}</div>
+            <div class="field"><label>電話番号</label>${inp('e_tel', c.telefone, 'tel')}</div>
           </div>
           <div class="grid" style="margin-bottom:12px">
-            <div class="field"><label>Telefone</label><div class="val">${v(c.telefone)}</div></div>
-            <div class="field"><label>Visto</label><div class="val">${v(c.visto)}</div></div>
+            <div class="field"><label>〒</label>${inp('e_cep', c.cep)}</div>
+            <div class="field"><label>住所</label>${inp('e_addr', c.endereco)}</div>
           </div>
         </div>
       </div>
     </div>
+
     <div class="card">
-      <h2>Skills & Condições</h2>
+      <h2>2. 就労・スキル</h2>
+      <div class="grid-3" style="margin-bottom:12px">
+        <div class="field"><label>日本語力</label>${inp('e_jp', c.nivel_japones)}</div>
+        <div class="field"><label>身長 (cm)</label>${inp('e_altura', c.altura, 'number')}</div>
+        <div class="field"><label>体重 (kg)</label>${inp('e_peso', c.peso, 'number')}</div>
+      </div>
+      <div class="grid-3" style="margin-bottom:12px">
+        <div class="field"><label>血液型</label>${inp('e_sangue', c.tipo_sanguineo)}</div>
+        <div class="field"><label>眼鏡</label>${inp('e_oculos', c.usa_oculos)}</div>
+        <div class="field"><label>利き手</label>${inp('e_lateral', c.lateralidade)}</div>
+      </div>
       <div class="grid-3">
-        <div class="field"><label>Japonês</label><div class="val">${v(c.nivel_japones)}</div></div>
-        <div class="field"><label>Turnos</label><div class="val">${tags(c.turnos)}</div></div>
-        <div class="field"><label>Habilitação</label><div class="val">${tags(c.habilitacao)}</div></div>
+        <div class="field"><label>作業服</label>${inp('e_blusa', c.tam_blusa)}</div>
+        <div class="field"><label>靴サイズ</label>${inp('e_sapato', c.tam_sapato)}</div>
+        <div class="field"><label>タトゥー</label>${inp('e_tatu', c.tatuagem)}</div>
       </div>
     </div>
+
     <div class="card">
-      <h2>Histórico de Trabalho</h2>
-      ${[1,2,3].map(n => c[`trabalho${n}_empresa`] ? `
-        <div style="margin-bottom:10px;padding:10px;background:#f9f9f9;border-radius:6px">
-          <div class="grid-3">
-            <div class="field"><label>Período</label><div class="val">${v(c[`trabalho${n}_periodo`])}</div></div>
-            <div class="field"><label>Empresa</label><div class="val">${v(c[`trabalho${n}_empresa`])}</div></div>
-            <div class="field"><label>Função</label><div class="val">${v(c[`trabalho${n}_funcao`])}</div></div>
-          </div>
-          <div class="field" style="margin-top:8px"><label>Motivo saída</label><div class="val">${v(c[`trabalho${n}_motivo_saida`])}</div></div>
-        </div>` : '').join('')}
+      <h2>3. 職歴</h2>
+      ${[1,2,3].map(n => `
+        <p style="font-weight:700;font-size:13px;color:#5e35b1;margin-bottom:8px">${n}° emprego</p>
+        <div class="grid-3" style="margin-bottom:8px">
+          <div class="field"><label>Período</label>${inp(`e_t${n}_per`, c[`trabalho${n}_periodo`])}</div>
+          <div class="field"><label>Empresa</label>${inp(`e_t${n}_emp`, c[`trabalho${n}_empresa`])}</div>
+          <div class="field"><label>Função</label>${inp(`e_t${n}_fun`, c[`trabalho${n}_funcao`])}</div>
+        </div>
+        <div class="field" style="margin-bottom:14px"><label>Motivo saída</label>${inp(`e_t${n}_mot`, c[`trabalho${n}_motivo_saida`])}</div>
+      `).join('')}
     </div>
+
     <div class="card">
       <h2>✏️ Campos do 担当者</h2>
       <div class="section-edit">
         <div class="grid" style="margin-bottom:12px">
-          <div class="field">
-            <label>通勤時間 / Tempo de deslocamento</label>
-            <input type="text" id="e_tsukinkikan" value="${c.tsukinkikan||''}" placeholder="Ex: 約30分、自転車">
-          </div>
-          <div></div>
+          <div class="field"><label>通勤時間</label>${inp('e_tsukinkikan', c.tsukinkikan, 'text', '例: 約30分、自転車')}</div>
+          <div class="field"><label>担当者名</label>${inp('e_tantousha_nome', c.tantousha_nome, 'text', '担当者の名前')}</div>
         </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>アピールポイント</label>
-          <textarea id="e_appeal" rows="4">${c.appeal_points||''}</textarea>
-        </div>
-        <div class="field" style="margin-bottom:12px">
-          <label>備考</label>
-          <textarea id="e_biko" rows="3">${c.biko||''}</textarea>
-        </div>
-        <div class="field">
-          <label>Notas internas (não aparecem no PDF)</label>
-          <textarea id="e_notas" rows="2">${c.tantousha_notas||''}</textarea>
-        </div>
+        <div class="field" style="margin-bottom:12px"><label>記入日</label>${inp('e_kiroku_date', c.kiroku_date, 'date')}</div>
+        <div class="field" style="margin-bottom:12px"><label>アピールポイント</label>${ta('e_appeal', c.appeal_points, 4)}</div>
+        <div class="field" style="margin-bottom:12px"><label>備考</label>${ta('e_biko', c.biko, 3)}</div>
+        <div class="field"><label>Notas internas (não aparecem no PDF)</label>${ta('e_notas', c.tantousha_notas, 2)}</div>
       </div>
     </div>
   `
 }
 
+function getVal(id) { return document.getElementById(id)?.value || null }
+
 async function salvar() {
   if (!curriculoId) return
-  const { error } = await sb.from('curriculos').update({
-    tsukinkikan:     document.getElementById('e_tsukinkikan')?.value || null,
-    appeal_points:   document.getElementById('e_appeal')?.value     || null,
-    biko:            document.getElementById('e_biko')?.value        || null,
-    tantousha_notas: document.getElementById('e_notas')?.value       || null,
-  }).eq('id', curriculoId)
+  const payload = {
+    furigana_sei: getVal('e_furi_sei'), furigana_mei: getVal('e_furi_mei'),
+    nome_completo: getVal('e_nome'), data_nascimento: getVal('e_nasc'),
+    idade: parseInt(getVal('e_idade')) || null, sexo: getVal('e_sexo'),
+    nacionalidade: getVal('e_nac'), visto: getVal('e_visto'),
+    telefone: getVal('e_tel'), cep: getVal('e_cep'), endereco: getVal('e_addr'),
+    nivel_japones: getVal('e_jp'), altura: parseInt(getVal('e_altura')) || null,
+    peso: parseInt(getVal('e_peso')) || null, tipo_sanguineo: getVal('e_sangue'),
+    usa_oculos: getVal('e_oculos'), lateralidade: getVal('e_lateral'),
+    tam_blusa: getVal('e_blusa'), tam_sapato: getVal('e_sapato'),
+    tatuagem: getVal('e_tatu'),
+    trabalho1_periodo: getVal('e_t1_per'), trabalho1_empresa: getVal('e_t1_emp'),
+    trabalho1_funcao: getVal('e_t1_fun'), trabalho1_motivo_saida: getVal('e_t1_mot'),
+    trabalho2_periodo: getVal('e_t2_per'), trabalho2_empresa: getVal('e_t2_emp'),
+    trabalho2_funcao: getVal('e_t2_fun'), trabalho2_motivo_saida: getVal('e_t2_mot'),
+    trabalho3_periodo: getVal('e_t3_per'), trabalho3_empresa: getVal('e_t3_emp'),
+    trabalho3_funcao: getVal('e_t3_fun'), trabalho3_motivo_saida: getVal('e_t3_mot'),
+    tsukinkikan: getVal('e_tsukinkikan'), tantousha_nome: getVal('e_tantousha_nome'),
+    kiroku_date: getVal('e_kiroku_date'), appeal_points: getVal('e_appeal'),
+    biko: getVal('e_biko'), tantousha_notas: getVal('e_notas'),
+  }
+  const { error } = await sb.from('curriculos').update(payload).eq('id', curriculoId)
   if (error) { alert('Erro: ' + error.message); return }
-
-  // Atualiza os dados locais
-  curriculoData.tsukinkikan   = document.getElementById('e_tsukinkikan')?.value || null
-  curriculoData.appeal_points = document.getElementById('e_appeal')?.value     || null
-  curriculoData.biko          = document.getElementById('e_biko')?.value        || null
+  Object.assign(curriculoData, payload)
   alert('✅ 保存完了!')
 }
 
 function gerarPDF() {
-  if (!curriculoData) return
-  const c = curriculoData
+  if (!curriculoData) { alert('Dados não carregados.'); return }
+  // Salva dados atuais dos inputs antes de gerar
+  const c = { ...curriculoData }
+  ;['e_tsukinkikan','e_tantousha_nome','e_kiroku_date','e_appeal','e_biko'].forEach(id => {
+    const el = document.getElementById(id)
+    if (el) {
+      const key = id.replace('e_','')
+      c[key] = el.value || null
+    }
+  })
+  c.appeal_points = document.getElementById('e_appeal')?.value || curriculoData.appeal_points
+  c.biko          = document.getElementById('e_biko')?.value   || curriculoData.biko
+  c.tantousha_nome = document.getElementById('e_tantousha_nome')?.value || curriculoData.tantousha_nome
+  c.kiroku_date    = document.getElementById('e_kiroku_date')?.value    || curriculoData.kiroku_date
 
-  // Preenche os campos do スキルシート
+  // Helper null-safe
+  function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val ?? '—' }
+
   const today = new Date()
-  const todayStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`
+  const todayStr = c.kiroku_date || `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`
 
-  document.getElementById('p_hoje').textContent = todayStr
+  set('p_hoje', todayStr)
+  set('p_tantousha', c.tantousha_nome || '')
   document.getElementById('p_nome').textContent = c.nome_completo || ''
   document.getElementById('p_furigana').textContent = [c.furigana_sei, c.furigana_mei].filter(Boolean).join(' ')
   document.getElementById('p_nasc').textContent  = c.data_nascimento || '—'
-  document.getElementById('p_idade').textContent = c.idade ? c.idade + '歳' : '—'
-  document.getElementById('p_sexo').textContent  = ja(c.sexo)
-  document.getElementById('p_nac').textContent = c.nacionalidade || '—'
-  document.getElementById('p_nac2').textContent = c.nacionalidade || '—'
-  document.getElementById('p_visto').textContent = ja(c.visto)
-  document.getElementById('p_addr').textContent = [c.endereco, c.cep].filter(Boolean).join(' ') || '—'
-  document.getElementById('p_tel').textContent = c.telefone || '—'
-  document.getElementById('p_inicio').textContent = c.data_inicio || '即日可能'
-  document.getElementById('p_turnos').textContent = jaArr(c.turnos)
-  document.getElementById('p_carro').textContent = ja(c.tem_carro)
-  document.getElementById('p_tsuki').textContent = c.tsukinkikan || '—'
-  document.getElementById('p_tabaco').textContent = ja(c.fumante)
-  document.getElementById('p_altura').textContent = c.altura ? c.altura + 'cm' : '—'
-  document.getElementById('p_peso').textContent = c.peso ? c.peso + 'kg' : '—'
-  document.getElementById('p_sapato').textContent = c.tam_sapato || '—'
-  document.getElementById('p_blusa').textContent = c.tam_blusa || '—'
-  document.getElementById('p_sangue').textContent = c.tipo_sanguineo || '—'
-  document.getElementById('p_oculos').textContent = ja(c.usa_oculos)
-  document.getElementById('p_lateral').textContent = ja(c.lateralidade)
-  document.getElementById('p_tatu').textContent = (c.tatuagem||'').includes('Sim') ? `あり — ${c.tatuagem_local||''}` : 'なし'
-  document.getElementById('p_jp_conv').textContent = stars(c.nivel_japones)
-  document.getElementById('p_hira').textContent = c.hiragana || '—'
-  document.getElementById('p_kata').textContent = c.katakana || '—'
-  document.getElementById('p_saude').textContent = ja(c.saude_estado)
-  document.getElementById('p_alergia').textContent = ja(c.alergia)
-  document.getElementById('p_fumante').textContent = c.fumante || '—'
-  document.getElementById('p_appeal').textContent = c.appeal_points || ''
-  document.getElementById('p_biko').textContent = c.biko || ''
+  set('p_idade',  c.idade ? c.idade + '歳' : '—')
+  set('p_sexo',   ja(c.sexo))
+  set('p_nac',    c.nacionalidade)
+  set('p_nac2',   c.nacionalidade)
+  set('p_visto',  ja(c.visto))
+  set('p_addr',   [c.endereco, c.cep].filter(Boolean).join(' ') || '—')
+  set('p_tel',    c.telefone)
+  set('p_inicio', c.data_inicio || '即日可能')
+  set('p_turnos', jaArr(c.turnos))
+  set('p_carro',  ja(c.tem_carro))
+  set('p_tsuki',  c.tsukinkikan)
+  set('p_tabaco', ja(c.fumante))
+  set('p_altura', c.altura ? c.altura + 'cm' : '—')
+  set('p_peso',   c.peso ? c.peso + 'kg' : '—')
+  set('p_sapato', c.tam_sapato)
+  set('p_blusa',  c.tam_blusa)
+  set('p_sangue', c.tipo_sanguineo)
+  set('p_oculos', ja(c.usa_oculos))
+  set('p_lateral',ja(c.lateralidade))
+  set('p_tatu',   (c.tatuagem||'').includes('Sim') ? `あり — ${c.tatuagem_local||''}` : 'なし')
+  set('p_hira',   c.hiragana)
+  set('p_kata',   c.katakana)
+  set('p_saude',  ja(c.saude_estado))
+  set('p_alergia',ja(c.alergia))
+  set('p_fumante',ja(c.fumante))
+  set('p_appeal', c.appeal_points || '')
+  set('p_biko',   c.biko || '')
 
   // Foto
   const fotoBox = document.getElementById('p_foto_box')
