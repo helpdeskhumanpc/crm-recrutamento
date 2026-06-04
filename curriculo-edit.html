@@ -38,53 +38,65 @@
     #skillSheet { display:none; }
 
     @media print {
-      body { background:white; padding:0; font-size:9pt; }
+      * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+      body { background:white; padding:0; margin:0; font-size:9pt; font-family:'MS Gothic',Arial,sans-serif; }
       .topbar,.card,.loading,.not-found { display:none !important; }
       #skillSheet { display:block !important; }
-
-      /* reset */
       #skillSheet * { box-sizing:border-box; }
 
-      .ss-page { width:210mm; padding:6mm 8mm; font-family:'MS Gothic',Arial,sans-serif; }
+      .ss-page { width:210mm; padding:5mm 7mm; }
 
-      /* header */
-      .ss-header { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #1a237e; padding-bottom:4px; margin-bottom:6px; }
-      .ss-title-main { font-size:18pt; font-weight:900; color:#1a237e; letter-spacing:2px; }
-      .ss-title-sub  { font-size:9pt; color:#555; margin-left:8px; }
-      .ss-logo { font-size:14pt; font-weight:900; color:#1a237e; border:2px solid #1a237e; padding:2px 8px; border-radius:4px; }
+      /* HEADER */
+      .ss-header { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #1a237e; padding-bottom:3px; margin-bottom:5px; }
+      .ss-title-main { font-size:20pt; font-weight:900; color:#1a237e; letter-spacing:2px; }
+      .ss-title-sub  { font-size:9pt; color:#888; margin-left:6px; }
+      .ss-logo { font-size:13pt; font-weight:900; color:#1a237e; border:2px solid #1a237e; padding:2px 10px; }
 
-      /* section title */
-      .ss-sec-title { background:#1a237e; color:white; font-size:9pt; font-weight:700; padding:2px 8px; margin-bottom:4px; display:flex; align-items:center; gap:4px; }
+      /* SECTION HEADER — azul escuro */
+      .ss-sec { margin-bottom:5px; page-break-inside:avoid; }
+      .ss-sec-title {
+        background:#1a237e !important; color:white !important;
+        font-size:8.5pt; font-weight:700; padding:3px 8px;
+        margin-bottom:3px; display:flex; align-items:center; gap:4px;
+      }
 
-      /* two-col layout */
-      .ss-row2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px; }
-      .ss-row2-6040 { display:grid; grid-template-columns:60% 40%; gap:6px; margin-bottom:6px; }
+      /* TWO-COL */
+      .ss-row2      { display:flex; gap:5px; margin-bottom:5px; }
+      .ss-col-60    { flex:0 0 59%; }
+      .ss-col-40    { flex:0 0 39%; }
+      .ss-col-50    { flex:1; }
 
-      /* info table */
-      .ss-table { width:100%; border-collapse:collapse; font-size:8pt; }
-      .ss-table td,.ss-table th { border:1px solid #aaa; padding:2px 5px; }
-      .ss-table th { background:#e8eaf6; font-weight:700; white-space:nowrap; width:35%; }
+      /* TABLES */
+      .ss-t { width:100%; border-collapse:collapse; font-size:8pt; }
+      .ss-t td,.ss-t th { border:1px solid #999; padding:2px 5px; vertical-align:middle; }
+      .ss-t th {
+        background:#e8eaf6 !important; color:#1a237e !important;
+        font-weight:700; white-space:nowrap; text-align:left; width:38%;
+      }
+      .ss-t td { word-break:break-word; }
 
-      /* work history */
-      .ss-hist th { background:#1a237e; color:white; font-size:8pt; }
+      /* WORK HISTORY TABLE */
+      .ss-hist-head th { background:#1a237e !important; color:white !important; font-size:8pt; text-align:center; }
 
-      /* stars */
-      .star { color:#f39c12; font-size:9pt; }
-      .star-empty { color:#ccc; font-size:9pt; }
+      /* PHOTO */
+      .ss-photo { width:55mm; height:73mm; object-fit:cover; border:1px solid #999; display:block; }
+      .ss-photo-empty { width:55mm; height:73mm; border:2px dashed #ccc; display:flex; align-items:center; justify-content:center; font-size:8pt; color:#aaa; text-align:center; }
 
-      /* checkbox */
-      .cb-row { display:flex; align-items:center; gap:4px; font-size:8pt; margin-bottom:3px; }
-      .cb-box { width:11px; height:11px; border:1px solid #333; display:inline-flex; align-items:center; justify-content:center; font-size:8pt; flex-shrink:0; }
+      /* STARS */
+      .ss-star-on  { color:#f39c12; font-size:10pt; }
+      .ss-star-off { color:#ddd;    font-size:10pt; }
 
-      /* photo */
-      .ss-photo { width:80px; height:100px; border:1px solid #aaa; object-fit:cover; }
-      .ss-photo-empty { width:80px; height:100px; border:1px solid #aaa; background:#eee; display:flex; align-items:center; justify-content:center; font-size:7pt; color:#999; text-align:center; }
+      /* LICENSE CHECKBOXES */
+      .ss-cb-table { width:100%; border-collapse:collapse; font-size:7.5pt; }
+      .ss-cb-table td { border:1px solid #999; padding:2px 5px; }
+      .ss-cb-table th { background:#e8eaf6 !important; color:#1a237e !important; font-weight:700; text-align:center; border:1px solid #999; padding:2px 4px; font-size:7pt; }
 
-      .ss-footer { border-top:1px solid #aaa; margin-top:6px; padding-top:4px; display:flex; justify-content:space-between; font-size:8pt; }
+      /* APPEAL BOX */
+      .ss-box { border:1px solid #999; min-height:50px; padding:4px 6px; font-size:8pt; white-space:pre-line; }
+      .ss-box-label { font-size:7pt; font-weight:700; color:#1a237e; margin-bottom:2px; }
 
-      .border-box { border:1px solid #aaa; padding:4px; }
-      .label-sm { font-size:7.5pt; color:#555; }
-      .val-sm { font-size:8.5pt; }
+      /* FOOTER */
+      .ss-footer { border-top:2px solid #1a237e; margin-top:5px; padding-top:4px; display:flex; justify-content:space-between; align-items:center; font-size:8pt; }
     }
   </style>
 </head>
@@ -103,32 +115,25 @@
 
 <!-- PRINT VIEW (スキルシート) -->
 <div id="skillSheet">
-  <div class="ss-page">
+ <div class="ss-page">
 
-    <!-- HEADER -->
-    <div class="ss-header">
-      <div>
-        <span class="ss-title-main">スキルシート</span>
-        <span class="ss-title-sub">SKILL SHEET</span>
-      </div>
-      <div class="ss-logo">HUMAN</div>
-    </div>
+  <!-- HEADER -->
+  <div class="ss-header">
+    <div><span class="ss-title-main">スキルシート</span><span class="ss-title-sub">SKILL SHEET</span></div>
+    <div class="ss-logo">HUMAN</div>
+  </div>
 
-    <!-- ROW 1: 基本情報 + 就労条件 -->
-    <div class="ss-row2-6040">
-
-      <!-- 1. 基本情報 -->
-      <div>
+  <!-- ROW 1: 基本情報(60%) + 就労条件(40%) -->
+  <div class="ss-row2">
+    <div class="ss-col-60">
+      <div class="ss-sec">
         <div class="ss-sec-title">📋 1. 基本情報</div>
-        <div style="display:flex;gap:6px">
-          <div>
-            <div id="p_foto_box"></div>
-          </div>
-          <table class="ss-table" style="flex:1">
+        <div style="display:flex;gap:5px">
+          <div id="p_foto_box" style="flex-shrink:0"></div>
+          <table class="ss-t" style="flex:1">
             <tr><th>登録名</th><td id="p_nome"></td></tr>
             <tr><th>フリガナ</th><td id="p_furigana"></td></tr>
-            <tr><th>生年月日</th><td><span id="p_nasc"></span> &nbsp; 年齢 <span id="p_idade"></span>歳</td></tr>
-            <tr><th>性別</th><td id="p_sexo"></td></tr>
+            <tr><th>生年月日</th><td><span id="p_nasc"></span>　年齢 <span id="p_idade"></span>歳　性別 <span id="p_sexo"></span></td></tr>
             <tr><th>国籍</th><td id="p_nac"></td></tr>
             <tr><th>在留資格</th><td id="p_visto"></td></tr>
             <tr><th>現住所</th><td id="p_addr"></td></tr>
@@ -136,11 +141,11 @@
           </table>
         </div>
       </div>
-
-      <!-- 2. 就労条件・希望 -->
-      <div>
+    </div>
+    <div class="ss-col-40">
+      <div class="ss-sec">
         <div class="ss-sec-title">💼 2. 就労条件・希望</div>
-        <table class="ss-table">
+        <table class="ss-t">
           <tr><th>勤務開始可能日</th><td id="p_inicio"></td></tr>
           <tr><th>希望シフト</th><td id="p_turnos"></td></tr>
           <tr><th>通勤方法</th><td id="p_carro"></td></tr>
@@ -152,62 +157,65 @@
         </table>
       </div>
     </div>
+  </div>
 
-    <!-- ROW 2: 身体情報 + 免許 -->
-    <div class="ss-row2">
-
-      <!-- 3. 身体情報・日本語能力 -->
-      <div>
+  <!-- ROW 2: 身体情報(50%) + 免許(50%) -->
+  <div class="ss-row2">
+    <div class="ss-col-50">
+      <div class="ss-sec">
         <div class="ss-sec-title">❤ 3. 身体情報・日本語能力</div>
-        <div style="display:flex;gap:6px">
-          <table class="ss-table" style="flex:1">
+        <div style="display:flex;gap:5px">
+          <table class="ss-t" style="flex:1">
             <tr><th>身長</th><td id="p_altura"></td><th>体重</th><td id="p_peso"></td></tr>
             <tr><th>靴サイズ</th><td id="p_sapato"></td><th>作業服</th><td id="p_blusa"></td></tr>
             <tr><th>血液型</th><td id="p_sangue"></td><th>眼鏡</th><td id="p_oculos"></td></tr>
             <tr><th>利き手</th><td id="p_lateral"></td><th>タトゥー</th><td id="p_tatu"></td></tr>
           </table>
-          <table class="ss-table" style="width:120px">
-            <tr><th colspan="2">日本語能力</th></tr>
-            <tr><td>会話</td><td id="p_jp_conv"></td></tr>
-            <tr><td>ひらがな</td><td id="p_hira"></td></tr>
-            <tr><td>カタカナ</td><td id="p_kata"></td></tr>
-            <tr><td>母国語</td><td id="p_nac2"></td></tr>
+          <table class="ss-t" style="width:95px">
+            <tr><th colspan="2" style="text-align:center;background:#1a237e !important;color:white !important">日本語能力</th></tr>
+            <tr><td style="font-size:7pt">日本語会話</td><td id="p_jp_conv" style="white-space:nowrap"></td></tr>
+            <tr><td style="font-size:7pt">ひらがな</td><td id="p_hira"></td></tr>
+            <tr><td style="font-size:7pt">カタカナ</td><td id="p_kata"></td></tr>
+            <tr><td style="font-size:7pt">母国語</td><td id="p_nac2"></td></tr>
           </table>
         </div>
       </div>
-
-      <!-- 4. 保有資格・免許 -->
-      <div>
+    </div>
+    <div class="ss-col-50">
+      <div class="ss-sec">
         <div class="ss-sec-title">🏆 4. 保有資格・免許</div>
-        <div id="p_licencas"></div>
+        <table class="ss-cb-table">
+          <thead><tr><th style="width:18px">取得</th><th>免許種類</th></tr></thead>
+          <tbody id="p_licencas"></tbody>
+        </table>
       </div>
     </div>
+  </div>
 
-    <!-- 5. 職歴 -->
-    <div style="margin-bottom:6px">
-      <div class="ss-sec-title">📅 5. 職歴（近の職歴順）</div>
-      <table class="ss-table ss-hist" style="width:100%">
-        <thead><tr><th>期間</th><th>勤務先</th><th>仕事内容</th><th>退職理由</th></tr></thead>
-        <tbody id="p_hist"></tbody>
-      </table>
-    </div>
+  <!-- 5. 職歴 -->
+  <div class="ss-sec">
+    <div class="ss-sec-title">📅 5. 職歴（近の職歴順）</div>
+    <table class="ss-t" style="width:100%">
+      <thead class="ss-hist-head"><tr><th style="width:22%">期間</th><th style="width:30%">勤務先</th><th>仕事内容</th><th style="width:16%">退職理由</th></tr></thead>
+      <tbody id="p_hist"></tbody>
+    </table>
+  </div>
 
-    <!-- 6. アピールポイント + その他 -->
-    <div class="ss-row2">
-      <div>
+  <!-- 6. アピールポイント + その他 -->
+  <div class="ss-row2">
+    <div class="ss-col-60">
+      <div class="ss-sec">
         <div class="ss-sec-title">⭐ 6. アピールポイント・備考</div>
-        <div class="border-box" style="min-height:60px;margin-bottom:4px">
-          <div class="label-sm">アピールポイント</div>
-          <div id="p_appeal" class="val-sm" style="white-space:pre-line"></div>
-        </div>
-        <div class="border-box" style="min-height:30px">
-          <div class="label-sm">備考</div>
-          <div id="p_biko" class="val-sm" style="white-space:pre-line"></div>
-        </div>
+        <div class="ss-box-label">アピールポイント</div>
+        <div id="p_appeal" class="ss-box" style="min-height:55px;margin-bottom:4px"></div>
+        <div class="ss-box-label">備考</div>
+        <div id="p_biko" class="ss-box" style="min-height:28px"></div>
       </div>
-      <div>
+    </div>
+    <div class="ss-col-40">
+      <div class="ss-sec">
         <div class="ss-sec-title">📊 その他情報</div>
-        <table class="ss-table">
+        <table class="ss-t">
           <tr><th>健康状態</th><td id="p_saude"></td></tr>
           <tr><th>アレルギー</th><td id="p_alergia"></td></tr>
           <tr><th>喫煙</th><td id="p_fumante"></td></tr>
@@ -216,15 +224,16 @@
         </table>
       </div>
     </div>
-
-    <!-- FOOTER -->
-    <div class="ss-footer">
-      <span>記入日: <span id="p_hoje"></span></span>
-      <span>担当者: ___________________________</span>
-      <span>HUMAN HELPDESK &nbsp; TEL: —</span>
-    </div>
-
   </div>
+
+  <!-- FOOTER -->
+  <div class="ss-footer">
+    <span>記入日: <strong id="p_hoje"></strong></span>
+    <span>担当者: _________________________</span>
+    <span style="font-weight:700">HUMAN HELPDESK　TEL: —</span>
+  </div>
+
+ </div>
 </div>
 
 <script>
@@ -425,19 +434,34 @@ function gerarPDF() {
   const fotoBox = document.getElementById('p_foto_box')
   fotoBox.innerHTML = c.foto_url
     ? `<img src="${c.foto_url}" class="ss-photo">`
-    : '<div class="ss-photo-empty">Sem<br>foto</div>'
+    : '<div class="ss-photo-empty">写真<br>なし</div>'
 
-  // Licenças
+  // Estrelas japonês
+  function starsHtml(nivel) {
+    const map = {'0%':0,'N5':1,'N4':2,'N3':3,'N2':4,'N1':5}
+    let n = 0
+    for (const [k,v] of Object.entries(map)) { if ((nivel||'').includes(k)) { n=v; break } }
+    return '<span class="ss-star-on">★</span>'.repeat(n) + '<span class="ss-star-off">★</span>'.repeat(5-n)
+  }
+  document.getElementById('p_jp_conv').innerHTML = starsHtml(c.nivel_japones)
+  document.getElementById('p_hira').textContent = c.hiragana || '—'
+  document.getElementById('p_kata').textContent = c.katakana || '—'
+
+  // Licenças como tabela com checkbox
   const hab = c.habilitacao || []
-  document.getElementById('p_licencas').innerHTML = [
-    cbLicenca(hab, '普通自動車免許',               ['car','carro']),
-    cbLicenca(hab, 'フォークリフト運転技能講習',   ['forklift','empilhadeira']),
-    cbLicenca(hab, '玉掛け技能講習',               ['tamakake']),
-    cbLicenca(hab, 'クレーン運転技能講習',         ['crane','guindaste']),
-    cbLicenca(hab, 'ガス溶接技能講習',             ['welding','solda']),
-    cbLicenca(hab, 'バイク',                       ['motorcycle','moto']),
-    cbLicenca(hab, 'カミオン/トラック',            ['truck','caminhão']),
-  ].join('')
+  const licList = [
+    { label:'普通自動車免許',               keys:['car','carro'] },
+    { label:'フォークリフト運転技能講習',   keys:['forklift','empilhadeira'] },
+    { label:'玉掛け技能講習',               keys:['tamakake'] },
+    { label:'クレーン運転技能講習',         keys:['crane','guindaste'] },
+    { label:'ガス溶接技能講習',             keys:['welding','solda'] },
+    { label:'バイク免許',                   keys:['motorcycle','moto'] },
+    { label:'大型/トラック免許',            keys:['truck','caminhão'] },
+  ]
+  document.getElementById('p_licencas').innerHTML = licList.map(l => {
+    const tem = l.keys.some(k => hab.some(h => h.toLowerCase().includes(k.toLowerCase())))
+    return `<tr><td style="text-align:center;font-size:11pt">${tem ? '☑' : '☐'}</td><td>${l.label}</td></tr>`
+  }).join('')
 
   // Histórico
   const hist = [1,2,3].map(n => {
