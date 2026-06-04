@@ -271,9 +271,9 @@ async function carregar() {
   const ultimos4 = telBusca.slice(-4)
   const { data, error } = await sb.from('curriculos').select('*').ilike('telefone', `%${ultimos4}`)
 
-  // Filtra normalizando ambos os lados
+  // Compara normalizando ambos os lados (remove traços, 81, etc.)
   const match = (data || []).find(row => normTel(row.telefone) === telBusca)
-  const finalData = match ? [match] : (data?.length === 1 ? data : [])
+  const finalData = match ? [match] : []
 
   if (error || !finalData.length) {
     document.getElementById('screenContent').innerHTML = `
