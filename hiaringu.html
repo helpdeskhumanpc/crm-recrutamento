@@ -41,6 +41,9 @@
       * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
       body { background:white; padding:0; font-size:9pt; font-family:'MS Gothic',Arial,sans-serif; }
       .topbar { display:none; }
+      .print-header { display:block !important; border-bottom:2px solid #00695c; margin-bottom:10px; padding-bottom:6px; }
+      .print-header h1 { font-size:16pt; font-weight:900; color:#00695c; display:inline; margin-right:16px; }
+      .print-header .ph-meta { display:inline; font-size:10pt; color:#333; }
       .card { box-shadow:none; border:1px solid #aaa; margin-bottom:6px; border-radius:0; page-break-inside:avoid; }
       .card-title { background:#b2dfdb !important; color:#00695c !important; padding:4px 8px; font-size:9pt; }
       .card-body { padding:8px; }
@@ -52,9 +55,7 @@
       .radio-row label { font-size:9pt; }
       .print-header { display:block !important; }
     }
-    .print-header { display:none; text-align:center; margin-bottom:10px; }
-    .print-header h1 { font-size:16pt; font-weight:900; }
-    .print-header .ph-meta { font-size:9pt; margin-top:4px; }
+    .print-header { display:none; }
   </style>
 </head>
 <body>
@@ -117,7 +118,8 @@ function renderForm(h) {
   <div class="card">
     <div class="card-title">面談情報</div>
     <div class="card-body">
-      <div class="grid-3">
+      <div class="grid-4">
+        <div class="field"><label>ヒアリング日 <span style="color:#00695c;font-size:10px">→ 見学・ヒアリング自動反映</span></label><input type="date" id="hiaringu_bi" value="${h.hiaringu_bi||''}"></div>
         <div class="field"><label>入社予定日</label><input type="date" id="nyusha_yotei_bi" value="${h.nyusha_yotei_bi||''}"></div>
         <div class="field"><label>面談日</label><input type="date" id="mensadan_bi" value="${h.mensadan_bi||''}"></div>
         <div class="field"><label>面談者</label><input type="text" id="mensadan_sha" value="${h.mensadan_sha||''}" placeholder="担当者名"></div>
@@ -421,8 +423,16 @@ function renderForm(h) {
 }
 
 async function salvar() {
+  const hiariguBi = g('hiaringu_bi')
+
+  // Atualiza dt_kengaku (見学・ヒアリング) no candidates
+  if (hiariguBi && candidateId) {
+    await sb.from('candidates').update({ dt_kengaku: hiariguBi }).eq('id', candidateId)
+  }
+
   const payload = {
     candidate_id: candidateId,
+    hiaringu_bi: hiariguBi,
     nyusha_yotei_bi: g('nyusha_yotei_bi'), mensadan_bi: g('mensadan_bi'), mensadan_sha: g('mensadan_sha'),
     jp_kaiwa: g('jp_kaiwa'), kanji_yomi: g('kanji_yomi'),
     hiragana_yomi: g('hiragana_yomi'), katakana_yomi: g('katakana_yomi'),
