@@ -140,14 +140,26 @@ function renderForm(h) {
             <option ${h.jp_kaiwa==='2.0'?'selected':''}>2.0（かたこと）</option>
           </select>
         </div>
-        <div class="field"><label>漢字 読み</label><input type="text" id="kanji_yomi" value="${h.kanji_yomi||''}"></div>
-        <div class="field"><label>漢字 書き</label><input type="text" id="kanji_kaki" value="${h.kanji_kaki||''}"></div>
+        <div class="field"><label>漢字</label><select id="kanji_yomi">
+          <option value="">選択</option>
+          <option ${h.kanji_yomi==='読み書き'?'selected':''}>読み書き</option>
+          <option ${h.kanji_yomi==='読み'?'selected':''}>読み</option>
+          <option ${h.kanji_yomi==='読めない'?'selected':''}>読めない</option>
+        </select></div>
       </div>
-      <div class="grid-4">
-        <div class="field"><label>ひらがな 読み</label><input type="text" id="hiragana_yomi" value="${h.hiragana_yomi||''}"></div>
-        <div class="field"><label>ひらがな 書き</label><input type="text" id="hiragana_kaki" value="${h.hiragana_kaki||''}"></div>
-        <div class="field"><label>カタカナ 読み</label><input type="text" id="katakana_yomi" value="${h.katakana_yomi||''}"></div>
-        <div class="field"><label>カタカナ 書き</label><input type="text" id="katakana_kaki" value="${h.katakana_kaki||''}"></div>
+      <div class="grid-3">
+        <div class="field"><label>ひらがな</label><select id="hiragana_yomi">
+          <option value="">選択</option>
+          <option ${h.hiragana_yomi==='読み書き'?'selected':''}>読み書き</option>
+          <option ${h.hiragana_yomi==='読み'?'selected':''}>読み</option>
+          <option ${h.hiragana_yomi==='読めない'?'selected':''}>読めない</option>
+        </select></div>
+        <div class="field"><label>カタカナ</label><select id="katakana_yomi">
+          <option value="">選択</option>
+          <option ${h.katakana_yomi==='読み書き'?'selected':''}>読み書き</option>
+          <option ${h.katakana_yomi==='読み'?'selected':''}>読み</option>
+          <option ${h.katakana_yomi==='読めない'?'selected':''}>読めない</option>
+        </select></div>
       </div>
       <div class="grid">
         <div class="field"><label>コメント</label><textarea id="jp_comment" rows="2">${h.jp_comment||''}</textarea></div>
@@ -223,11 +235,12 @@ function renderForm(h) {
       <div class="grid-4">
         <div class="field">
           <label>入社歴</label>
-          <div class="radio-row">
-            <label><input type="radio" name="nyusha_umu" value="ある（ヒューマン）" ${h.nyusha_umu==='ある（ヒューマン）'?'checked':''}> ある（ヒューマン）</label>
-            <label><input type="radio" name="nyusha_umu" value="ある（他社）" ${h.nyusha_umu==='ある（他社）'?'checked':''}> ある（他社）</label>
-            <label><input type="radio" name="nyusha_umu" value="ない" ${h.nyusha_umu==='ない'?'checked':''}> ない</label>
-          </div>
+          <select id="nyusha_umu">
+            <option value="">選択</option>
+            <option ${h.nyusha_umu==='ある（ヒューマン）'?'selected':''}>ある（ヒューマン）</option>
+            <option ${h.nyusha_umu==='ある（他社）'?'selected':''}>ある（他社）</option>
+            <option ${h.nyusha_umu==='ない'?'selected':''}>ない</option>
+          </select>
         </div>
         <div class="field"><label>企業名</label><input type="text" id="nyusha_kigyo" value="${h.nyusha_kigyo||''}"></div>
         <div class="field"><label>入社時期</label><input type="text" id="nyusha_jiki" value="${h.nyusha_jiki||''}"></div>
@@ -411,9 +424,8 @@ async function salvar() {
   const payload = {
     candidate_id: candidateId,
     nyusha_yotei_bi: g('nyusha_yotei_bi'), mensadan_bi: g('mensadan_bi'), mensadan_sha: g('mensadan_sha'),
-    jp_kaiwa: g('jp_kaiwa'), kanji_yomi: g('kanji_yomi'), kanji_kaki: g('kanji_kaki'),
-    hiragana_yomi: g('hiragana_yomi'), hiragana_kaki: g('hiragana_kaki'),
-    katakana_yomi: g('katakana_yomi'), katakana_kaki: g('katakana_kaki'),
+    jp_kaiwa: g('jp_kaiwa'), kanji_yomi: g('kanji_yomi'),
+    hiragana_yomi: g('hiragana_yomi'), katakana_yomi: g('katakana_yomi'),
     jp_comment: g('jp_comment'), jp_hantei: g('jp_hantei'),
     shiryoku_migi: g('shiryoku_migi'), shiryoku_hidari: g('shiryoku_hidari'),
     megane_migi: g('megane_migi'), megane_hidari: g('megane_hidari'),
@@ -421,7 +433,7 @@ async function salvar() {
     tattoo_umu: r('tattoo_umu'), tattoo_basho: g('tattoo_basho'), tattoo_taiou: g('tattoo_taiou'), tattoo_hantei: g('tattoo_hantei'),
     doukyo_kazoku: g('doukyo_kazoku'), doukyo_hantei: g('doukyo_hantei'),
     bekkyo_kazoku: g('bekkyo_kazoku'), bekkyo_hantei: g('bekkyo_hantei'),
-    nyusha_umu: r('nyusha_umu'), nyusha_kigyo: g('nyusha_kigyo'), nyusha_jiki: g('nyusha_jiki'),
+    nyusha_umu: g('nyusha_umu'), nyusha_kigyo: g('nyusha_kigyo'), nyusha_jiki: g('nyusha_jiki'),
     taisha_jiki: g('taisha_jiki'), taisha_riyu: g('taisha_riyu'), nyusha_hantei: g('nyusha_hantei'),
     genshoku_umu: r('genshoku_umu'), genshoku_status: g('genshoku_status'),
     genshoku_taishoku: g('genshoku_taishoku'), kyogo_status: g('kyogo_status'),
