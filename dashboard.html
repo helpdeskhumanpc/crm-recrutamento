@@ -596,7 +596,8 @@
       <h2 id="modalTitle">候補者詳細</h2>
       <a id="btnCall" href="#" class="btn-call">📞 電話</a>
       <a id="btnWA"   href="#" class="btn-wa" target="_blank">💬 WhatsApp</a>
-      <a id="btnRireki" href="#" target="_blank" style="padding:6px 12px;background:#5e35b1;color:white;border-radius:4px;text-decoration:none;font-size:13px;white-space:nowrap">📄 履歴書</a>
+      <a id="btnRireki"   href="#" target="_blank" style="padding:6px 12px;background:#5e35b1;color:white;border-radius:4px;text-decoration:none;font-size:13px;white-space:nowrap">📄 履歴書</a>
+      <a id="btnHiaringu" href="#" target="_blank" style="padding:6px 12px;background:#00695c;color:white;border-radius:4px;text-decoration:none;font-size:13px;white-space:nowrap">🎙 ヒアリング</a>
       <button class="modal-close" onclick="fecharModal()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
@@ -1044,7 +1045,8 @@ function abrirModal(id) {
   const wa  = tel.startsWith('0') ? '81' + tel.slice(1) : tel
   document.getElementById('btnCall').href    = tel ? `tel:${tel}` : '#'
   document.getElementById('btnWA').href      = tel ? `https://wa.me/${wa}` : '#'
-  document.getElementById('btnRireki').href  = tel ? `curriculo-edit.html?tel=${tel.replace(/\D/g,'')}` : '#'
+  document.getElementById('btnRireki').href    = tel ? `curriculo-edit.html?tel=${tel.replace(/\D/g,'')}` : '#'
+  document.getElementById('btnHiaringu').href  = c.id ? `hiaringu.html?id=${c.id}` : '#'
 
   const chk = (arr, val) => (arr || []).includes(val) ? 'checked' : ''
   const sel = (opts, val) => opts.map(o => `<option ${o===val?'selected':''}>${o}</option>`).join('')
