@@ -83,10 +83,33 @@
     #calendarView { flex: 1; overflow-y: auto; padding: 12px; display: none; flex-direction: column; }
 
     /* LEADS DO SITE */
-    #leadsView { flex: 1; overflow-y: auto; padding: 12px; display: none; flex-direction: column; gap: 10px; }
-    .btn-enviar-fab { padding: 5px 10px; background: #2e7d32; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap; }
-    .btn-enviar-fab:hover { background: #1b5e20; }
-    .lead-grid { display: grid; grid-template-columns: 150px 110px 130px 100px 50px 50px 120px 140px; gap: 6px; align-items: center; }
+    #leadsView { flex: 1; overflow-y: auto; padding: 12px; display: none; flex-direction: column; gap: 8px; }
+    .lead-stage-section { border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .lead-stage-header { padding: 8px 16px; color: white; font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 10px; }
+    .lead-stage-count { background: rgba(255,255,255,0.3); border-radius: 12px; padding: 1px 8px; font-size: 11px; }
+    .lead-stage-body { background: white; }
+    .lead-col-header { display: grid; grid-template-columns: 140px 100px 120px 70px 45px 45px 100px 1fr; gap: 6px; padding: 5px 16px; background: #f9f9f9; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; }
+    .lead-row { display: grid; grid-template-columns: 140px 100px 120px 70px 45px 45px 100px 1fr; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; }
+    .lead-row:last-child { border-bottom: none; }
+    .lead-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+    .btn-lead { padding: 3px 8px; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+    .btn-lead.green  { background: #2e7d32; color: white; }
+    .btn-lead.blue   { background: #1565c0; color: white; }
+    .btn-lead.orange { background: #e65100; color: white; }
+    .btn-lead.red    { background: #c62828; color: white; }
+    .lead-stage-renrakumae .lead-stage-header { background: #1e88e5; }
+    .lead-stage-indicado   .lead-stage-header { background: #2e7d32; }
+    .lead-stage-stock      .lead-stage-header { background: #e91e8c; }
+    .lead-stage-ng         .lead-stage-header { background: #c62828; }
+    .lead-stage-black      .lead-stage-header { background: #212121; }
+
+    /* STOCK POOL */
+    #stockPoolView { flex: 1; overflow-y: auto; padding: 12px; display: none; flex-direction: column; gap: 10px; }
+    .pool-col-header { display: grid; grid-template-columns: 140px 100px 130px 90px 45px 45px 110px 140px; gap: 6px; padding: 6px 16px; background: #f5f5f5; font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; }
+    .pool-row { display: grid; grid-template-columns: 140px 100px 130px 90px 45px 45px 110px 140px; gap: 6px; padding: 9px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; }
+    .pool-row:last-child { border-bottom: none; }
+    .btn-atribuir { padding: 5px 10px; background: #7b1fa2; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: 700; }
+    .btn-atribuir:hover { background: #6a1b9a; }
 
     /* CHARTS */
     #chartsView { flex: 1; overflow-y: auto; padding: 16px; display: none; flex-direction: column; gap: 16px; }
@@ -231,7 +254,7 @@
       .col-header > span:nth-child(7) { display:none; }
 
       /* Espaço para bottom nav */
-      #pipeline, #calendarView, #chartsView, #leadsView { padding-bottom: 65px; }
+      #pipeline, #calendarView, #chartsView, #leadsView, #stockPoolView { padding-bottom: 65px; }
 
       /* Modal tela cheia */
       #modal { align-items:flex-end; }
@@ -316,6 +339,7 @@
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
     <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
     <button class="tab-btn" id="btnLeadsTab" style="display:none;background:#fff3e0;border-color:#e8621a;color:#e8621a" onclick="showTab('leads', this)">Leads do Site</button>
+    <button class="tab-btn" id="btnPoolTab" style="display:none;background:#f3e5f5;border-color:#7b1fa2;color:#7b1fa2" onclick="showTab('stockpool', this)">ストック Pool</button>
     <input type="text" id="searchInput" placeholder="氏名・電話で検索" oninput="renderPipeline()">
     <select class="filter-select" id="filterSexo" onchange="renderPipeline()">
       <option value="">性別：全て</option>
@@ -441,15 +465,41 @@
 
   <!-- LEADS DO SITE VIEW (admin only) -->
   <div id="leadsView">
-    <div style="background:white;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
-      <span style="font-size:14px;font-weight:700;color:#333">Leads do Site&nbsp;<span id="leads-count" style="font-size:12px;color:#888;font-weight:normal"></span></span>
-      <span style="font-size:11px;color:#aaa">Cadastros do formulário público — pendentes de encaminhamento</span>
+    <div style="background:white;border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+      <span style="font-size:14px;font-weight:700;color:#333">Leads do Site</span>
+      <select id="leadsFilter" style="padding:4px 10px;border:1px solid #ddd;border-radius:4px;font-size:12px" onchange="renderLeads()">
+        <option value="">Todas as fábricas</option>
+      </select>
+      <span id="leads-count" style="font-size:12px;color:#888;margin-left:auto"></span>
+    </div>
+    <div id="leadsStages"></div>
+  </div>
+
+  <!-- STOCK POOL VIEW (all roles) -->
+  <div id="stockPoolView">
+    <div style="background:white;border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+      <span style="font-size:14px;font-weight:700;color:#7b1fa2">ストック Pool</span>
+      <select id="poolFilterJP" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px" onchange="renderStockPool()">
+        <option value="">日本語：全て</option>
+        <option value="0%（日本語不可）">0%</option>
+        <option value="N5 10%〜（少し話せる）">N5</option>
+        <option value="N4 30%〜（基本会話）">N4</option>
+        <option value="N3 50%〜（日常会話）">N3</option>
+        <option value="N2 60%〜（中級会話）">N2</option>
+        <option value="N1 80%〜（上級会話）">N1</option>
+      </select>
+      <select id="poolFilterSexo" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px" onchange="renderStockPool()">
+        <option value="">性別：全て</option>
+        <option value="男性">M</option>
+        <option value="女性">F</option>
+      </select>
+      <span id="pool-count" style="font-size:12px;color:#888;margin-left:auto"></span>
     </div>
     <div style="background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow:hidden">
-      <div class="lead-grid" style="padding:8px 16px;background:#f5f5f5;font-size:10px;font-weight:700;color:#666;text-transform:uppercase">
-        <span>Nome</span><span>Telefone</span><span>Fábrica</span><span>Visto</span><span>Gên.</span><span>Idade</span><span>Japonês</span><span>Ação</span>
+      <div class="pool-col-header">
+        <span>Nome</span><span>Telefone</span><span>Fábrica pref.</span><span>Visto</span><span>Gên.</span><span>Idade</span><span>Japonês</span><span>Ação</span>
       </div>
-      <div id="leadsBody"></div>
+      <div id="poolBody"></div>
     </div>
   </div>
 
@@ -696,7 +746,7 @@ async function carregarDados() {
 function fabricaEfetiva(c) { return c.fabrica2 || c.fabrica }
 
 function carregarSidebar() {
-  const candidatos = todosOsCandidatos.filter(c => c.origem !== 'web')
+  const candidatos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock')
   const fabricas = [...new Set(candidatos.map(c => fabricaEfetiva(c)).filter(Boolean))].sort()
   const container = document.getElementById('sidebarFabricas')
   container.innerHTML = ''
@@ -874,7 +924,7 @@ function getFiltrados() {
   const f = activeFilters
 
   return todosOsCandidatos.filter(c => {
-    if (c.origem === 'web') return false
+    if (c.origem === 'web' || c.origem === 'web_stock') return false
     if (fabricaAtiva && fabricaEfetiva(c) !== fabricaAtiva) return false
     if (sexo   && c.sexo !== sexo)                                            return false
     if (jp     && c.nivel_japones !== jp)                                     return false
@@ -1242,15 +1292,17 @@ function fecharModal() { document.getElementById('modal').style.display = 'none'
 function closeModalBg(e) { if (e.target.id === 'modal') fecharModal() }
 
 function showTab(tab, btn) {
-  document.getElementById('pipeline').style.display     = tab === 'pipeline' ? 'block' : 'none'
-  document.getElementById('calendarView').style.display = tab === 'calendar' ? 'flex'  : 'none'
-  document.getElementById('chartsView').style.display   = tab === 'charts'   ? 'flex'  : 'none'
-  document.getElementById('leadsView').style.display    = tab === 'leads'    ? 'flex'  : 'none'
+  document.getElementById('pipeline').style.display      = tab === 'pipeline'  ? 'block' : 'none'
+  document.getElementById('calendarView').style.display  = tab === 'calendar'  ? 'flex'  : 'none'
+  document.getElementById('chartsView').style.display    = tab === 'charts'    ? 'flex'  : 'none'
+  document.getElementById('leadsView').style.display     = tab === 'leads'     ? 'flex'  : 'none'
+  document.getElementById('stockPoolView').style.display = tab === 'stockpool' ? 'flex'  : 'none'
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
   if (btn) btn.classList.add('active')
-  if (tab === 'calendar') renderCalendar()
-  if (tab === 'charts')   renderCharts()
-  if (tab === 'leads')    renderLeads()
+  if (tab === 'calendar')  renderCalendar()
+  if (tab === 'charts')    renderCharts()
+  if (tab === 'leads')     renderLeads()
+  if (tab === 'stockpool') renderStockPool()
 }
 
 // ─── CHARTS ──────────────────────────────────────────────────
@@ -1365,35 +1417,171 @@ filtrarFabrica = function(fabrica, el) {
 }
 
 // ─── LEADS DO SITE ────────────────────────────────────────────
+const LEAD_STAGES = [
+  { key: 'renrakumae', label: '連絡前',    cls: 'lead-stage-renrakumae' },
+  { key: 'indicado',   label: '担当者紹介', cls: 'lead-stage-indicado'   },
+  { key: 'stock',      label: 'ストック',   cls: 'lead-stage-stock'      },
+  { key: 'ng',         label: 'NG',        cls: 'lead-stage-ng'         },
+  { key: 'black',      label: 'ブラック',   cls: 'lead-stage-black'      },
+]
+const _leadExpanded = new Set()
+
+function getLeadsStage(c) {
+  if (c.is_blacklisted)              return 'black'
+  if (c.origem === 'web_indicado')   return 'indicado'
+  if (c.origem === 'web_stock')      return 'stock'
+  if (c.dt_ng)                       return 'ng'
+  return 'renrakumae'
+}
+
 function renderLeads() {
-  const leads = todosOsCandidatos.filter(c => c.origem === 'web')
+  const sel = document.getElementById('leadsFilter')
+  const fabFilter = sel?.value || ''
+
+  // Popula dropdown de fábricas
+  const allLeads = todosOsCandidatos.filter(c => c.origem === 'web' || c.origem === 'web_indicado' || c.origem === 'web_stock')
+  const fabs = [...new Set(allLeads.map(c => c.fabrica).filter(Boolean))].sort()
+  const cur  = sel?.value || ''
+  if (sel) sel.innerHTML = '<option value="">Todas as fábricas</option>' + fabs.map(f => `<option value="${f}" ${f===cur?'selected':''}>${f}</option>`).join('')
+
+  const leads = allLeads.filter(c => !fabFilter || c.fabrica === fabFilter)
+
+  const grouped = {}
+  LEAD_STAGES.forEach(s => grouped[s.key] = [])
+  leads.forEach(c => { const stg = getLeadsStage(c); if (grouped[stg]) grouped[stg].push(c) })
+
   document.getElementById('leads-count').textContent = `(${leads.length})`
-  const body = document.getElementById('leadsBody')
-  if (!leads.length) {
-    body.innerHTML = '<div style="padding:30px;color:#aaa;font-size:13px;text-align:center">Nenhum lead pendente</div>'
+
+  const colHeader = `<div class="lead-col-header"><span>Nome</span><span>Telefone</span><span>Fábrica</span><span>Visto</span><span>G</span><span>Idade</span><span>Japonês</span><span>Ações</span></div>`
+
+  document.getElementById('leadsStages').innerHTML = LEAD_STAGES.map(stage => {
+    const list = grouped[stage.key]
+    const expanded = _leadExpanded.has(stage.key)
+    const show = expanded ? list : list.slice(0, 5)
+    const hasMore = list.length > 5 && !expanded
+
+    let rows = ''
+    if (list.length === 0) {
+      rows = '<div style="padding:10px 16px;color:#aaa;font-size:12px;font-style:italic">候補者なし</div>'
+    } else {
+      rows = colHeader + show.map(c => {
+        let actions = ''
+        if (stage.key === 'renrakumae') {
+          actions = `<div class="lead-actions">
+            <button class="btn-lead green"  onclick="enviarParaFabrica('${c.id}')">担当者紹介</button>
+            <button class="btn-lead blue"   onclick="moverParaStock('${c.id}')">ストック</button>
+            <button class="btn-lead orange" onclick="moverNG('${c.id}')">NG</button>
+            <button class="btn-lead red"    onclick="bloquearLead('${c.id}')">Bloquear</button>
+          </div>`
+        } else if (stage.key === 'stock') {
+          actions = `<div class="lead-actions">
+            <button class="btn-lead green"  onclick="enviarParaFabrica('${c.id}')">担当者紹介</button>
+            <button class="btn-lead orange" onclick="moverNG('${c.id}')">NG</button>
+          </div>`
+        } else if (stage.key === 'indicado') {
+          actions = `<span style="font-size:11px;color:#2e7d32;font-weight:600">✓ Encaminhado</span>`
+        }
+        return `<div class="lead-row">
+          <span style="font-weight:600;cursor:pointer;color:#1e88e5" onclick="abrirModal('${c.id}')">${c.shimei || '—'}</span>
+          <span>${c.telefone || '—'}</span>
+          <span style="font-size:11px">${c.fabrica || '—'}</span>
+          <span style="font-size:10px">${c.visa?.split('（')[0] || '—'}</span>
+          <span>${c.sexo === '男性' ? 'M' : c.sexo === '女性' ? 'F' : '—'}</span>
+          <span>${c.idade || '—'}</span>
+          <span style="font-size:11px">${c.nivel_japones?.split(' ')[0] || '—'}</span>
+          <span>${actions}</span>
+        </div>`
+      }).join('') + (hasMore ? `<div style="padding:7px 16px;font-size:12px;color:#1e88e5;cursor:pointer" onclick="_leadExpanded.add('${stage.key}');renderLeads()">+ さらに ${list.length - 5} 件</div>` : '')
+    }
+
+    return `<div class="lead-stage-section ${stage.cls}">
+      <div class="lead-stage-header">${stage.label} <span class="lead-stage-count">${list.length}</span></div>
+      <div class="lead-stage-body">${rows}</div>
+    </div>`
+  }).join('')
+}
+
+async function enviarParaFabrica(id) {
+  const c = todosOsCandidatos.find(x => x.id === id)
+  if (!c) return
+  if (!c.fabrica && !confirm('Este lead não tem fábrica atribuída. Enviar assim mesmo?')) return
+  const { error } = await sb.from('candidates').update({ origem: 'web_indicado', dt_ng: null }).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  if (c) { c.origem = 'web_indicado'; c.dt_ng = null }
+  renderLeads()
+  carregarSidebar()
+  renderPipeline()
+}
+
+async function moverParaStock(id) {
+  const { error } = await sb.from('candidates').update({ origem: 'web_stock' }).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  const c = todosOsCandidatos.find(x => x.id === id)
+  if (c) c.origem = 'web_stock'
+  renderLeads()
+}
+
+async function moverNG(id) {
+  const hoje = new Date().toISOString().split('T')[0]
+  const { error } = await sb.from('candidates').update({ dt_ng: hoje, origem: 'web' }).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  const c = todosOsCandidatos.find(x => x.id === id)
+  if (c) { c.dt_ng = hoje; c.origem = 'web' }
+  renderLeads()
+}
+
+async function bloquearLead(id) {
+  if (!confirm('Bloquear este lead?')) return
+  const { error } = await sb.from('candidates').update({ is_blacklisted: true }).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  const c = todosOsCandidatos.find(x => x.id === id)
+  if (c) c.is_blacklisted = true
+  renderLeads()
+}
+
+// ─── STOCK POOL ───────────────────────────────────────────────
+function renderStockPool() {
+  const jp   = document.getElementById('poolFilterJP')?.value   || ''
+  const sexo = document.getElementById('poolFilterSexo')?.value || ''
+
+  let pool = todosOsCandidatos.filter(c => c.origem === 'web_stock')
+  if (jp)   pool = pool.filter(c => c.nivel_japones === jp)
+  if (sexo) pool = pool.filter(c => c.sexo === sexo)
+
+  document.getElementById('pool-count').textContent = `(${pool.length})`
+  const body = document.getElementById('poolBody')
+
+  if (!pool.length) {
+    body.innerHTML = '<div style="padding:30px;color:#aaa;font-size:13px;text-align:center">Nenhum candidato no pool</div>'
     return
   }
-  body.innerHTML = leads.map(c => `
-    <div class="lead-grid" style="padding:9px 16px;border-bottom:1px solid #f0f0f0;font-size:12px">
-      <span style="font-weight:600">${c.shimei || '—'}</span>
+
+  body.innerHTML = pool.map(c => `
+    <div class="pool-row">
+      <span style="font-weight:600;cursor:pointer;color:#1e88e5" onclick="abrirModal('${c.id}')">${c.shimei || '—'}</span>
       <span>${c.telefone || '—'}</span>
       <span style="font-size:11px">${c.fabrica || '—'}</span>
-      <span style="font-size:11px">${c.visa?.split('（')[0] || '—'}</span>
+      <span style="font-size:10px">${c.visa?.split('（')[0] || '—'}</span>
       <span>${c.sexo === '男性' ? 'M' : c.sexo === '女性' ? 'F' : '—'}</span>
       <span>${c.idade || '—'}</span>
       <span style="font-size:11px">${c.nivel_japones?.split(' ')[0] || '—'}</span>
-      <span><button class="btn-enviar-fab" onclick="enviarParaFabrica('${c.id}')">Enviar p/ fábrica</button></span>
+      <span><button class="btn-atribuir" onclick="atribuirParaFabrica('${c.id}')">Atribuir fábrica</button></span>
     </div>
   `).join('')
 }
 
-async function enviarParaFabrica(id) {
-  if (!confirm('Enviar este lead para o tantousha?')) return
-  const { error } = await sb.from('candidates').update({ origem: 'indicado' }).eq('id', id)
+async function atribuirParaFabrica(id) {
+  const fabricasSel = todasFabricas.length ? todasFabricas : [...new Set(todosOsCandidatos.filter(x => x.fabrica).map(x => x.fabrica))].sort()
+  const lista = fabricasSel.map((f, i) => `${i+1}. ${f}`).join('\n')
+  const resp = prompt('Selecione a fábrica:\n' + lista + '\n\nDigite o número:')
+  if (!resp) return
+  const fabrica = fabricasSel[parseInt(resp) - 1]
+  if (!fabrica) { alert('Número inválido'); return }
+  const { error } = await sb.from('candidates').update({ fabrica, origem: 'indicado' }).eq('id', id)
   if (error) { alert('Erro: ' + error.message); return }
-  const idx = todosOsCandidatos.findIndex(c => c.id === id)
-  if (idx >= 0) todosOsCandidatos[idx].origem = 'indicado'
-  renderLeads()
+  const c = todosOsCandidatos.find(x => x.id === id)
+  if (c) { c.fabrica = fabrica; c.origem = 'indicado' }
+  renderStockPool()
   carregarSidebar()
   renderPipeline()
 }
@@ -1444,6 +1632,7 @@ async function iniciarDashboard() {
   if (profile?.role === 'admin') {
     document.getElementById('btnLeadsTab').style.display = ''
   }
+  document.getElementById('btnPoolTab').style.display = ''
 
   showTab('pipeline')
   await carregarDados()
