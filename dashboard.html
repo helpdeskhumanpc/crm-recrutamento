@@ -885,6 +885,8 @@ function renderAlerts() {
     alerts.map(c => `<span class="alert-chip" onclick="abrirModal('${c.id}')">${c.shimei}</span>`).join('')
 }
 
+const _expandedStages = new Set()
+
 function renderPipeline() {
   const candidatos = getFiltrados()
   const grouped = {}
@@ -906,8 +908,9 @@ function renderPipeline() {
   const stagesVisiveis = getStagesVisiveis()
   document.getElementById('pipeline').innerHTML = STAGES.filter(s => stagesVisiveis.includes(s.key)).map(stage => {
     const list = grouped[stage.key]
-    const show = list._expanded ? list : list.slice(0, 5)
-    const hasMore = list.length > 5 && !list._expanded
+    const expanded = _expandedStages.has(stage.key)
+    const show = expanded ? list : list.slice(0, 5)
+    const hasMore = list.length > 5 && !expanded
 
     const rowsHtml = list.length === 0
       ? `<div class="stage-empty">候補者なし</div>`
@@ -937,7 +940,7 @@ function renderPipeline() {
 }
 
 function toggleStage(key) { const b = document.getElementById('body-'+key); b.style.display = b.style.display === 'none' ? '' : 'none' }
-function expandStage(key)  { window._grouped[key]._expanded = true; renderPipeline() }
+function expandStage(key)  { _expandedStages.add(key); renderPipeline() }
 
 // ─── CALENDAR ─────────────────────────────────────────────────
 function calPrev()  { calMonth--; if (calMonth < 0)  { calMonth = 11; calYear-- } renderCalendar() }
