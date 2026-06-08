@@ -293,9 +293,9 @@
 const { createClient } = supabase
 const sb = createClient('https://xzxfwrbebkwagnropgfb.supabase.co', 'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE')
 
-// Pega fábrica da URL: ?fabrica=三菱
-const params  = new URLSearchParams(location.search)
-const fabrica = params.get('fabrica') || ''
+// Lê fábrica do campo oculto do WPForms já existente na página
+const fabricaField = document.querySelector('input[name="form_fields[pagina]"]')
+const fabrica = fabricaField?.value || new URLSearchParams(location.search).get('fabrica') || ''
 
 document.getElementById('vagaForm').addEventListener('submit', async (e) => {
   e.preventDefault()
