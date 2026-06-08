@@ -362,7 +362,7 @@
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="renrakumae" checked onchange="renderPipeline()"> 連絡前</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="taiochu" checked onchange="renderPipeline()"> 対応中</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="mensetsu" checked onchange="renderPipeline()"> 面接</label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="kengaku" checked onchange="renderPipeline()"> 見学</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="kengaku" checked onchange="renderPipeline()"> 見学・ヒアリング済み</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="naitei" checked onchange="renderPipeline()"> 内定</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="nyusha" checked onchange="renderPipeline()"> 入社</label>
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="stock" checked onchange="renderPipeline()"> ストック</label>
@@ -390,7 +390,7 @@
     <div class="stat-card"><div class="stat-num" id="s-renraku">-</div><div class="stat-label">連絡前</div></div>
     <div class="stat-card"><div class="stat-num" id="s-taiochu">-</div><div class="stat-label">対応中</div></div>
     <div class="stat-card"><div class="stat-num" id="s-mensetsu">-</div><div class="stat-label">面接</div></div>
-    <div class="stat-card"><div class="stat-num" id="s-kengaku">-</div><div class="stat-label">見学</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-kengaku">-</div><div class="stat-label">見学・ヒアリング済み</div></div>
     <div class="stat-card"><div class="stat-num" id="s-naitei">-</div><div class="stat-label">内定</div></div>
     <div class="stat-card"><div class="stat-num" id="s-nyusha">-</div><div class="stat-label">入社</div></div>
     <div class="stat-card"><div class="stat-num" id="s-stock" style="color:#e91e8c">-</div><div class="stat-label">ストック</div></div>
@@ -413,7 +413,7 @@
     </div>
     <div class="cal-type-filters" style="margin-bottom:12px">
       <button class="cal-type-btn mensetsu active" onclick="toggleCalType(this,'mensetsu')">● 面接</button>
-      <button class="cal-type-btn kengaku  active" onclick="toggleCalType(this,'kengaku')">● 見学</button>
+      <button class="cal-type-btn kengaku  active" onclick="toggleCalType(this,'kengaku')">● 見学・ヒアリング済み</button>
       <button class="cal-type-btn nyusha   active" onclick="toggleCalType(this,'nyusha')">● 入社</button>
       <button class="cal-type-btn alerta   active" onclick="toggleCalType(this,'alerta')">● アラート</button>
     </div>
@@ -553,7 +553,7 @@
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="renrakumae"> 連絡前</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="taiochu"> 対応中</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="mensetsu"> 面接</label>
-        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="kengaku"> 見学</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="kengaku"> 見学・ヒアリング済み</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="naitei"> 内定</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="nyusha"> 入社</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="stock"> ストック</label>
@@ -697,7 +697,7 @@ const STAGES = [
   { key:'renrakumae', label:'連絡前',  cls:'stage-renrakumae' },
   { key:'taiochu',   label:'対応中',  cls:'stage-taiochu'    },
   { key:'mensetsu',  label:'面接',    cls:'stage-mensetsu'   },
-  { key:'kengaku',   label:'見学',    cls:'stage-kengaku'    },
+  { key:'kengaku',   label:'見学・ヒアリング済み',    cls:'stage-kengaku'    },
   { key:'naitei',    label:'内定',    cls:'stage-naitei'     },
   { key:'nyusha',    label:'入社',    cls:'stage-nyusha'     },
   { key:'stock',     label:'ストック', cls:'stage-stock'     },
@@ -1057,7 +1057,7 @@ function renderCalendar() {
       if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, c.fabrica, c.id)
     })
 
-  const tipoLabel = { mensetsu:'面接', kengaku:'見学', nyusha:'入社', alerta:'アラート' }
+  const tipoLabel = { mensetsu:'面接', kengaku:'見学・ヒアリング済み', nyusha:'入社', alerta:'アラート' }
 
   // ── GRID (desktop) ──────────────────────────────────────
   const grid = document.getElementById('calGrid')
@@ -1336,7 +1336,7 @@ function renderCharts() {
   document.getElementById('cv-nyu').textContent   = pct(comNyu, comNait)
 
   // Funil
-  const stageLabels = ['連絡前','対応中','面接','見学','内定','入社','ストック','NG','ブラック']
+  const stageLabels = ['連絡前','対応中','面接','見学・ヒアリング済み','内定','入社','ストック','NG','ブラック']
   const stageKeys   = ['renrakumae','taiochu','mensetsu','kengaku','naitei','nyusha','stock','ng','black']
   const stageCounts = stageKeys.map(k => dados.filter(c => getStage(c) === k).length)
   const stageColors = ['#1e88e5','#f57c00','#00897b','#5e35b1','#2e7d32','#7b1fa2','#e91e8c','#c62828','#212121']
