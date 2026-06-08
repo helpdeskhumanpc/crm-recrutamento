@@ -1271,17 +1271,24 @@ async function salvarCandidato() {
 
   const { error } = await sb.from('candidates').update(payload).eq('id', candidatoAtivo.id)
   if (error) { alert('エラー: ' + error.message); return }
+  const idx = todosOsCandidatos.findIndex(c => c.id === candidatoAtivo.id)
+  if (idx >= 0) Object.assign(todosOsCandidatos[idx], payload)
   fecharModal()
-  await carregarDados()
+  carregarSidebar()
+  renderPipeline()
+  renderCalendar()
 }
 
 async function deletarCandidato() {
   if (!candidatoAtivo) return
   if (!confirm(`「${candidatoAtivo.shimei}」を非表示にしますか？\n（データはシステムに保持されます）`)) return
-  const { error } = await sb.rpc('deletar_candidato', { candidate_id: candidatoAtivo.id })
+  const id = candidatoAtivo.id
+  const { error } = await sb.rpc('deletar_candidato', { candidate_id: id })
   if (error) { alert('エラー: ' + error.message); return }
+  todosOsCandidatos = todosOsCandidatos.filter(c => c.id !== id)
   fecharModal()
-  await carregarDados()
+  carregarSidebar()
+  renderPipeline()
 }
 
 function hoje(id) {
