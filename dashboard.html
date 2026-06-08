@@ -1278,7 +1278,7 @@ async function salvarCandidato() {
 async function deletarCandidato() {
   if (!candidatoAtivo) return
   if (!confirm(`「${candidatoAtivo.shimei}」を非表示にしますか？\n（データはシステムに保持されます）`)) return
-  const { error } = await sb.from('candidates').update({ is_deleted: true }).eq('id', candidatoAtivo.id)
+  const { error } = await sb.rpc('deletar_candidato', { candidate_id: candidatoAtivo.id })
   if (error) { alert('エラー: ' + error.message); return }
   fecharModal()
   await carregarDados()
