@@ -136,31 +136,31 @@ function renderForm(h) {
           <label>会話レベル</label>
           <select id="jp_kaiwa">
             <option value="">選択</option>
-            <option ${h.jp_kaiwa==='4.0'?'selected':''}>4.0（高卒レベル）</option>
-            <option ${h.jp_kaiwa==='3.0'?'selected':''}>3.0（流暢に話す）</option>
-            <option ${h.jp_kaiwa==='2.5'?'selected':''}>2.5（言葉を選べば可）</option>
-            <option ${h.jp_kaiwa==='2.0'?'selected':''}>2.0（かたこと）</option>
+            <option value="4.0" ${h.jp_kaiwa==='4.0'?'selected':''}>4.0（高卒レベル）</option>
+            <option value="3.0" ${h.jp_kaiwa==='3.0'?'selected':''}>3.0（流暢に話す）</option>
+            <option value="2.5" ${h.jp_kaiwa==='2.5'?'selected':''}>2.5（言葉を選べば可）</option>
+            <option value="2.0" ${h.jp_kaiwa==='2.0'?'selected':''}>2.0（かたこと）</option>
           </select>
         </div>
         <div class="field"><label>漢字</label><select id="kanji_yomi">
           <option value="">選択</option>
-          <option ${h.kanji_yomi==='読み書き'?'selected':''}>読み書き</option>
-          <option ${h.kanji_yomi==='読み'?'selected':''}>読み</option>
-          <option ${h.kanji_yomi==='読めない'?'selected':''}>読めない</option>
+          <option value="読み書き" ${h.kanji_yomi==='読み書き'?'selected':''}>読み書き</option>
+          <option value="読み" ${h.kanji_yomi==='読み'?'selected':''}>読み</option>
+          <option value="読めない" ${h.kanji_yomi==='読めない'?'selected':''}>読めない</option>
         </select></div>
       </div>
       <div class="grid-3">
         <div class="field"><label>ひらがな</label><select id="hiragana_yomi">
           <option value="">選択</option>
-          <option ${h.hiragana_yomi==='読み書き'?'selected':''}>読み書き</option>
-          <option ${h.hiragana_yomi==='読み'?'selected':''}>読み</option>
-          <option ${h.hiragana_yomi==='読めない'?'selected':''}>読めない</option>
+          <option value="読み書き" ${h.hiragana_yomi==='読み書き'?'selected':''}>読み書き</option>
+          <option value="読み" ${h.hiragana_yomi==='読み'?'selected':''}>読み</option>
+          <option value="読めない" ${h.hiragana_yomi==='読めない'?'selected':''}>読めない</option>
         </select></div>
         <div class="field"><label>カタカナ</label><select id="katakana_yomi">
           <option value="">選択</option>
-          <option ${h.katakana_yomi==='読み書き'?'selected':''}>読み書き</option>
-          <option ${h.katakana_yomi==='読み'?'selected':''}>読み</option>
-          <option ${h.katakana_yomi==='読めない'?'selected':''}>読めない</option>
+          <option value="読み書き" ${h.katakana_yomi==='読み書き'?'selected':''}>読み書き</option>
+          <option value="読み" ${h.katakana_yomi==='読み'?'selected':''}>読み</option>
+          <option value="読めない" ${h.katakana_yomi==='読めない'?'selected':''}>読めない</option>
         </select></div>
       </div>
       <div class="grid">
@@ -239,9 +239,9 @@ function renderForm(h) {
           <label>入社歴</label>
           <select id="nyusha_umu">
             <option value="">選択</option>
-            <option ${h.nyusha_umu==='ある（ヒューマン）'?'selected':''}>ある（ヒューマン）</option>
-            <option ${h.nyusha_umu==='ある（他社）'?'selected':''}>ある（他社）</option>
-            <option ${h.nyusha_umu==='ない'?'selected':''}>ない</option>
+            <option value="ある（ヒューマン）" ${h.nyusha_umu==='ある（ヒューマン）'?'selected':''}>ある（ヒューマン）</option>
+            <option value="ある（他社）" ${h.nyusha_umu==='ある（他社）'?'selected':''}>ある（他社）</option>
+            <option value="ない" ${h.nyusha_umu==='ない'?'selected':''}>ない</option>
           </select>
         </div>
         <div class="field"><label>企業名</label><input type="text" id="nyusha_kigyo" value="${h.nyusha_kigyo||''}"></div>
@@ -271,10 +271,10 @@ function renderForm(h) {
           <label>就業状況</label>
           <select id="genshoku_status">
             <option value="">選択</option>
-            <option ${h.genshoku_status==='正社員'?'selected':''}>正社員</option>
-            <option ${h.genshoku_status==='派遣'?'selected':''}>派遣</option>
-            <option ${h.genshoku_status==='アルバイト'?'selected':''}>アルバイト</option>
-            <option ${h.genshoku_status==='その他'?'selected':''}>その他</option>
+            <option value="正社員" ${h.genshoku_status==='正社員'?'selected':''}>正社員</option>
+            <option value="派遣" ${h.genshoku_status==='派遣'?'selected':''}>派遣</option>
+            <option value="アルバイト" ${h.genshoku_status==='アルバイト'?'selected':''}>アルバイト</option>
+            <option value="その他" ${h.genshoku_status==='その他'?'selected':''}>その他</option>
           </select>
         </div>
         <div class="field"><label>退職できる時期</label><input type="text" id="genshoku_taishoku" value="${h.genshoku_taishoku||''}"></div>
@@ -353,10 +353,10 @@ function renderForm(h) {
           <label>住居種類</label>
           <select id="jutaku_shurui">
             <option value="">選択</option>
-            <option ${h.jutaku_shurui==='賃貸アパート'?'selected':''}>賃貸アパート</option>
-            <option ${h.jutaku_shurui==='自己所有'?'selected':''}>自己所有</option>
-            <option ${h.jutaku_shurui==='派遣アパート'?'selected':''}>派遣アパート</option>
-            <option ${h.jutaku_shurui==='その他'?'selected':''}>その他</option>
+            <option value="賃貸アパート" ${h.jutaku_shurui==='賃貸アパート'?'selected':''}>賃貸アパート</option>
+            <option value="自己所有" ${h.jutaku_shurui==='自己所有'?'selected':''}>自己所有</option>
+            <option value="派遣アパート" ${h.jutaku_shurui==='派遣アパート'?'selected':''}>派遣アパート</option>
+            <option value="その他" ${h.jutaku_shurui==='その他'?'selected':''}>その他</option>
           </select>
         </div>
         <div class="field"><label>居住年数</label><input type="text" id="kyoju_nensu" value="${h.kyoju_nensu||''}"></div>
@@ -407,10 +407,10 @@ function renderForm(h) {
           <label>住居種類（当時）</label>
           <select id="s${n}_jutaku">
             <option value="">選択</option>
-            <option ${h[`s${n}_jutaku`]==='賃貸アパート'?'selected':''}>賃貸アパート</option>
-            <option ${h[`s${n}_jutaku`]==='自己所有'?'selected':''}>自己所有</option>
-            <option ${h[`s${n}_jutaku`]==='派遣アパート'?'selected':''}>派遣アパート</option>
-            <option ${h[`s${n}_jutaku`]==='その他'?'selected':''}>その他</option>
+            <option value="賃貸アパート" ${h[`s${n}_jutaku`]==='賃貸アパート'?'selected':''}>賃貸アパート</option>
+            <option value="自己所有" ${h[`s${n}_jutaku`]==='自己所有'?'selected':''}>自己所有</option>
+            <option value="派遣アパート" ${h[`s${n}_jutaku`]==='派遣アパート'?'selected':''}>派遣アパート</option>
+            <option value="その他" ${h[`s${n}_jutaku`]==='その他'?'selected':''}>その他</option>
           </select>
         </div>
       </div>
