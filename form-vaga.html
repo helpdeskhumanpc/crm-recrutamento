@@ -293,6 +293,9 @@
 const { createClient } = supabase
 const sb = createClient('https://xzxfwrbebkwagnropgfb.supabase.co', 'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE')
 
+// URL do servidor CRM no Railway
+const CRM_URL = 'https://COLE_AQUI_O_URL_DO_RAILWAY'
+
 document.getElementById('vagaForm').addEventListener('submit', async (e) => {
   e.preventDefault()
 
@@ -357,6 +360,13 @@ document.getElementById('vagaForm').addEventListener('submit', async (e) => {
     msg.style.display = 'block'
     msg.textContent = '❌ Erro ao enviar: ' + (error.message || JSON.stringify(error))
   } else {
+    // Salvar no Google Contacts em background (não bloqueia o sucesso do formulário)
+    fetch(`${CRM_URL}/api/google-contact`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    }).catch(err => console.warn('Google Contacts:', err))
+
     form.reset()
     document.getElementById('successPopup').style.display = 'flex'
   }
