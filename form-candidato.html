@@ -129,6 +129,7 @@
     </div>
 
     <!-- 工場 / 面接日 -->
+    <!-- PRE-FILTRO POR ESTADO: descomentar quando necessário
     <div class="form-row">
       <div>
         <label>都道府県（工場）</label>
@@ -137,12 +138,14 @@
         </select>
       </div>
       <div>
-        <label>工場 <span class="required">*</span></label>
-        <select id="fabricaSelect" name="fabrica" required>
-          <option value="">選択してください</option>
-        </select>
-      </div>
+    -->
+    <div class="form-group">
+      <label>工場 <span class="required">*</span></label>
+      <select id="fabricaSelect" name="fabrica" required>
+        <option value="">選択してください</option>
+      </select>
     </div>
+    <!-- fim do bloco com filtro por estado -->
     <div class="form-row">
       <div>
         <label>面接日</label>
@@ -225,6 +228,7 @@
           <option value="家族滞在">家族滞在</option>
           <option value="留学">留学</option>
           <option value="日本国籍">日本国籍</option>
+          <option value="特定活動">特定活動</option>
         </select>
       </div>
     </div>
@@ -232,8 +236,9 @@
     <!-- アパート / 引っ越し / 車 -->
     <div class="form-row-3">
       <div>
-        <label>アパート必要</label>
-        <select name="precisa_apartamento">
+        <label>アパート必要 <span class="required">*</span></label>
+        <select name="precisa_apartamento" required>
+          <option value="">選択してください</option>
           <option value="true">必要</option>
           <option value="false">不要</option>
         </select>
@@ -263,6 +268,7 @@
           <option value="離職中">離職中</option>
           <option value="アルバイト中">アルバイト中</option>
           <option value="退職予定（予告期間中）">退職予定（予告期間中）</option>
+          <option value="無職">無職</option>
         </select>
       </div>
       <div>
@@ -323,8 +329,9 @@
 
     <!-- 日本語力 -->
     <div class="form-group">
-      <label>日本語力</label>
-      <select name="nivel_japones">
+      <label>日本語力 <span class="required">*</span></label>
+      <select name="nivel_japones" required>
+        <option value="">選択してください</option>
         <option value="0%（日本語不可）">0%（日本語不可）</option>
         <option value="N5 10%〜（少し話せる）">N5 10%〜（少し話せる）</option>
         <option value="N4 30%〜（基本会話）">N4 30%〜（基本会話）</option>
@@ -412,21 +419,9 @@
   let todasFabricas = []
 
   async function carregarFabricas() {
-    const { data, error } = await sb.from('locations').select('nome, estado').eq('tipo', '工場').order('nome')
+    const { data, error } = await sb.from('locations').select('nome, estado').eq('tipo', '工場').eq('ativo', true).order('nome')
     if (error || !data) return
     todasFabricas = data
-
-    // popula estados únicos
-    const estados = [...new Set(data.map(f => f.estado).filter(Boolean))].sort()
-    const estadoSel = document.getElementById('estadoSelect')
-    estados.forEach(e => {
-      const opt = document.createElement('option')
-      opt.value = e
-      opt.textContent = e
-      estadoSel.appendChild(opt)
-    })
-
-    // popula todas as fábricas inicialmente
     preencherFabricas(data)
   }
 

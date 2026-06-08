@@ -1,7 +1,7 @@
 # Cérebro — CRM Recrutamento Japão
 
 > Documento de referência do projeto. Reflete o estado atual construído.
-> Última atualização: 2026-06-04
+> Última atualização: 2026-06-08
 
 ---
 
@@ -209,6 +209,99 @@ created_at  timestamp
 
 > Criada automaticamente via trigger quando usuário é criado no Auth. Role padrão: `tantousha`.
 
+### `hiaringu` — ficha de ヒアリング por candidato
+
+```sql
+id                  uuid PK default gen_random_uuid()
+candidate_id        uuid references candidates(id)
+-- 面談情報
+hiaringu_bi         date          -- ヒアリング日 (reflete em dt_kengaku)
+nyusha_yotei_bi     date
+mensadan_bi         date
+mensadan_sha        text
+-- 日本語力
+jp_kaiwa            text          -- '4.0' | '3.0' | '2.5' | '2.0'
+kanji_yomi          text          -- 読み書き | 読み | 読めない
+hiragana_yomi       text
+katakana_yomi       text
+jp_comment          text
+jp_hantei           text
+-- 身体・健康
+shiryoku_migi       text
+shiryoku_hidari     text
+megane_migi         text
+megane_hidari       text
+kikite              text          -- 右 | 左
+kiourekki           text
+shintai_hantei      text
+-- タトゥー
+tattoo_umu          text          -- あり | なし
+tattoo_basho        text
+tattoo_taiou        text
+tattoo_hantei       text
+-- 家族
+doukyo_kazoku       text
+doukyo_hantei       text
+bekkyo_kazoku       text
+bekkyo_hantei       text
+-- 入社歴
+nyusha_umu          text
+nyusha_kigyo        text
+nyusha_jiki         text
+taisha_jiki         text
+taisha_riyu         text
+nyusha_hantei       text
+-- 現職
+genshoku_umu        text          -- あり | なし
+genshoku_status     text
+genshoku_taishoku   text
+kyogo_status        text
+-- 勤務条件
+kotai_kinmu         text          -- 可 | 不可
+kotai_keiken        text          -- あり | なし
+zangyou_taiou       text
+zangyou_jikan       text
+kyujitsu_shukkin    text
+kinmu_hantei        text
+kinmu_comment       text
+zangyou_mondai      text
+hayai_shukkin       text
+-- 通勤
+tsukin_houhou       text
+tsukin_maker        text
+tsukin_kyori        text
+tsukin_jikan        text
+mae_kyori           text
+tsukin_hantei       text
+-- 住居
+jutaku_shurui       text
+kyoju_nensu         text
+genzai_yachin       integer
+hikkoshi            text          -- 可 | 不可
+-- 給与・動機
+kyuyo_kibou_riyu    text
+kyuyo_kokyo         text
+obo_douki           text
+-- 職歴①②③ (prefixo s1_, s2_, s3_)
+s1_kaishi           text  -- yyyy-MM (input month)
+s1_shuryo           text
+s1_sha              text
+s1_kinmuchi         text
+s1_jikyu            integer
+s1_sosshikyu        integer
+s1_tedori           integer
+s1_taisha           text
+s1_naiyou           text
+s1_taihen           text
+s1_douki            text
+s1_jutaku           text
+s1_yachin           integer
+-- (idem s2_* e s3_*)
+created_at          timestamp with time zone default now()
+```
+
+> Uma linha por candidato. `hiaringu_bi` reflete automaticamente em `candidates.dt_kengaku` ao salvar.
+
 ### `tantoushas` — DEPRECIADA
 
 Será removida após todos os usuários migrarem para `profiles`.
@@ -244,6 +337,11 @@ create policy "leitura publica" on shokaisha for select using (true);
 
 -- locations
 create policy "leitura publica" on locations for select using (true);
+
+-- hiaringu
+create policy "authenticated insert" on hiaringu for insert to authenticated with check (true);
+create policy "authenticated update" on hiaringu for update to authenticated using (true);
+create policy "authenticated select" on hiaringu for select to authenticated using (true);
 ```
 
 ---
@@ -461,3 +559,7 @@ node server.js
 | 2026-06-04 | Bug de fuso horário JST corrigido no calendário |
 | 2026-06-04 | Botões 📞 電話 e 💬 WhatsApp adicionados no modal do candidato |
 | 2026-06-04 | Formulário: tela de senha 0246 + popup de sucesso após cadastro |
+| 2026-06-08 | Tabela `hiaringu` documentada — ficha de ヒアリング por candidato |
+| 2026-06-08 | RLS da tabela `hiaringu` configurado (authenticated insert/update/select) |
+| 2026-06-08 | Bug corrigido: botão さらに não expandia (estado perdido no re-render) |
+| 2026-06-08 | Bug corrigido: selects do hiaringu sem value explícito não pré-selecionavam ao recarregar |
