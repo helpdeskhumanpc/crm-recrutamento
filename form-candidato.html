@@ -519,6 +519,7 @@
       hiragana:             data.get('hiragana'),
       katakana:             data.get('katakana'),
       comentario:           data.get('comentario')          || null,
+      origem:               'indicado',
     }
 
     const { error } = await sb.from('candidates').insert([payload])

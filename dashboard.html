@@ -82,6 +82,12 @@
     /* CALENDAR */
     #calendarView { flex: 1; overflow-y: auto; padding: 12px; display: none; flex-direction: column; }
 
+    /* LEADS DO SITE */
+    #leadsView { flex: 1; overflow-y: auto; padding: 12px; display: none; flex-direction: column; gap: 10px; }
+    .btn-enviar-fab { padding: 5px 10px; background: #2e7d32; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; white-space: nowrap; }
+    .btn-enviar-fab:hover { background: #1b5e20; }
+    .lead-grid { display: grid; grid-template-columns: 150px 110px 130px 100px 50px 50px 120px 140px; gap: 6px; align-items: center; }
+
     /* CHARTS */
     #chartsView { flex: 1; overflow-y: auto; padding: 16px; display: none; flex-direction: column; gap: 16px; }
     .chart-filter-bar { display: flex; align-items: center; gap: 12px; background: white; padding: 10px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
@@ -225,7 +231,7 @@
       .col-header > span:nth-child(7) { display:none; }
 
       /* Espaço para bottom nav */
-      #pipeline, #calendarView, #chartsView { padding-bottom: 65px; }
+      #pipeline, #calendarView, #chartsView, #leadsView { padding-bottom: 65px; }
 
       /* Modal tela cheia */
       #modal { align-items:flex-end; }
@@ -309,6 +315,7 @@
     <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
     <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
+    <button class="tab-btn" id="btnLeadsTab" style="display:none;background:#fff3e0;border-color:#e8621a;color:#e8621a" onclick="showTab('leads', this)">Leads do Site</button>
     <input type="text" id="searchInput" placeholder="氏名・電話で検索" oninput="renderPipeline()">
     <select class="filter-select" id="filterSexo" onchange="renderPipeline()">
       <option value="">性別：全て</option>
@@ -429,6 +436,20 @@
         <h3>紹介者 ランキング（上位10）</h3>
         <canvas id="chartShokai"></canvas>
       </div>
+    </div>
+  </div>
+
+  <!-- LEADS DO SITE VIEW (admin only) -->
+  <div id="leadsView">
+    <div style="background:white;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+      <span style="font-size:14px;font-weight:700;color:#333">Leads do Site&nbsp;<span id="leads-count" style="font-size:12px;color:#888;font-weight:normal"></span></span>
+      <span style="font-size:11px;color:#aaa">Cadastros do formulário público — pendentes de encaminhamento</span>
+    </div>
+    <div style="background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow:hidden">
+      <div class="lead-grid" style="padding:8px 16px;background:#f5f5f5;font-size:10px;font-weight:700;color:#666;text-transform:uppercase">
+        <span>Nome</span><span>Telefone</span><span>Fábrica</span><span>Visto</span><span>Gên.</span><span>Idade</span><span>Japonês</span><span>Ação</span>
+      </div>
+      <div id="leadsBody"></div>
     </div>
   </div>
 
@@ -675,12 +696,13 @@ async function carregarDados() {
 function fabricaEfetiva(c) { return c.fabrica2 || c.fabrica }
 
 function carregarSidebar() {
-  const fabricas = [...new Set(todosOsCandidatos.map(c => fabricaEfetiva(c)).filter(Boolean))].sort()
+  const candidatos = todosOsCandidatos.filter(c => c.origem !== 'web')
+  const fabricas = [...new Set(candidatos.map(c => fabricaEfetiva(c)).filter(Boolean))].sort()
   const container = document.getElementById('sidebarFabricas')
   container.innerHTML = ''
-  document.getElementById('totalCount').textContent = todosOsCandidatos.length + '名'
+  document.getElementById('totalCount').textContent = candidatos.length + '名'
   fabricas.forEach(f => {
-    const count = todosOsCandidatos.filter(c => fabricaEfetiva(c) === f).length
+    const count = candidatos.filter(c => fabricaEfetiva(c) === f).length
     const div = document.createElement('div')
     div.className = 'sidebar-item'
     div.innerHTML = `<div class="factory-name">${f}</div><div class="factory-count">${count}名</div>`
@@ -852,6 +874,7 @@ function getFiltrados() {
   const f = activeFilters
 
   return todosOsCandidatos.filter(c => {
+    if (c.origem === 'web') return false
     if (fabricaAtiva && fabricaEfetiva(c) !== fabricaAtiva) return false
     if (sexo   && c.sexo !== sexo)                                            return false
     if (jp     && c.nivel_japones !== jp)                                     return false
@@ -1222,10 +1245,12 @@ function showTab(tab, btn) {
   document.getElementById('pipeline').style.display     = tab === 'pipeline' ? 'block' : 'none'
   document.getElementById('calendarView').style.display = tab === 'calendar' ? 'flex'  : 'none'
   document.getElementById('chartsView').style.display   = tab === 'charts'   ? 'flex'  : 'none'
+  document.getElementById('leadsView').style.display    = tab === 'leads'    ? 'flex'  : 'none'
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
   if (btn) btn.classList.add('active')
   if (tab === 'calendar') renderCalendar()
   if (tab === 'charts')   renderCharts()
+  if (tab === 'leads')    renderLeads()
 }
 
 // ─── CHARTS ──────────────────────────────────────────────────
@@ -1339,6 +1364,40 @@ filtrarFabrica = function(fabrica, el) {
   }
 }
 
+// ─── LEADS DO SITE ────────────────────────────────────────────
+function renderLeads() {
+  const leads = todosOsCandidatos.filter(c => c.origem === 'web')
+  document.getElementById('leads-count').textContent = `(${leads.length})`
+  const body = document.getElementById('leadsBody')
+  if (!leads.length) {
+    body.innerHTML = '<div style="padding:30px;color:#aaa;font-size:13px;text-align:center">Nenhum lead pendente</div>'
+    return
+  }
+  body.innerHTML = leads.map(c => `
+    <div class="lead-grid" style="padding:9px 16px;border-bottom:1px solid #f0f0f0;font-size:12px">
+      <span style="font-weight:600">${c.shimei || '—'}</span>
+      <span>${c.telefone || '—'}</span>
+      <span style="font-size:11px">${c.fabrica || '—'}</span>
+      <span style="font-size:11px">${c.visa?.split('（')[0] || '—'}</span>
+      <span>${c.sexo === '男性' ? 'M' : c.sexo === '女性' ? 'F' : '—'}</span>
+      <span>${c.idade || '—'}</span>
+      <span style="font-size:11px">${c.nivel_japones?.split(' ')[0] || '—'}</span>
+      <span><button class="btn-enviar-fab" onclick="enviarParaFabrica('${c.id}')">Enviar p/ fábrica</button></span>
+    </div>
+  `).join('')
+}
+
+async function enviarParaFabrica(id) {
+  if (!confirm('Enviar este lead para o tantousha?')) return
+  const { error } = await sb.from('candidates').update({ origem: 'indicado' }).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  const idx = todosOsCandidatos.findIndex(c => c.id === id)
+  if (idx >= 0) todosOsCandidatos[idx].origem = 'indicado'
+  renderLeads()
+  carregarSidebar()
+  renderPipeline()
+}
+
 let currentProfile = null
 
 async function fazerLogin() {
@@ -1381,6 +1440,10 @@ async function iniciarDashboard() {
 
   document.getElementById('loginScreen').style.display = 'none'
   document.getElementById('userNome').textContent = profile?.nome || user.email
+
+  if (profile?.role === 'admin') {
+    document.getElementById('btnLeadsTab').style.display = ''
+  }
 
   showTab('pipeline')
   await carregarDados()
