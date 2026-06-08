@@ -478,14 +478,24 @@ async function salvar() {
 
   let error
   if (hiariguId) {
-    ;({ error } = await sb.from('hiaringu').update(payload).eq('id', hiariguId))
-  } else {
-    const res = await sb.from('hiaringu').insert([payload]).select('id').single()
+    const res = await sb.from('hiaringu').update(payload).eq('id', hiariguId).select('id')
     error = res.error
-    if (!error) hiariguId = res.data.id
+    if (!error && (!res.data || res.data.length === 0)) {
+      console.error('UPDATE afetou 0 linhas — verifique RLS da tabela hiaringu')
+      alert('⚠️ Erro de permissão: o registro não pôde ser atualizado.\nVerifique as políticas RLS da tabela hiaringu no Supabase.')
+      return
+    }
+  } else {
+    const res = await sb.from('hiaringu').insert(payload).select('id').maybeSingle()
+    error = res.error
+    if (!error && res.data) hiariguId = res.data.id
   }
 
-  if (error) { alert('Erro: ' + error.message); return }
+  if (error) {
+    console.error('Supabase error:', error)
+    alert('Erro ao salvar:\n' + error.message + (error.code ? '\nCódigo: ' + error.code : ''))
+    return
+  }
   alert('✅ 保存完了!')
 }
 
