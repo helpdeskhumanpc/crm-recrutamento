@@ -1,7 +1,13 @@
 # Cérebro — CRM Recrutamento Japão
 
 > Documento de referência do projeto. Reflete o estado atual construído.
-> Última atualização: 2026-06-08
+> Última atualização: 2026-06-09
+
+---
+
+## Regra de Colaboração com o Assistente
+
+**Sempre que o Eder pedir qualquer alteração ou tarefa:** o assistente deve primeiro explicar o que entendeu do pedido e aguardar confirmação antes de executar. Nunca executar direto sem confirmar o entendimento.
 
 ---
 

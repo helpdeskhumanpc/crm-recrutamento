@@ -730,7 +730,7 @@ async function carregarDados() {
   document.getElementById('pipeline').innerHTML = '<div class="loading">読み込み中...</div>'
   const [res1, res2] = await Promise.all([
     sb.from('candidates').select('*').eq('is_deleted', false).order('created_at', { ascending: false }),
-    sb.from('locations').select('nome').eq('tipo', '工場').order('nome')
+    sb.from('locations').select('nome').eq('tipo', '工場').eq('ativo', true).order('nome')
   ])
   todosOsCandidatos = res1.data || []
   todasFabricas     = (res2.data || []).map(f => f.nome)
@@ -1277,6 +1277,8 @@ async function salvarCandidato() {
   carregarSidebar()
   renderPipeline()
   renderCalendar()
+  renderLeads()
+  renderStockPool()
 }
 
 async function deletarCandidato() {
