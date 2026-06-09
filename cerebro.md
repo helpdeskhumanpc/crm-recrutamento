@@ -114,7 +114,9 @@ Campo `fabricas` é um array — formato JSON:
 | Banco de dados | Supabase (PostgreSQL) — free tier |
 | Dashboard CRM | HTML + CSS + JS vanilla (dashboard.html) |
 | Autenticação | Supabase Auth (email + senha individual por usuário) |
-| Servidor | Express.js — apenas serve arquivos estáticos (server.js) |
+| Servidor | Express.js — serve arquivos estáticos + endpoint `/api/google-contact` (server.js) |
+| Google Contacts | Google People API via OAuth 2.0 — cria contato automático ao receber lead do site |
+| Telegram | Bot API — envia notificação formatada ao receber lead do site |
 | Deploy | Railway (auto-deploy via GitHub push) |
 
 ---
@@ -123,10 +125,11 @@ Campo `fabricas` é um array — formato JSON:
 
 | Arquivo | Função |
 |---------|--------|
-| `dashboard.html` | CRM completo — pipeline, calendário, gráficos |
-| `form-candidato.html` | Formulário de cadastro de candidatos (japonês) |
-| `server.js` | Servidor Express — serve arquivos estáticos |
-| `package.json` | Dependências: express |
+| `dashboard.html` | CRM completo — pipeline, leads, stock pool, calendário, gráficos |
+| `form-candidato.html` | Formulário interno de cadastro (japonês) — origem `indicado` |
+| `form-vaga.html` | Formulário público (português) no WordPress — origem `web` |
+| `server.js` | Express: serve estáticos + POST `/api/google-contact` (Google + Telegram) |
+| `package.json` | Dependências: express, cookie-parser |
 | `.gitignore` | Ignora node_modules |
 
 ---
@@ -175,6 +178,7 @@ blacklist_motivo      text
 alerta_data           timestamp     -- data/hora do alerta
 alerta_nota           text          -- instrução do alerta
 is_deleted            boolean default false  -- soft delete
+origem                text          -- 'indicado' | 'web' | 'web_indicado' | 'web_stock'
 -- Pipeline dates
 dt_oubo               date          -- 応募日
 dt_taiochu            date          -- 対応中
@@ -196,10 +200,14 @@ nome        text NOT NULL
 tipo        text default '工場'
 cidade      text
 estado      text          -- adicionado depois
+jimusho     text          -- escritório responsável
+ativo       boolean default true  -- false = não aparece nos dropdowns
 created_at  timestamp with time zone default now()
 ```
 
 **Fábricas cadastradas:** アラコ, FTS, FTS田原, イビデン, コベルク富士松, コベルクいなべ, マルヤス, 三菱, 三菱重工, TBKいなべ, TBSK高浜, タチエス安城, 豊臣本社, 豊臣いなべ, ビューテック
+
+> Os dropdowns de 工場 no dashboard e no form-candidato.html mostram apenas `ativo = true`.
 
 ### `profiles` — perfis de acesso ao CRM
 
@@ -387,6 +395,71 @@ dt_taiochu     → taiochu
 
 Candidatos não são apagados — `is_deleted = true` os oculta do dashboard. Dados preservados no Supabase.
 
+O delete usa a função RPC `deletar_candidato` (SECURITY DEFINER) para contornar limitações de RLS:
+```sql
+-- Já criada no Supabase
+select deletar_candidato('uuid-do-candidato');
+```
+
+### Campo `origem` — separação de fluxos
+
+| Valor | Origem | Aparece em |
+|-------|--------|-----------|
+| `indicado` | form-candidato.html (interno) | Pipeline principal |
+| `web` | form-vaga.html (WordPress) | Leads do Site (admin) |
+| `web_indicado` | Lead promovido pelo admin | Pipeline principal |
+| `web_stock` | Lead movido para stock pool | ストック Pool |
+
+### Etapa 見学
+
+Renomeada para **見学・ヒアリング済み** em toda a interface (pipeline, filtros, calendário, funil).
+
+---
+
+## Formulário Público (`form-vaga.html`)
+
+Formulário em **português** embutido no WordPress via Elementor HTML widget.
+Ao submeter, grava no Supabase com `origem = 'web'` e **em seguida** chama `POST https://crm-recrutamento-production.up.railway.app/api/google-contact`.
+
+### Detecção automática de fábrica
+
+1. Campo oculto WPForms `form_fields[pagina]` (preenche automaticamente no post dinâmico da vaga)
+2. Body class WordPress `fabrica-xxx` (taxonomy)
+3. URL param `?fabrica=`
+
+### Endpoint `/api/google-contact` (server.js)
+
+Recebe o payload do candidato e executa **em paralelo**:
+1. **Google Contacts** — cria contato via People API com nome, telefone, nascimento, endereço e demais campos nas observações
+2. **Telegram** — envia mensagem formatada em japonês para o grupo configurado
+
+### Mensagem Telegram
+
+```
+お疲れ様です。
+{fabrica}向け
+
+紹介：ヒューマンシステム（西留）
+氏名：{nome}
+電話番号：{telefone}
+〒：{cep}
+住所：{prefecture} / {city}
+生年月日：{YYYY年M月D日}
+年齢：{idade}
+性別：Man/Woman
+国籍：{nacionalidade}
+ビザ：{visa em inglês}
+日本語力：{nivel}
+ひらがな：Reading and Writing / Reading only / Cannot
+カタカナ：...
+免許：{habilitações em inglês}
+経験：{experiência em inglês}
+アパート必要：Yes/No
+現在仕事中：Yes/No/Part-time
+
+よろしくお願いします。
+```
+
 ---
 
 ## Formulário de Cadastro (`form-candidato.html`)
@@ -441,11 +514,13 @@ Candidatos não são apagados — `is_deleted = true` os oculta do dashboard. Da
 
 ### Abas
 
-| Aba | Função |
-|-----|--------|
-| 状況 | Pipeline de candidatos por etapa |
-| カレンダー | Grid mensal (desktop) / Agenda lista (mobile) |
-| グラフ | Gráficos Tier 1 |
+| Aba | Visível para | Função |
+|-----|-------------|--------|
+| 状況 | Todos | Pipeline principal de candidatos (origem `indicado` + `web_indicado`) |
+| カレンダー | Todos | Grid mensal (desktop) / Agenda lista (mobile) |
+| グラフ | Todos | Gráficos Tier 1 |
+| Leads do Site | Somente `admin` | Mini-pipeline de leads do formulário WordPress |
+| ストック Pool | Todos | Candidatos em ストック disponíveis para tantoushas reivindicarem |
 
 ### Sidebar
 
@@ -455,7 +530,7 @@ Candidatos não são apagados — `is_deleted = true` os oculta do dashboard. Da
 
 ### Barra de stats
 
-総候補者 | 連絡前 | 対応中 | 面接 | 見学 | 内定 | 入社 | ストック | NG
+総候補者 | 連絡前 | 対応中 | 面接 | 見学・ヒアリング済み | 内定 | 入社 | ストック | NG
 
 ### Painel 状況
 
@@ -482,12 +557,30 @@ Candidatos não são apagados — `is_deleted = true` os oculta do dashboard. Da
 - Botão 保存 → salva no Supabase
 - Botão 削除 → soft delete (oculta, não apaga)
 
+### Leads do Site (aba admin)
+
+Pipeline separado para candidatos com `origem = 'web'`. Etapas:
+
+| Etapa | Chave | Descrição |
+|-------|-------|-----------|
+| 連絡前 | renrakumae | Recém cadastrado, ainda não contactado |
+| 担当者紹介 | indicado | Enviado para fábrica (`origem = 'web_indicado'`) |
+| ストック | stock | Movido para pool (`origem = 'web_stock'`) |
+| NG | ng | `dt_ng` preenchido |
+| ブラック | black | `is_blacklisted = true` |
+
+Ações disponíveis por card: **Enviar para fábrica** → move para pipeline principal | **ストック** → move para pool | **NG** | **ブラック**
+
+### ストック Pool (aba todos)
+
+Lista de candidatos com `origem = 'web_stock'`. Tantoushas podem clicar em **Atribuir para fábrica** → seleciona a fábrica → move para pipeline principal com `origem = 'indicado'`.
+
 ### Calendário
 
 - **Desktop:** grade mensal tradicional
 - **Mobile:** vista agenda cronológica (só dias com eventos)
 - Filtro por fábrica (sincronizado com sidebar)
-- Toggle de tipos: ● 面接 ● 見学 ● 入社 ● アラート
+- Toggle de tipos: ● 面接 ● 見学・ヒアリング済み ● 入社 ● アラート
 - Clicar em evento abre modal do candidato
 
 ### Gráficos (aba グラフ)
@@ -528,7 +621,14 @@ git push
 ```
 
 **Variáveis de ambiente no Railway:**
-- Nenhuma obrigatória — autenticação via Supabase Auth no browser
+
+| Variável | Descrição |
+|----------|-----------|
+| `GOOGLE_CLIENT_ID` | OAuth client ID do projeto "Human Piotnet integration" |
+| `GOOGLE_CLIENT_SECRET` | OAuth client secret |
+| `GOOGLE_REFRESH_TOKEN` | Refresh token com escopo `auth/contacts` |
+| `TELEGRAM_BOT_TOKEN` | Token do bot Telegram para notificações |
+| `TELEGRAM_CHAT_ID` | ID do grupo/canal que recebe as notificações (`-5181155523`) |
 
 **Para testar localmente:**
 ```bash
@@ -569,3 +669,13 @@ node server.js
 | 2026-06-08 | RLS da tabela `hiaringu` configurado (authenticated insert/update/select) |
 | 2026-06-08 | Bug corrigido: botão さらに não expandia (estado perdido no re-render) |
 | 2026-06-08 | Bug corrigido: selects do hiaringu sem value explícito não pré-selecionavam ao recarregar |
+| 2026-06-09 | form-vaga.html criado — formulário público português no WordPress para captura de leads |
+| 2026-06-09 | Campo `origem` adicionado — separa leads web do pipeline principal |
+| 2026-06-09 | Pipeline "Leads do Site" criado (admin only) com etapas: 連絡前/担当者紹介/ストック/NG/ブラック |
+| 2026-06-09 | ストック Pool criado — aba visível para todos os roles para reivindicar candidatos |
+| 2026-06-09 | Integração Google Contacts — cria contato automático ao receber lead do form-vaga.html |
+| 2026-06-09 | Integração Telegram — notificação automática formatada ao receber lead |
+| 2026-06-09 | Função RPC `deletar_candidato` (SECURITY DEFINER) — contorna limitação de RLS no soft delete |
+| 2026-06-09 | 見学 renomeado para 見学・ヒアリング済み em toda a interface |
+| 2026-06-09 | Coluna `ativo` adicionada em `locations` — filtra fábricas inativas dos dropdowns |
+| 2026-06-09 | 工場 e 工場２ no modal alterados de input texto para select (fábricas ativas da tabela locations) |
