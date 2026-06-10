@@ -31,29 +31,60 @@
     .field input:focus, .field select:focus, .field textarea:focus { outline:none; border-color:#00695c; }
     .radio-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:4px; }
     .radio-row label { display:flex; align-items:center; gap:4px; font-size:13px; font-weight:normal; cursor:pointer; }
+
+    /* 注意フラグ（赤） - 画面・印刷共通 */
+    .radio-row label:has(input[value="不可"]:checked),
+    .radio-row label:has(input[name="tattoo_umu"][value="あり"]:checked),
+    .radio-row label:has(input[name="genshoku_umu"][value="なし"]:checked),
+    .radio-row label:has(input[name="kotai_keiken"][value="なし"]:checked) {
+      color:#c62828; font-weight:700;
+    }
+    #jp_kaiwa:has(option[value="2.0"]:checked),
+    #hiragana_yomi:has(option[value="読み"]:checked),
+    #hiragana_yomi:has(option[value="読めない"]:checked),
+    #katakana_yomi:has(option[value="読み"]:checked),
+    #katakana_yomi:has(option[value="読めない"]:checked) {
+      color:#c62828; font-weight:700;
+    }
+
+    .print-date { display:none; }
+    .print-only { display:none; }
+    .print-footer { display:none; }
     .shokureki-title { font-weight:700; color:#00695c; font-size:13px; margin:12px 0 8px; border-left:3px solid #00695c; padding-left:8px; }
     .loading { text-align:center; padding:40px; color:#aaa; }
 
     @media (max-width:600px) { .grid,.grid-3,.grid-4 { grid-template-columns:1fr; } }
 
     /* PRINT */
+    @page {
+      margin: 8mm 8mm 14mm 8mm;
+      @bottom-center { content: counter(page) " / " counter(pages); font-size:7pt; color:#999; }
+    }
     @media print {
       * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
-      body { background:white; padding:0; font-size:9pt; font-family:'MS Gothic',Arial,sans-serif; }
+      body { background:white; padding:0; font-size:8pt; font-family:'MS Gothic',Arial,sans-serif; }
       .topbar { display:none; }
-      .print-header { display:block !important; border-bottom:2px solid #00695c; margin-bottom:10px; padding-bottom:6px; }
-      .print-header h1 { font-size:16pt; font-weight:900; color:#00695c; display:inline; margin-right:16px; }
-      .print-header .ph-meta { display:inline; font-size:10pt; color:#333; }
-      .card { box-shadow:none; border:1px solid #aaa; margin-bottom:6px; border-radius:0; page-break-inside:avoid; }
-      .card-title { background:#b2dfdb !important; color:#00695c !important; padding:4px 8px; font-size:9pt; }
-      .card-body { padding:8px; }
-      .field label { font-size:8pt; }
-      .field input, .field select, .field textarea { border:none; border-bottom:1px solid #aaa; border-radius:0; padding:2px 4px; font-size:9pt; background:transparent; }
-      .grid { gap:8px; }
-      .grid-3, .grid-4 { gap:6px; }
-      .shokureki-title { font-size:9pt; margin:6px 0 4px; }
-      .radio-row label { font-size:9pt; }
+      .print-header { display:block !important; border-bottom:2px solid #00695c; margin-bottom:6px; padding-bottom:3px; }
+      .print-header h1 { font-size:13pt; font-weight:900; color:#00695c; display:block; margin-bottom:2px; }
+      .print-header .ph-meta { display:block; font-size:8pt; color:#333; }
+      .card { box-shadow:none; border:1px solid #aaa; margin-bottom:3px; border-radius:0; page-break-inside:avoid; }
+      .card-title { background:#b2dfdb !important; color:#00695c !important; padding:2px 6px; font-size:8pt; }
+      .card-body { padding:5px; }
+      .field { margin-bottom:4px; }
+      .field label { font-size:7pt; }
+      .field input, .field select, .field textarea { border:none; border-bottom:1px solid #aaa; border-radius:0; padding:1px 3px; font-size:8pt; background:transparent; color:#1565c0; }
+      .field input[type="date"], .field input[type="month"] { display:none; }
+      .print-date { display:block; border-bottom:1px solid #aaa; padding:1px 3px; font-size:8pt; color:#1565c0; min-height:1.2em; }
+      .print-only { display:block; }
+      .radio-row label:has(input:checked) { color:#1565c0; font-weight:700; }
+      #kyuyo_kibou_riyu { min-height:36px; }
+      .grid { gap:5px; }
+      .grid-3, .grid-4 { gap:4px; }
+      .radio-row { gap:6px; margin-top:2px; }
+      .shokureki-title { font-size:8pt; margin:3px 0 2px; }
+      .radio-row label { font-size:8pt; }
       .print-header { display:block !important; }
+      .print-footer { display:block; position:fixed; bottom:0; left:0; right:0; font-size:7pt; color:#999; text-align:center; padding-top:2px; border-top:1px solid #ddd; }
     }
     .print-header { display:none; }
   </style>
@@ -63,18 +94,21 @@
 <div class="topbar">
   <h1>🎙 ヒアリングシート</h1>
   <span class="candidate-name" id="candidateName">読み込み中...</span>
-  <button class="btn btn-back" onclick="history.back()">← Voltar</button>
+  <button class="btn btn-back" onclick="salvarEFechar()">💾 保存して閉じる</button>
   <button class="btn btn-save" onclick="salvar()">💾 保存</button>
   <button class="btn btn-print" onclick="window.print()">🖨 印刷</button>
 </div>
-
-<div id="content"><div class="loading">読み込み中...</div></div>
 
 <!-- PRINT HEADER -->
 <div class="print-header" id="printHeader">
   <h1>ヒアリングシート</h1>
   <div class="ph-meta" id="printMeta"></div>
 </div>
+
+<div id="content"><div class="loading">読み込み中...</div></div>
+
+<!-- PRINT FOOTER -->
+<div class="print-footer" id="printFooter"></div>
 
 <script>
 const { createClient } = supabase
@@ -95,7 +129,7 @@ async function carregar() {
 
   // Busca dados do candidato
   const [resCand, resHia] = await Promise.all([
-    sb.from('candidates').select('shimei,telefone').eq('id', candidateId).single(),
+    sb.from('candidates').select('shimei,telefone,shokai').eq('id', candidateId).single(),
     sb.from('hiaringu').select('*').eq('candidate_id', candidateId).maybeSingle()
   ])
 
@@ -105,10 +139,26 @@ async function carregar() {
   if (cand) {
     document.getElementById('candidateName').textContent = `${cand.shimei || ''} (${cand.telefone || ''})`
     document.getElementById('printMeta').textContent = `氏名: ${cand.shimei || ''} / TEL: ${cand.telefone || ''}`
+    document.getElementById('printFooter').textContent = cand.shimei || ''
   }
 
   if (hia) hiariguId = hia.id
   renderForm(hia || {})
+  document.getElementById('shokaiSha').textContent = cand?.shokai || ''
+}
+
+function formatDateJP(dateStr) {
+  if (!dateStr) return ''
+  const [y, m, d] = dateStr.split('-')
+  if (!y || !m || !d) return ''
+  return `${y}年${parseInt(m,10)}月${parseInt(d,10)}日`
+}
+
+function formatMonthJP(monthStr) {
+  if (!monthStr) return ''
+  const [y, m] = monthStr.split('-')
+  if (!y || !m) return ''
+  return `${y}年${parseInt(m,10)}月`
 }
 
 function renderForm(h) {
@@ -119,10 +169,11 @@ function renderForm(h) {
     <div class="card-title">面談情報</div>
     <div class="card-body">
       <div class="grid-4">
-        <div class="field"><label>ヒアリング日 <span style="color:#00695c;font-size:10px">→ 見学・ヒアリング自動反映</span></label><input type="date" id="hiaringu_bi" value="${h.hiaringu_bi||''}"></div>
-        <div class="field"><label>入社予定日</label><input type="date" id="nyusha_yotei_bi" value="${h.nyusha_yotei_bi||''}"></div>
-        <div class="field"><label>面談日</label><input type="date" id="mensadan_bi" value="${h.mensadan_bi||''}"></div>
+        <div class="field"><label>ヒアリング日 <span style="color:#00695c;font-size:10px">→ 見学・ヒアリング自動反映</span></label><input type="date" id="hiaringu_bi" value="${h.hiaringu_bi||''}"><span class="print-date">${formatDateJP(h.hiaringu_bi)}</span></div>
+        <div class="field"><label>入社予定日</label><input type="date" id="nyusha_yotei_bi" value="${h.nyusha_yotei_bi||''}"><span class="print-date">${formatDateJP(h.nyusha_yotei_bi)}</span></div>
+        <div class="field"><label>面談日</label><input type="date" id="mensadan_bi" value="${h.mensadan_bi||''}"><span class="print-date">${formatDateJP(h.mensadan_bi)}</span></div>
         <div class="field"><label>面談者</label><input type="text" id="mensadan_sha" value="${h.mensadan_sha||''}" placeholder="担当者名"></div>
+        <div class="field print-only"><label>紹介者</label><span class="print-date" id="shokaiSha"></span></div>
       </div>
     </div>
   </div>
@@ -232,7 +283,7 @@ function renderForm(h) {
 
   <!-- 入社歴 -->
   <div class="card">
-    <div class="card-title">企業入社歴</div>
+    <div class="card-title">三菱自動車入社歴</div>
     <div class="card-body">
       <div class="grid-4">
         <div class="field">
@@ -309,7 +360,7 @@ function renderForm(h) {
             <label><input type="radio" name="zangyou_taiou" value="不可" ${h.zangyou_taiou==='不可'?'checked':''}> 不可</label>
           </div>
         </div>
-        <div class="field"><label>残業時間</label><input type="text" id="zangyou_jikan" value="${h.zangyou_jikan||''}"></div>
+        <div class="field"><label>一日可能な残業時間</label><input type="text" id="zangyou_jikan" value="${h.zangyou_jikan||''}"></div>
       </div>
       <div class="grid-4">
         <div class="field">
@@ -331,6 +382,7 @@ function renderForm(h) {
   <div class="card">
     <div class="card-title">住所・通勤</div>
     <div class="card-body">
+      <div class="field"><label>現在住所</label><input type="text" id="genzai_jusho" value="${h.genzai_jusho||''}" placeholder="〒000-0000 ..."></div>
       <div class="grid-4">
         <div class="field"><label>通勤方法</label><input type="text" id="tsukin_houhou" value="${h.tsukin_houhou||''}" placeholder="自転車・車・電車..."></div>
         <div class="field"><label>メーカー・車種</label><input type="text" id="tsukin_maker" value="${h.tsukin_maker||''}"></div>
@@ -388,8 +440,8 @@ function renderForm(h) {
     <div class="card-title">職歴詳細 ${'①②③'[n-1]}</div>
     <div class="card-body">
       <div class="grid-4">
-        <div class="field"><label>開始</label><input type="month" id="s${n}_kaishi" value="${h[`s${n}_kaishi`]||''}"></div>
-        <div class="field"><label>終了</label><input type="month" id="s${n}_shuryo" value="${h[`s${n}_shuryo`]||''}"></div>
+        <div class="field"><label>開始</label><input type="month" id="s${n}_kaishi" value="${h[`s${n}_kaishi`]||''}"><span class="print-date">${formatMonthJP(h[`s${n}_kaishi`])}</span></div>
+        <div class="field"><label>終了</label><input type="month" id="s${n}_shuryo" value="${h[`s${n}_shuryo`]||''}"><span class="print-date">${formatMonthJP(h[`s${n}_shuryo`])}</span></div>
         <div class="field"><label>社名</label><input type="text" id="s${n}_sha" value="${h[`s${n}_sha`]||''}"></div>
         <div class="field"><label>勤務地</label><input type="text" id="s${n}_kinmuchi" value="${h[`s${n}_kinmuchi`]||''}"></div>
       </div>
@@ -451,6 +503,7 @@ async function salvar() {
     zangyou_taiou: r('zangyou_taiou'), zangyou_jikan: g('zangyou_jikan'),
     kyujitsu_shukkin: r('kyujitsu_shukkin'), kinmu_hantei: g('kinmu_hantei'),
     kinmu_comment: g('kinmu_comment'), zangyou_mondai: g('zangyou_mondai'), hayai_shukkin: g('hayai_shukkin'),
+    genzai_jusho: g('genzai_jusho'),
     tsukin_houhou: g('tsukin_houhou'), tsukin_maker: g('tsukin_maker'),
     tsukin_kyori: g('tsukin_kyori'), tsukin_jikan: g('tsukin_jikan'),
     mae_kyori: g('mae_kyori'), tsukin_hantei: g('tsukin_hantei'),
@@ -497,6 +550,12 @@ async function salvar() {
     return
   }
   alert('✅ 保存完了!')
+}
+
+async function salvarEFechar() {
+  await salvar()
+  if (window.history.length > 1) history.back()
+  else window.close()
 }
 
 carregar()

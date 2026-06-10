@@ -97,7 +97,9 @@
     .btn-lead.blue   { background: #1565c0; color: white; }
     .btn-lead.orange { background: #e65100; color: white; }
     .btn-lead.red    { background: #c62828; color: white; }
+    .btn-lead.amber  { background: #f9a825; color: white; }
     .lead-stage-renrakumae .lead-stage-header { background: #1e88e5; }
+    .lead-stage-taiochu    .lead-stage-header { background: #f9a825; }
     .lead-stage-indicado   .lead-stage-header { background: #2e7d32; }
     .lead-stage-stock      .lead-stage-header { background: #e91e8c; }
     .lead-stage-ng         .lead-stage-header { background: #c62828; }
@@ -323,6 +325,12 @@
 
 <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div id="sidebar">
+  <div class="sidebar-item sidebar-nav" id="btnLeadsTab" style="display:none" onclick="showTab('leads', this)">
+    <div class="factory-name">Leads do Site</div>
+  </div>
+  <div class="sidebar-item sidebar-nav" id="btnPoolTab" onclick="showTab('stockpool', this)">
+    <div class="factory-name">全体ストック</div>
+  </div>
   <h2>工場別</h2>
   <div class="sidebar-item active" onclick="filtrarFabrica(null, this)">
     <div class="factory-name">全体</div>
@@ -338,9 +346,7 @@
     <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
     <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
-    <button class="tab-btn" id="btnLeadsTab" style="display:none;background:#fff3e0;border-color:#e8621a;color:#e8621a" onclick="showTab('leads', this)">Leads do Site</button>
-    <button class="tab-btn" id="btnPoolTab" style="display:none;background:#f3e5f5;border-color:#7b1fa2;color:#7b1fa2" onclick="showTab('stockpool', this)">ストック Pool</button>
-    <input type="text" id="searchInput" placeholder="氏名・電話で検索" oninput="renderPipeline()">
+    <input type="text" id="searchInput" placeholder="氏名・電話で検索" oninput="renderPipeline(); renderLeads()">
     <select class="filter-select" id="filterSexo" onchange="renderPipeline()">
       <option value="">性別：全て</option>
       <option value="男性">男性</option><option value="女性">女性</option>
@@ -478,7 +484,7 @@
   <!-- STOCK POOL VIEW (all roles) -->
   <div id="stockPoolView">
     <div style="background:white;border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
-      <span style="font-size:14px;font-weight:700;color:#7b1fa2">ストック Pool</span>
+      <span style="font-size:14px;font-weight:700;color:#7b1fa2">全体ストック</span>
       <select id="poolFilterJP" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px" onchange="renderStockPool()">
         <option value="">日本語：全て</option>
         <option value="0%（日本語不可）">0%</option>
@@ -769,6 +775,14 @@ function carregarCalFabricaFilter() {
 
 function filtrarFabrica(fabrica, el) {
   fabricaAtiva = fabrica
+  // se estava em Leads do Site / 全体ストック, volta para o painel 状況
+  if (document.getElementById('leadsView').style.display === 'flex' || document.getElementById('stockPoolView').style.display === 'flex') {
+    document.getElementById('leadsView').style.display     = 'none'
+    document.getElementById('stockPoolView').style.display = 'none'
+    document.getElementById('pipeline').style.display      = 'block'
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+    document.querySelector('.tab-btn').classList.add('active')
+  }
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
   if (el) el.classList.add('active')
   // sincroniza filtros do calendário e gráficos
@@ -1228,6 +1242,9 @@ async function salvarCandidato() {
   const g = id => document.getElementById(id)
   const chks = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value)
 
+  const novoFab2 = g('f_fab2').value || null
+  const fab2Mudou = novoFab2 && novoFab2 !== candidatoAtivo.fabrica2
+
   const payload = {
     is_blacklisted:       g('f_black')?.checked || false,
     blacklist_motivo:     g('f_blackmotivo')?.value || null,
@@ -1242,7 +1259,7 @@ async function salvarCandidato() {
     postal_code:          g('f_cep').value,
     visa:                 g('f_visa').value,
     fabrica:              g('f_fab').value,
-    fabrica2:             g('f_fab2').value  || null,
+    fabrica2:             novoFab2,
     shokai:               g('f_shokai').value || null,
     esta_empregado:       g('f_emp').value,
     precisa_apartamento:  g('f_apt').value === 'true',
@@ -1255,14 +1272,14 @@ async function salvarCandidato() {
     turnos_possiveis:     chks('turno'),
     experiencia:          chks('exp'),
     dt_oubo:              g('f_oubo').value    || null,
-    dt_taiochu:           g('f_taio').value    || null,
-    dt_mensetsu:          g('f_mens').value    || null,
-    mensetsu_hora:        g('f_menshora').value || null,
-    dt_kengaku:           g('f_keng').value    || null,
-    dt_naitei:            g('f_nait').value    || null,
-    dt_nyusha:            g('f_nyu').value     || null,
-    dt_stock:             g('f_stock').value   || null,
-    dt_ng:                g('f_ng').value      || null,
+    dt_taiochu:           fab2Mudou ? null : (g('f_taio').value    || null),
+    dt_mensetsu:          fab2Mudou ? null : (g('f_mens').value    || null),
+    mensetsu_hora:        fab2Mudou ? null : (g('f_menshora').value || null),
+    dt_kengaku:           fab2Mudou ? null : (g('f_keng').value    || null),
+    dt_naitei:            fab2Mudou ? null : (g('f_nait').value    || null),
+    dt_nyusha:            fab2Mudou ? null : (g('f_nyu').value     || null),
+    dt_stock:             fab2Mudou ? null : (g('f_stock').value   || null),
+    dt_ng:                fab2Mudou ? null : (g('f_ng').value      || null),
     alerta_data:          g('f_alert').value   || null,
     alerta_nota:          g('f_alertnota').value || null,
     comentario:           g('f_com').value     || null,
@@ -1307,7 +1324,17 @@ function showTab(tab, btn) {
   document.getElementById('leadsView').style.display     = tab === 'leads'     ? 'flex'  : 'none'
   document.getElementById('stockPoolView').style.display = tab === 'stockpool' ? 'flex'  : 'none'
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-  if (btn) btn.classList.add('active')
+  if (tab === 'leads' || tab === 'stockpool') {
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
+    if (btn) btn.classList.add('active')
+  } else {
+    document.querySelectorAll('.sidebar-nav').forEach(i => i.classList.remove('active'))
+    if (btn) btn.classList.add('active')
+    if (!document.querySelector('.sidebar-item.active')) {
+      const total = document.querySelector('.sidebar-item:not(.sidebar-nav)')
+      if (total) total.classList.add('active')
+    }
+  }
   if (tab === 'calendar')  renderCalendar()
   if (tab === 'charts')    renderCharts()
   if (tab === 'leads')     renderLeads()
@@ -1428,6 +1455,7 @@ filtrarFabrica = function(fabrica, el) {
 // ─── LEADS DO SITE ────────────────────────────────────────────
 const LEAD_STAGES = [
   { key: 'renrakumae', label: '連絡前',    cls: 'lead-stage-renrakumae' },
+  { key: 'taiochu',    label: '対応中',    cls: 'lead-stage-taiochu'    },
   { key: 'indicado',   label: '担当者紹介', cls: 'lead-stage-indicado'   },
   { key: 'stock',      label: 'ストック',   cls: 'lead-stage-stock'      },
   { key: 'ng',         label: 'NG',        cls: 'lead-stage-ng'         },
@@ -1440,6 +1468,7 @@ function getLeadsStage(c) {
   if (c.origem === 'web_indicado')   return 'indicado'
   if (c.origem === 'web_stock')      return 'stock'
   if (c.dt_ng)                       return 'ng'
+  if (c.dt_taiochu)                  return 'taiochu'
   return 'renrakumae'
 }
 
@@ -1453,7 +1482,12 @@ function renderLeads() {
   const cur  = sel?.value || ''
   if (sel) sel.innerHTML = '<option value="">Todas as fábricas</option>' + fabs.map(f => `<option value="${f}" ${f===cur?'selected':''}>${f}</option>`).join('')
 
-  const leads = allLeads.filter(c => !fabFilter || c.fabrica === fabFilter)
+  const search = document.getElementById('searchInput')?.value.toLowerCase() || ''
+  const leads = allLeads.filter(c => {
+    if (fabFilter && c.fabrica !== fabFilter) return false
+    if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
+    return true
+  })
 
   const grouped = {}
   LEAD_STAGES.forEach(s => grouped[s.key] = [])
@@ -1476,6 +1510,14 @@ function renderLeads() {
       rows = colHeader + show.map(c => {
         let actions = ''
         if (stage.key === 'renrakumae') {
+          actions = `<div class="lead-actions">
+            <button class="btn-lead amber"  onclick="moverParaTaiochu('${c.id}')">対応中</button>
+            <button class="btn-lead green"  onclick="enviarParaFabrica('${c.id}')">担当者紹介</button>
+            <button class="btn-lead blue"   onclick="moverParaStock('${c.id}')">ストック</button>
+            <button class="btn-lead orange" onclick="moverNG('${c.id}')">NG</button>
+            <button class="btn-lead red"    onclick="bloquearLead('${c.id}')">Bloquear</button>
+          </div>`
+        } else if (stage.key === 'taiochu') {
           actions = `<div class="lead-actions">
             <button class="btn-lead green"  onclick="enviarParaFabrica('${c.id}')">担当者紹介</button>
             <button class="btn-lead blue"   onclick="moverParaStock('${c.id}')">ストック</button>
@@ -1514,12 +1556,30 @@ async function enviarParaFabrica(id) {
   const c = todosOsCandidatos.find(x => x.id === id)
   if (!c) return
   if (!c.fabrica && !confirm('Este lead não tem fábrica atribuída. Enviar assim mesmo?')) return
-  const { error } = await sb.from('candidates').update({ origem: 'web_indicado', dt_ng: null }).eq('id', id)
+  const updates = {
+    origem:        'web_indicado',
+    dt_taiochu:    null,
+    dt_mensetsu:   null,
+    mensetsu_hora: null,
+    dt_kengaku:    null,
+    dt_stock:      null,
+    dt_ng:         null,
+  }
+  const { error } = await sb.from('candidates').update(updates).eq('id', id)
   if (error) { alert('Erro: ' + error.message); return }
-  if (c) { c.origem = 'web_indicado'; c.dt_ng = null }
+  Object.assign(c, updates)
   renderLeads()
   carregarSidebar()
   renderPipeline()
+}
+
+async function moverParaTaiochu(id) {
+  const hoje = new Date().toISOString().split('T')[0]
+  const { error } = await sb.from('candidates').update({ dt_taiochu: hoje }).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  const c = todosOsCandidatos.find(x => x.id === id)
+  if (c) c.dt_taiochu = hoje
+  renderLeads()
 }
 
 async function moverParaStock(id) {

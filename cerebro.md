@@ -280,7 +280,8 @@ kinmu_hantei        text
 kinmu_comment       text
 zangyou_mondai      text
 hayai_shukkin       text
--- 通勤
+-- 住所・通勤
+genzai_jusho        text          -- 現在住所
 tsukin_houhou       text
 tsukin_maker        text
 tsukin_kyori        text
@@ -640,6 +641,60 @@ node server.js
 
 ---
 
+## Tarefa Pendente — Notificação LINE (9h e 13h JST)
+
+**Status:** Planejado, aguardando execução. Setup do canal LINE já concluído.
+
+### Objetivo
+Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) com o resumo de candidatos cadastrados via `form-candidato.html` (`origem = 'indicado'`), agrupados por `fabrica`.
+
+### Regras
+- Considerar apenas candidatos com `origem = 'indicado'` criados **desde a última notificação**:
+  - Disparo das 9:00 JST → candidatos criados desde as 13:00 JST do dia anterior
+  - Disparo das 13:00 JST → candidatos criados desde as 9:00 JST do mesmo dia
+- Agrupar por `fabrica`, contar quantos por fábrica
+- **Se não houver nenhum candidato novo, não enviar mensagem**
+- Formato da mensagem:
+```
+新情報が入りました。
+
+三菱: 2名
+フジトランス: 3名
+アラコ: 1名
+
+各担当者はご確認ください。
+```
+
+### Credenciais já obtidas (canal "通知" no provider "Eder")
+- **Channel ID:** `2010343284`
+- **Channel secret:** `cd8495194fa2a2b7e314690e80b61c6b`
+- **Bot basic ID:** `@207sktgh`
+- **Channel Access Token (long-lived):** `aSk0XxIBYUGXxK/5ZMaicRuutZuus3mm8AoogVJgI1lPlDT3i0Mw9qMuNWvFTSkDwBDktaZ9rPY0hTgaCUiPyxyq035buos4VpgURbT7mNg68cpSAzkF1YalBjxdb0ZeFI6KT6eBopxjgYE4E2QjbgdB04t89/1O/w1cDnyilFU=`
+- **User ID pessoal do Eder (LINE):** `U60d8255b3e3483f02d10d06494b192c0`
+
+### Destino da notificação
+- **Decidido:** enviar para um **grupo do LINE** (não para o User ID pessoal)
+- Para isso falta:
+  1. Habilitar **"Allow bot to join group chats"** no LINE Developers Console (estava "Disabled")
+  2. Configurar webhook no Railway (`/api/line-webhook`) para capturar o `groupId` quando o bot `@207sktgh` for adicionado ao grupo
+  3. Criar o grupo no LINE e adicionar o bot
+  4. Salvar o `groupId` capturado como variável de ambiente
+
+- **Estratégia de implementação combinada:** implementar e testar primeiro enviando para o **User ID pessoal** (já disponível), validar a lógica de agrupamento/horários, e só depois trocar o destino para o `groupId` do grupo (quando webhook estiver configurado).
+
+### Implementação técnica planejada
+- Adicionar dependências: `node-cron` (agendamento) e `dotenv` (variáveis locais)
+- Criar `.env` local (gitignored) espelhando as variáveis do Railway, para testar localmente
+- Adicionar endpoint manual `/api/test-line-notify` para disparar a notificação sob demanda (sem esperar 9h/13h), funciona local e no Railway
+- Função `sendLineMessage(to, text)` usando `https://api.line.me/v2/bot/message/push` com header `Authorization: Bearer <CHANNEL_ACCESS_TOKEN>`
+- Query Supabase REST: `candidates?origem=eq.indicado&created_at=gte.<ISO>&select=fabrica`
+- Novas variáveis de ambiente no Railway: `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_USER_ID` (depois trocar/complementar com `LINE_GROUP_ID`)
+
+### Limite do plano gratuito LINE
+200 mensagens push grátis/mês. Em grupo, cada envio conta 1x por membro do grupo (ex: grupo de 5 pessoas × 2 disparos/dia × 30 dias = até 300/mês — pode estourar dependendo do tamanho do grupo).
+
+---
+
 ## Histórico de Decisões
 
 | Data | Decisão |
@@ -679,3 +734,6 @@ node server.js
 | 2026-06-09 | 見学 renomeado para 見学・ヒアリング済み em toda a interface |
 | 2026-06-09 | Coluna `ativo` adicionada em `locations` — filtra fábricas inativas dos dropdowns |
 | 2026-06-09 | 工場 e 工場２ no modal alterados de input texto para select (fábricas ativas da tabela locations) |
+| 2026-06-10 | Canal LINE Messaging API "通知" criado (provider Eder) — credenciais salvas, notificação 9h/13h planejada para depois |
+| 2026-06-10 | ヒアリングシート: campo `genzai_jusho` (現在住所) adicionado em 住所・通勤 (1ª pergunta) — coluna criada no Supabase |
+| 2026-06-10 | ヒアリングシート: rodapé de impressão com nome do candidato (fixo em todas as páginas) e seção その他のコメント (caixa em branco, não persiste) adicionados |
