@@ -73,9 +73,11 @@
       .field { margin-bottom:4px; }
       .field label { font-size:7pt; }
       .field input, .field select, .field textarea { border:none; border-bottom:1px solid #aaa; border-radius:0; padding:1px 3px; font-size:8pt; background:transparent; color:#1565c0; }
+      .field:has(input[id$="_hantei"]) label { color:#00695c; }
       .field input[type="date"], .field input[type="month"] { display:none; }
       .print-date { display:block; border-bottom:1px solid #aaa; padding:1px 3px; font-size:8pt; color:#1565c0; min-height:1.2em; }
       .print-only { display:block; }
+      .print-hide { display:none; }
       .radio-row label:has(input:checked) { color:#1565c0; font-weight:700; }
       #kyuyo_kibou_riyu { min-height:36px; }
       .grid { gap:5px; }
@@ -129,7 +131,7 @@ async function carregar() {
 
   // Busca dados do candidato
   const [resCand, resHia] = await Promise.all([
-    sb.from('candidates').select('shimei,telefone,shokai').eq('id', candidateId).single(),
+    sb.from('candidates').select('shimei,telefone,shokai,nacionalidade,visa,data_nascimento,idade').eq('id', candidateId).single(),
     sb.from('hiaringu').select('*').eq('candidate_id', candidateId).order('updated_at', { ascending: false }).limit(1)
   ])
 
@@ -143,7 +145,7 @@ async function carregar() {
   }
 
   if (hia) hiariguId = hia.id
-  renderForm(hia || {})
+  renderForm(hia || {}, cand || {})
   document.getElementById('shokaiSha').textContent = cand?.shokai || ''
 }
 
@@ -161,7 +163,7 @@ function formatMonthJP(monthStr) {
   return `${y}年${parseInt(m,10)}月`
 }
 
-function renderForm(h) {
+function renderForm(h, cand = {}) {
   document.getElementById('content').innerHTML = `
 
   <!-- 面談情報 -->
@@ -173,6 +175,10 @@ function renderForm(h) {
         <div class="field"><label>入社予定日</label><input type="date" id="nyusha_yotei_bi" value="${h.nyusha_yotei_bi||''}"><span class="print-date">${formatDateJP(h.nyusha_yotei_bi)}</span></div>
         <div class="field"><label>面談日</label><input type="date" id="mensadan_bi" value="${h.mensadan_bi||''}"><span class="print-date">${formatDateJP(h.mensadan_bi)}</span></div>
         <div class="field"><label>面談者</label><input type="text" id="mensadan_sha" value="${h.mensadan_sha||''}" placeholder="担当者名"></div>
+        <div class="field"><label>国籍</label><input type="text" value="${cand.nacionalidade||''}" disabled></div>
+        <div class="field print-hide"><label>生年月日</label><input type="text" value="${formatDateJP(cand.data_nascimento)}" disabled></div>
+        <div class="field"><label>年齢</label><input type="text" value="${cand.idade!=null ? cand.idade+'歳' : ''}" disabled></div>
+        <div class="field"><label>ビザ</label><input type="text" value="${cand.visa||''}" disabled></div>
         <div class="field print-only"><label>紹介者</label><span class="print-date" id="shokaiSha"></span></div>
       </div>
     </div>

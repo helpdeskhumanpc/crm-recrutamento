@@ -65,6 +65,7 @@
     .stage-empty { padding: 10px 16px; color: #aaa; font-size: 12px; font-style: italic; }
     .col-header { display: grid; grid-template-columns: 160px 100px 120px 110px 60px 55px 110px 70px; gap: 6px; padding: 5px 16px; background: #f5f5f5; font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; }
     .candidate-row { display: grid; grid-template-columns: 160px 100px 120px 110px 60px 55px 110px 70px; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; cursor: pointer; transition: background 0.1s; }
+    .col-header.col-9, .candidate-row.col-9 { grid-template-columns: 160px 100px 120px 110px 60px 55px 110px 70px 95px; }
     .candidate-row:hover { background: #f0f7ff; }
     .candidate-row:last-child { border-bottom: none; }
     .black-flag { color: #c62828; font-weight: 700; font-size: 10px; }
@@ -255,11 +256,13 @@
       .candidate-row > span:nth-child(5),
       .candidate-row > span:nth-child(6),
       .candidate-row > span:nth-child(7),
+      .candidate-row > span:nth-child(9),
       .col-header > span:nth-child(2),
       .col-header > span:nth-child(4),
       .col-header > span:nth-child(5),
       .col-header > span:nth-child(6),
-      .col-header > span:nth-child(7) { display:none; }
+      .col-header > span:nth-child(7),
+      .col-header > span:nth-child(9) { display:none; }
 
       /* Espaço para bottom nav */
       #pipeline, #calendarView, #chartsView, #leadsView, #stockPoolView { padding-bottom: 65px; }
@@ -738,11 +741,16 @@ const STAGES = [
   { key:'black',     label:'ブラック', cls:'stage-black'     },
 ]
 
+function hojeISO() {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`
+}
+
 function getStage(c) {
   if (c.is_blacklisted) return 'black'
   if (c.dt_ng)          return 'ng'
   if (c.dt_stock)       return 'stock'
-  if (c.dt_nyusha)      return 'nyusha'
+  if (c.dt_nyusha && c.dt_nyusha <= hojeISO()) return 'nyusha'
   if (c.dt_naitei)      return 'naitei'
   if (c.dt_kengaku)     return 'kengaku'
   if (c.dt_mensetsu)    return 'mensetsu'
@@ -760,7 +768,9 @@ function diasNaEtapa(c) {
 }
 
 // 紹介者は登録時に固定。全体ストック／NG／ブラックになってから5日経過した場合のみ変更可能
+// admin は期間に関係なく常に変更可能
 function shokaiBloqueado(c) {
+  if (currentProfile?.role === 'admin') return false
   let ref = null
   if (c.dt_stock_geral) ref = c.dt_stock_geral
   else if (c.dt_ng)     ref = c.dt_ng
@@ -1064,16 +1074,19 @@ function renderPipeline() {
   const stagesVisiveis = getStagesVisiveis()
   document.getElementById('pipeline').innerHTML = STAGES.filter(s => stagesVisiveis.includes(s.key)).map(stage => {
     const list = grouped[stage.key]
+    const showNyushaCol = stage.key === 'nyusha' || stage.key === 'naitei'
+    if (showNyushaCol) list.sort((a, b) => (b.dt_nyusha || '').localeCompare(a.dt_nyusha || ''))
     const expanded = _expandedStages.has(stage.key)
     const show = expanded ? list : list.slice(0, 5)
     const hasMore = list.length > 5 && !expanded
+    const col9 = showNyushaCol ? ' col-9' : ''
 
     const rowsHtml = list.length === 0
       ? `<div class="stage-empty">候補者なし</div>`
-      : `<div class="col-header"><span>氏名</span><span>紹介者</span><span>電話番号</span><span>工場</span><span>国籍</span><span>性別</span><span>日本語</span><span>経過</span></div>` +
+      : `<div class="col-header${col9}"><span>氏名</span><span>紹介者</span><span>電話番号</span><span>工場</span><span>国籍</span><span>性別</span><span>日本語</span><span>経過</span>${showNyushaCol ? '<span>入社日</span>' : ''}</div>` +
         show.map(c => {
           const d = diasNaEtapa(c)
-          return `<div class="candidate-row" onclick="abrirModal('${c.id}')">
+          return `<div class="candidate-row${col9}" onclick="abrirModal('${c.id}')">
             <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}">${c.is_blacklisted ? '<span class="black-flag">⚠</span> ' : ''}${c.shimei || '—'}</span>
             <span style="font-size:11px;color:#666">${c.shokai || '—'}</span>
             <span>${c.telefone || '—'}</span>
@@ -1082,6 +1095,7 @@ function renderPipeline() {
             <span>${c.sexo === '男性' ? 'M' : c.sexo === '女性' ? 'F' : '—'}</span>
             <span style="font-size:11px">${c.nivel_japones?.split('（')[0] || '—'}</span>
             <span class="dias-badge ${d.alert ? 'alert' : ''}">${d.text}</span>
+            ${showNyushaCol ? `<span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span>` : ''}
           </div>`
         }).join('') +
         (hasMore ? `<div style="padding:7px 16px;font-size:12px;color:#1e88e5;cursor:pointer" onclick="expandStage('${stage.key}')">+ さらに ${list.length - 5} 件</div>` : '')
@@ -1436,7 +1450,7 @@ async function salvarCandidato() {
     dt_naitei:            fab2Mudou ? null : (g('f_nait').value    || null),
     dt_nyusha:            fab2Mudou ? null : (g('f_nyu').value     || null),
     dt_stock:             fab2Mudou ? null : (g('f_stock').value   || null),
-    dt_stock_geral:       fab2Mudou ? null : (g('f_stockgeral').value || null),
+    dt_stock_geral:       fab2Mudou ? null : (g('f_stockgeral').value || g('f_ng').value || null),
     dt_ng:                fab2Mudou ? null : (g('f_ng').value      || null),
     alerta_data:          g('f_alert').value   || null,
     alerta_nota:          g('f_alertnota').value || null,
@@ -1752,10 +1766,12 @@ async function moverParaStock(id) {
 
 async function moverNG(id) {
   const hoje = new Date().toISOString().split('T')[0]
-  const { error } = await sb.from('candidates').update({ dt_ng: hoje, origem: 'web' }).eq('id', id)
-  if (error) { alert('Erro: ' + error.message); return }
   const c = todosOsCandidatos.find(x => x.id === id)
-  if (c) { c.dt_ng = hoje; c.origem = 'web' }
+  const updates = { dt_ng: hoje, origem: 'web' }
+  if (!c?.dt_stock_geral) updates.dt_stock_geral = hoje
+  const { error } = await sb.from('candidates').update(updates).eq('id', id)
+  if (error) { alert('Erro: ' + error.message); return }
+  if (c) Object.assign(c, updates)
   renderLeads()
 }
 
