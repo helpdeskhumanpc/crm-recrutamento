@@ -130,11 +130,11 @@ async function carregar() {
   // Busca dados do candidato
   const [resCand, resHia] = await Promise.all([
     sb.from('candidates').select('shimei,telefone,shokai').eq('id', candidateId).single(),
-    sb.from('hiaringu').select('*').eq('candidate_id', candidateId).maybeSingle()
+    sb.from('hiaringu').select('*').eq('candidate_id', candidateId).order('updated_at', { ascending: false }).limit(1)
   ])
 
   const cand = resCand.data
-  const hia  = resHia.data
+  const hia  = resHia.data?.[0] || null
 
   if (cand) {
     document.getElementById('candidateName').textContent = `${cand.shimei || ''} (${cand.telefone || ''})`
@@ -475,6 +475,13 @@ function renderForm(h) {
 }
 
 async function salvar() {
+  const btnSave = document.querySelector('.btn-save')
+  const btnBack = document.querySelector('.btn-back')
+  if (btnSave?.disabled) return // evita duplo clique / envio duplicado
+  if (btnSave) btnSave.disabled = true
+  if (btnBack) btnBack.disabled = true
+
+  try {
   const hiariguBi = g('hiaringu_bi')
 
   // Atualiza dt_kengaku (見学・ヒアリング) no candidates
@@ -550,6 +557,10 @@ async function salvar() {
     return
   }
   alert('✅ 保存完了!')
+  } finally {
+    if (btnSave) btnSave.disabled = false
+    if (btnBack) btnBack.disabled = false
+  }
 }
 
 async function salvarEFechar() {

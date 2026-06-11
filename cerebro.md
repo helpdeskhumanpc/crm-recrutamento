@@ -180,14 +180,15 @@ alerta_nota           text          -- instrução do alerta
 is_deleted            boolean default false  -- soft delete
 origem                text          -- 'indicado' | 'web' | 'web_indicado' | 'web_stock'
 -- Pipeline dates
-dt_oubo               date          -- 応募日
+dt_oubo               date          -- 応募日 (não usado; dashboard usa created_at, somente leitura)
 dt_taiochu            date          -- 対応中
 dt_mensetsu           date          -- 面接日
 mensetsu_hora         time          -- 面接時間
 dt_kengaku            date          -- 見学日
 dt_naitei             date          -- 内定
 dt_nyusha             date          -- 入社
-dt_stock              date          -- ストック
+dt_stock              date          -- 工場ストック
+dt_stock_geral        date          -- 全体ストック (libera candidato p/ pool 全体ストック, qualquer fábrica pode assumir)
 dt_ng                 date          -- NG
 created_at            timestamp with time zone default now()
 ```
