@@ -171,8 +171,8 @@ function renderForm(h, cand = {}) {
     <div class="card-title">面談情報</div>
     <div class="card-body">
       <div class="grid-4">
-        <div class="field"><label>ヒアリング日 <span style="color:#00695c;font-size:10px">→ 見学・ヒアリング自動反映</span></label><input type="date" id="hiaringu_bi" value="${h.hiaringu_bi||''}"><span class="print-date">${formatDateJP(h.hiaringu_bi)}</span></div>
-        <div class="field"><label>入社予定日</label><input type="date" id="nyusha_yotei_bi" value="${h.nyusha_yotei_bi||''}"><span class="print-date">${formatDateJP(h.nyusha_yotei_bi)}</span></div>
+        <div class="field"><label>ヒアリング日 <span style="color:#00695c;font-size:10px">→ 見学・ヒアリング/内定 自動反映</span></label><input type="date" id="hiaringu_bi" value="${h.hiaringu_bi||''}"><span class="print-date">${formatDateJP(h.hiaringu_bi)}</span></div>
+        <div class="field"><label>入社予定日 <span style="color:#00695c;font-size:10px">→ 入社 自動反映</span></label><input type="date" id="nyusha_yotei_bi" value="${h.nyusha_yotei_bi||''}"><span class="print-date">${formatDateJP(h.nyusha_yotei_bi)}</span></div>
         <div class="field"><label>面談日</label><input type="date" id="mensadan_bi" value="${h.mensadan_bi||''}"><span class="print-date">${formatDateJP(h.mensadan_bi)}</span></div>
         <div class="field"><label>面談者</label><input type="text" id="mensadan_sha" value="${h.mensadan_sha||''}" placeholder="担当者名"></div>
         <div class="field"><label>国籍</label><input type="text" value="${cand.nacionalidade||''}" disabled></div>
@@ -489,16 +489,26 @@ async function salvar() {
 
   try {
   const hiariguBi = g('hiaringu_bi')
+  const nyushaYoteiBi = g('nyusha_yotei_bi')
 
-  // Atualiza dt_kengaku (見学・ヒアリング) no candidates
-  if (hiariguBi && candidateId) {
-    await sb.from('candidates').update({ dt_kengaku: hiariguBi }).eq('id', candidateId)
+  // Atualiza dt_kengaku (見学・ヒアリング), dt_naitei (内定) e dt_nyusha (入社) no candidates
+  const candidateUpdates = {}
+  if (hiariguBi)     { candidateUpdates.dt_kengaku = hiariguBi; candidateUpdates.dt_naitei = hiariguBi }
+  if (nyushaYoteiBi) { candidateUpdates.dt_nyusha = nyushaYoteiBi }
+
+  if (Object.keys(candidateUpdates).length && candidateId) {
+    const resCand = await sb.from('candidates').update(candidateUpdates).eq('id', candidateId).select('id')
+    if (resCand.error) {
+      console.error('Erro ao atualizar candidates:', resCand.error)
+    } else if (!resCand.data || resCand.data.length === 0) {
+      console.error('UPDATE candidates afetou 0 linhas — verifique RLS da tabela candidates')
+    }
   }
 
   const payload = {
     candidate_id: candidateId,
     hiaringu_bi: hiariguBi,
-    nyusha_yotei_bi: g('nyusha_yotei_bi'), mensadan_bi: g('mensadan_bi'), mensadan_sha: g('mensadan_sha'),
+    nyusha_yotei_bi: nyushaYoteiBi, mensadan_bi: g('mensadan_bi'), mensadan_sha: g('mensadan_sha'),
     jp_kaiwa: g('jp_kaiwa'), kanji_yomi: g('kanji_yomi'),
     hiragana_yomi: g('hiragana_yomi'), katakana_yomi: g('katakana_yomi'),
     jp_comment: g('jp_comment'), jp_hantei: g('jp_hantei'),

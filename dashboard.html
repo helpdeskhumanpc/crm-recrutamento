@@ -1075,7 +1075,7 @@ function renderPipeline() {
   document.getElementById('pipeline').innerHTML = STAGES.filter(s => stagesVisiveis.includes(s.key)).map(stage => {
     const list = grouped[stage.key]
     const showNyushaCol = stage.key === 'nyusha' || stage.key === 'naitei'
-    if (showNyushaCol) list.sort((a, b) => (b.dt_nyusha || '').localeCompare(a.dt_nyusha || ''))
+    if (showNyushaCol) list.sort((a, b) => (a.dt_nyusha || '').localeCompare(b.dt_nyusha || ''))
     const expanded = _expandedStages.has(stage.key)
     const show = expanded ? list : list.slice(0, 5)
     const hasMore = list.length > 5 && !expanded
@@ -1490,6 +1490,19 @@ function hoje(id) {
 }
 function fecharModal() { document.getElementById('modal').style.display = 'none'; candidatoAtivo = null }
 function closeModalBg(e) { if (e.target.id === 'modal') fecharModal() }
+
+// ヒアリングをタブで開いて閉じた後、見学/内定/入社日が外部更新されている可能性があるため再取得
+window.addEventListener('focus', async () => {
+  if (!candidatoAtivo || document.getElementById('modal').style.display !== 'flex') return
+  const { data, error } = await sb.from('candidates').select('dt_kengaku,dt_naitei,dt_nyusha').eq('id', candidatoAtivo.id).single()
+  if (error || !data) return
+  Object.assign(candidatoAtivo, data)
+  const c = todosOsCandidatos.find(x => x.id === candidatoAtivo.id)
+  if (c) Object.assign(c, data)
+  document.getElementById('f_keng').value = data.dt_kengaku || ''
+  document.getElementById('f_nait').value = data.dt_naitei || ''
+  document.getElementById('f_nyu').value  = data.dt_nyusha || ''
+})
 
 function showTab(tab, btn) {
   document.getElementById('pipeline').style.display      = tab === 'pipeline'  ? 'block' : 'none'
