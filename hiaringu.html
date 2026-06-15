@@ -15,6 +15,10 @@
     .btn-print { background:#e8621a; color:white; }
     .btn-back  { background:#f5f5f5; color:#555; border:1px solid #ddd; }
     .candidate-name { font-size:14px; color:#555; padding:6px 12px; background:#e0f2f1; border-radius:4px; }
+    .save-status { font-size:12px; padding:4px 10px; border-radius:4px; white-space:nowrap; }
+    .save-status.saving  { color:#888; }
+    .save-status.success { color:#2e7d32; background:#e8f5e9; }
+    .save-status.error   { color:#c62828; background:#ffebee; font-weight:700; }
 
     .card { background:white; border-radius:8px; padding:0; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; }
     .card-title { background:#00695c; color:white; padding:10px 16px; font-size:13px; font-weight:700; }
@@ -96,6 +100,7 @@
 <div class="topbar">
   <h1>🎙 ヒアリングシート</h1>
   <span class="candidate-name" id="candidateName">読み込み中...</span>
+  <span class="save-status" id="saveStatus"></span>
   <button class="btn btn-back" onclick="salvarEFechar()">💾 保存して閉じる</button>
   <button class="btn btn-save" onclick="salvar()">💾 保存</button>
   <button class="btn btn-print" onclick="window.print()">🖨 印刷</button>
@@ -162,6 +167,17 @@ function formatMonthJP(monthStr) {
   if (!y || !m) return ''
   return `${y}年${parseInt(m,10)}月`
 }
+
+// 印刷前に .print-date を入力欄の現在値で更新（保存直後にリロードせず印刷しても反映されるように）
+function syncPrintDates() {
+  document.querySelectorAll('#content .field').forEach(field => {
+    const input = field.querySelector('input[type="date"], input[type="month"]')
+    const span = field.querySelector('.print-date')
+    if (!input || !span) return
+    span.textContent = input.type === 'month' ? formatMonthJP(input.value) : formatDateJP(input.value)
+  })
+}
+window.addEventListener('beforeprint', syncPrintDates)
 
 function renderForm(h, cand = {}) {
   document.getElementById('content').innerHTML = `
@@ -480,12 +496,20 @@ function renderForm(h, cand = {}) {
   document.getElementById('content').innerHTML = document.getElementById('content').innerHTML
 }
 
+function setSaveStatus(text, cls) {
+  const status = document.getElementById('saveStatus')
+  if (!status) return
+  status.textContent = text
+  status.className = 'save-status' + (cls ? ' ' + cls : '')
+}
+
 async function salvar() {
   const btnSave = document.querySelector('.btn-save')
   const btnBack = document.querySelector('.btn-back')
-  if (btnSave?.disabled) return // evita duplo clique / envio duplicado
+  if (btnSave?.disabled) return false // evita duplo clique / envio duplicado
   if (btnSave) btnSave.disabled = true
   if (btnBack) btnBack.disabled = true
+  setSaveStatus('保存中...', 'saving')
 
   try {
   const hiariguBi = g('hiaringu_bi')
@@ -558,8 +582,9 @@ async function salvar() {
     error = res.error
     if (!error && (!res.data || res.data.length === 0)) {
       console.error('UPDATE afetou 0 linhas — verifique RLS da tabela hiaringu')
+      setSaveStatus('❌ 保存失敗（権限エラー）', 'error')
       alert('⚠️ Erro de permissão: o registro não pôde ser atualizado.\nVerifique as políticas RLS da tabela hiaringu no Supabase.')
-      return
+      return false
     }
   } else {
     const res = await sb.from('hiaringu').insert(payload).select('id').maybeSingle()
@@ -569,10 +594,19 @@ async function salvar() {
 
   if (error) {
     console.error('Supabase error:', error)
+    setSaveStatus('❌ 保存失敗', 'error')
     alert('Erro ao salvar:\n' + error.message + (error.code ? '\nCódigo: ' + error.code : ''))
-    return
+    return false
   }
+  const now = new Date()
+  setSaveStatus(`✅ 保存済み ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`, 'success')
   alert('✅ 保存完了!')
+  return true
+  } catch (e) {
+    console.error('Erro de rede/inesperado ao salvar:', e)
+    setSaveStatus('❌ 保存失敗（通信エラー）', 'error')
+    alert('⚠️ 保存に失敗しました。ネットワーク接続を確認して、もう一度保存してください。\n\n' + (e?.message || e))
+    return false
   } finally {
     if (btnSave) btnSave.disabled = false
     if (btnBack) btnBack.disabled = false
@@ -580,7 +614,8 @@ async function salvar() {
 }
 
 async function salvarEFechar() {
-  await salvar()
+  const ok = await salvar()
+  if (!ok) return
   if (window.history.length > 1) history.back()
   else window.close()
 }
