@@ -818,7 +818,9 @@ function fabricaEfetiva(c) { return c.fabrica2 || c.fabrica }
 
 function carregarSidebar() {
   const candidatos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock')
-  const fabricas = [...new Set(candidatos.map(c => fabricaEfetiva(c)).filter(Boolean))].sort()
+  const fabricas = currentProfile?.role === 'admin'
+    ? todasFabricas
+    : [...new Set(candidatos.map(c => fabricaEfetiva(c)).filter(Boolean))].sort()
   const container = document.getElementById('sidebarFabricas')
   container.innerHTML = ''
   document.getElementById('totalCount').textContent = candidatos.length + '名'
