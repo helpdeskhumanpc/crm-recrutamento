@@ -95,8 +95,8 @@
     .lead-stage-header { padding: 8px 16px; color: white; font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 10px; }
     .lead-stage-count { background: rgba(255,255,255,0.3); border-radius: 12px; padding: 1px 8px; font-size: 11px; }
     .lead-stage-body { background: white; }
-    .lead-col-header { display: grid; grid-template-columns: 140px 100px 120px 70px 45px 45px 100px 1fr; gap: 6px; padding: 5px 16px; background: #f9f9f9; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; }
-    .lead-row { display: grid; grid-template-columns: 140px 100px 120px 70px 45px 45px 100px 1fr; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; }
+    .lead-col-header { display: grid; grid-template-columns: 140px 100px 120px 80px 90px 45px 45px 100px 1fr; gap: 6px; padding: 5px 16px; background: #f9f9f9; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; }
+    .lead-row { display: grid; grid-template-columns: 140px 100px 120px 80px 90px 45px 45px 100px 1fr; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; }
     .lead-row:last-child { border-bottom: none; }
     .lead-actions { display: flex; gap: 4px; flex-wrap: wrap; }
     .btn-lead { padding: 3px 8px; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; font-weight: 600; white-space: nowrap; }
@@ -1718,7 +1718,7 @@ function renderLeads() {
 
   document.getElementById('leads-count').textContent = `(${leads.length})`
 
-  const colHeader = `<div class="lead-col-header"><span>Nome</span><span>Telefone</span><span>Fábrica</span><span>Visto</span><span>G</span><span>Idade</span><span>Japonês</span><span>Ações</span></div>`
+  const colHeader = `<div class="lead-col-header"><span>Nome</span><span>Telefone</span><span>Fábrica</span><span>Estado</span><span>Cidade</span><span>G</span><span>Idade</span><span>Japonês</span><span>Ações</span></div>`
 
   document.getElementById('leadsStages').innerHTML = LEAD_STAGES.map(stage => {
     const list = grouped[stage.key]
@@ -1759,7 +1759,8 @@ function renderLeads() {
           <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}" style="font-weight:600;cursor:pointer;color:#1e88e5" onclick="abrirModal('${c.id}')">${c.shimei || '—'}</span>
           <span>${c.telefone || '—'}</span>
           <span style="font-size:11px">${c.fabrica || '—'}</span>
-          <span style="font-size:10px">${c.visa?.split('（')[0] || '—'}</span>
+          <span style="font-size:11px">${c.prefecture || '—'}</span>
+          <span style="font-size:11px">${c.city || '—'}</span>
           <span>${c.sexo === '男性' ? 'M' : c.sexo === '女性' ? 'F' : '—'}</span>
           <span>${c.idade || '—'}</span>
           <span style="font-size:11px">${c.nivel_japones?.split(' ')[0] || '—'}</span>
