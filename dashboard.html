@@ -66,7 +66,7 @@
     .col-header { display: grid; grid-template-columns: 160px 100px 120px 110px 60px 55px 110px 70px; gap: 6px; padding: 5px 16px; background: #f5f5f5; font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; }
     .candidate-row { display: grid; grid-template-columns: 160px 100px 120px 110px 60px 55px 110px 70px; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; cursor: pointer; transition: background 0.1s; }
     .col-header.col-9, .candidate-row.col-9 { grid-template-columns: 160px 100px 120px 110px 60px 55px 110px 70px 95px; }
-    .col-header.col-kengaku, .candidate-row.col-kengaku { grid-template-columns: 145px 85px 110px 100px 55px 45px 90px 50px 80px 130px; }
+    .col-header.col-kengaku, .candidate-row.col-kengaku { grid-template-columns: 135px 80px 100px 90px 50px 40px 80px 45px 75px 75px 130px; }
     .col-header.col-zaiseki, .candidate-row.col-zaiseki { grid-template-columns: 155px 90px 115px 105px 55px 50px 100px 65px 90px 80px; }
     .candidate-row:hover { background: #f0f7ff; }
     .candidate-row:last-child { border-bottom: none; }
@@ -261,13 +261,15 @@
       .candidate-row > span:nth-child(7),
       .candidate-row > span:nth-child(9),
       .candidate-row > span:nth-child(10),
+      .candidate-row > span:nth-child(11),
       .col-header > span:nth-child(2),
       .col-header > span:nth-child(4),
       .col-header > span:nth-child(5),
       .col-header > span:nth-child(6),
       .col-header > span:nth-child(7),
       .col-header > span:nth-child(9),
-      .col-header > span:nth-child(10) { display:none; }
+      .col-header > span:nth-child(10),
+      .col-header > span:nth-child(11) { display:none; }
 
       /* Espaço para bottom nav */
       #pipeline, #calendarView, #chartsView, #leadsView, #stockPoolView { padding-bottom: 65px; }
@@ -1111,7 +1113,7 @@ function renderPipeline() {
 
     let extraHeader = ''
     if (showNyushaCol)       extraHeader = '<span>入社日</span>'
-    else if (showKengakuCol) extraHeader = '<span>見学日</span><span>アクション</span>'
+    else if (showKengakuCol) extraHeader = '<span>見学日</span><span>入社日</span><span>アクション</span>'
     else if (showZaisekiCol) extraHeader = '<span>入社日</span><span></span>'
 
     const rowsHtml = list.length === 0
@@ -1123,7 +1125,7 @@ function renderPipeline() {
           if (showNyushaCol)
             extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span>`
           else if (showKengakuCol)
-            extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_kengaku) || '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;align-items:center"><button class="btn-lead red" onclick="kengakuNG(event,'${c.id}')">NG</button><button class="btn-lead green" onclick="kengakuNaitei(event,'${c.id}')">内定</button></span>`
+            extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_kengaku) || '—'}</span><span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;align-items:center"><button class="btn-lead red" onclick="kengakuNG(event,'${c.id}')">NG</button><button class="btn-lead green" onclick="kengakuNaitei(event,'${c.id}')">内定</button></span>`
           else if (showZaisekiCol)
             extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()"><button class="btn-lead blue" onclick="taisha(event,'${c.id}')">退社</button></span>`
           return `<div class="candidate-row${colClass}" onclick="abrirModal('${c.id}')">
