@@ -1,7 +1,7 @@
 # Cérebro — CRM Recrutamento Japão
 
 > Documento de referência do projeto. Reflete o estado atual construído.
-> Última atualização: 2026-06-09
+> Última atualização: 2026-06-18
 
 ---
 
@@ -316,7 +316,7 @@ s1_yachin           integer
 created_at          timestamp with time zone default now()
 ```
 
-> Uma linha por candidato. `hiaringu_bi` reflete automaticamente em `candidates.dt_kengaku` ao salvar.
+> Uma linha por candidato. `hiaringu_bi` reflete automaticamente em `candidates.dt_kengaku` ao salvar (**não** marca mais `dt_naitei` automaticamente — 内定 passa a ser decisão manual do responsável, via modal ou botão 内定 na etapa 見学・ヒアリング済み do pipeline). `nyusha_yotei_bi` continua refletindo em `candidates.dt_nyusha`.
 
 ### `tantoushas` — DEPRECIADA
 
@@ -385,13 +385,16 @@ A etapa atual é determinada pela última data preenchida:
 is_blacklisted → black
 dt_ng          → ng
 dt_stock       → stock
-dt_nyusha      → nyusha
+dt_nyusha (mês anterior ao atual) → zaiseki
+dt_nyusha (mês atual ou anterior, ≤ hoje) → nyusha
 dt_naitei      → naitei
 dt_kengaku     → kengaku
 dt_mensetsu    → mensetsu
 dt_taiochu     → taiochu
 (nenhuma)      → renrakumae
 ```
+
+**在籍 (zaiseki):** calculado automaticamente — quando `dt_nyusha` cai em um mês anterior ao mês corrente, o candidato deixa de aparecer em 入社 e passa a aparecer em 在籍 (sem precisar de ação manual, basta o mês virar). Cada linha de 在籍 tem um botão **退社** que seta `dt_stock_geral = hoje`, movendo o candidato para 全体ストック.
 
 ### Soft Delete
 
@@ -529,10 +532,13 @@ Recebe o payload do candidato e executa **em paralelo**:
 - Lista de fábricas com contagem
 - Clicar filtra **todas as abas** simultaneamente (状況 + カレンダー + グラフ)
 - Mobile: escondida, abre via botão ☰
+- **Admin:** vê TODAS as fábricas cadastradas em `locations` (inclusive `ativo = false` e com 0 candidatos) — usa `todasFabricas` direto, sem derivar dos candidatos
+- **Demais perfis (jimusho/tantousha/shokaisha):** veem só as fábricas que têm pelo menos 1 candidato (lista derivada de `todosOsCandidatos`)
+- Mesma regra de admin vale para os dropdowns de seleção de fábrica no modal/filtros — `carregarDados()` só aplica `.eq('ativo', true)` na query de `locations` quando o perfil NÃO é admin
 
 ### Barra de stats
 
-総候補者 | 連絡前 | 対応中 | 面接 | 見学・ヒアリング済み | 内定 | 入社 | ストック | NG
+総候補者 | 連絡前 | 対応中 | 面接 | 見学・ヒアリング済み | 内定 | 入社 | 在籍 | ストック | NG
 
 ### Painel 状況
 
@@ -540,9 +546,18 @@ Recebe o payload do candidato e executa **em paralelo**:
 - Colunas: 氏名 | 紹介者 | 電話番号 | 工場 | 国籍 | 性別 | 日本語 | 経過
 - 経過 = dias na etapa atual (vermelho após 7 dias)
 - Paginação: 5 por etapa + "Ver mais"
-- Botão ステージ ▾ para mostrar/esconder etapas específicas
-- Botão 詳細フィルター → painel slide-in com filtros avançados
+- Botão ステージ ▾ para mostrar/esconder etapas específicas (inclui 在籍)
+- Botão 詳細フィルター → painel slide-in com filtros avançados (inclui 在籍)
 - Botão PDF印刷 → abre nova aba com lista para imprimir
+
+**Colunas extras por etapa:**
+| Etapa | Colunas extras | Ações inline |
+|-------|----------------|---------------|
+| 内定 / 入社 | 入社日 | — |
+| 見学・ヒアリング済み | 見学日, 入社日 (se já preenchido via ヒアリング) | botões **NG** e **内定** (setam `dt_ng`/`dt_naitei = hoje`, sem abrir modal) |
+| 在籍 | 入社日 | botão **退社** (seta `dt_stock_geral = hoje`, move p/ 全体ストック) |
+
+Ordenação especial: 見学・ヒアリング済み por `dt_kengaku` decrescente (mais recente em cima); 内定/入社/在籍 por `dt_nyusha` crescente.
 
 ### Filtros disponíveis
 
@@ -572,6 +587,8 @@ Pipeline separado para candidatos com `origem = 'web'`. Etapas:
 | ブラック | black | `is_blacklisted = true` |
 
 Ações disponíveis por card: **Enviar para fábrica** → move para pipeline principal | **ストック** → move para pool | **NG** | **ブラック**
+
+Colunas da tabela: 氏名 | 電話番号 | 工場 | 都道府県 (Estado) | 市区町村 (Cidade) | 性別 | 年齢 | 日本語 | Ações — **Visto removido**, substituído por Estado e Cidade.
 
 ### ストック Pool (aba todos)
 
@@ -738,3 +755,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-06-10 | Canal LINE Messaging API "通知" criado (provider Eder) — credenciais salvas, notificação 9h/13h planejada para depois |
 | 2026-06-10 | ヒアリングシート: campo `genzai_jusho` (現在住所) adicionado em 住所・通勤 (1ª pergunta) — coluna criada no Supabase |
 | 2026-06-10 | ヒアリングシート: rodapé de impressão com nome do candidato (fixo em todas as páginas) e seção その他のコメント (caixa em branco, não persiste) adicionados |
+| 2026-06-18 | Etapa 在籍 criada — calculada automaticamente quando `dt_nyusha` cai em mês anterior ao atual; botão 退社 move candidato para 全体ストック |
+| 2026-06-18 | 見学・ヒアリング済み: coluna 見学日 adicionada (ordenado por mais recente), coluna 入社日 (quando já preenchida via ヒアリング) e botões inline NG/内定 |
+| 2026-06-18 | Leads do Site: coluna Visto substituída por Estado e Cidade |
+| 2026-06-18 | Admin passa a ver TODAS as fábricas (inclusive `ativo=false` e sem candidato) na sidebar e nos dropdowns; demais perfis continuam só com `ativo=true` e/ou com candidato |
+| 2026-06-18 | hiaringu.html: `hiaringu_bi` deixou de marcar `dt_naitei` automaticamente — só reflete em `dt_kengaku`. 内定 agora é decisão manual |
