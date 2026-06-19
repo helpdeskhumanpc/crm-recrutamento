@@ -95,8 +95,8 @@
     .lead-stage-header { padding: 8px 16px; color: white; font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 10px; }
     .lead-stage-count { background: rgba(255,255,255,0.3); border-radius: 12px; padding: 1px 8px; font-size: 11px; }
     .lead-stage-body { background: white; }
-    .lead-col-header { display: grid; grid-template-columns: 140px 100px 120px 80px 90px 45px 45px 100px 1fr; gap: 6px; padding: 5px 16px; background: #f9f9f9; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; }
-    .lead-row { display: grid; grid-template-columns: 140px 100px 120px 80px 90px 45px 45px 100px 1fr; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; }
+    .lead-col-header { display: grid; grid-template-columns: 140px 100px 120px 80px 90px 45px 45px 100px 60px 1fr; gap: 6px; padding: 5px 16px; background: #f9f9f9; font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; }
+    .lead-row { display: grid; grid-template-columns: 140px 100px 120px 80px 90px 45px 45px 100px 60px 1fr; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; }
     .lead-row:last-child { border-bottom: none; }
     .lead-actions { display: flex; gap: 4px; flex-wrap: wrap; }
     .btn-lead { padding: 3px 8px; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; font-weight: 600; white-space: nowrap; }
@@ -938,6 +938,7 @@ function resetFilterPanel() {
   activeFilters = {}
   atualizarBadge()
   renderPipeline()
+  renderLeads()
 }
 
 function aplicarFilterPanel() {
@@ -958,6 +959,7 @@ function aplicarFilterPanel() {
   atualizarBadge()
   fecharFilterPanel()
   renderPipeline()
+  renderLeads()
 }
 
 function atualizarBadge() {
@@ -1036,17 +1038,29 @@ function imprimirPDFLeads() {
   const fabFilter = document.getElementById('leadsFilter')?.value || ''
   const fab = fabFilter ? `【${fabFilter}】` : '【全体】'
   const search = document.getElementById('searchInput')?.value.toLowerCase() || ''
+  const f = activeFilters
   const leads = todosOsCandidatos.filter(c => {
     if (c.origem !== 'web' && c.origem !== 'web_indicado' && c.origem !== 'web_stock') return false
     if (fabFilter && c.fabrica !== fabFilter) return false
     if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
+    if (f.jp?.length    && !f.jp.includes(c.nivel_japones))     return false
+    if (f.emp?.length   && !f.emp.includes(c.esta_empregado))    return false
+    if (f.nac?.length   && !f.nac.includes(c.nacionalidade))     return false
+    if (f.pref?.length  && !f.pref.includes(c.prefecture))       return false
+    if (f.turno?.length  && !(c.turnos_possiveis||[]).some(t => f.turno.includes(t)))   return false
+    if (f.menkyo?.length && !(c.habilitacao||[]).some(m => f.menkyo.includes(m)))       return false
+    if (f.exp?.length    && !(c.experiencia||[]).some(e => f.exp.includes(e)))          return false
+    if (f.apt            && String(c.precisa_apartamento) !== f.apt)                    return false
+    if (f.sexo           && c.sexo !== f.sexo)                                          return false
+    if (f.move           && String(c.pode_mudar) !== f.move)                            return false
+    if (f.ageMax         && (c.idade > f.ageMax))                                       return false
     return true
   })
 
   const linhas = LEAD_STAGES.map(stage => {
     const list = leads.filter(c => getLeadsStage(c) === stage.key)
     if (!list.length) return ''
-    return `<tr class="stage-row"><td colspan="6">${stage.label}（${list.length}名）</td></tr>` +
+    return `<tr class="stage-row"><td colspan="7">${stage.label}（${list.length}名）</td></tr>` +
       list.map((c, i) => `<tr class="${i%2===0?'even':''}">
         <td>${c.shimei||'—'}</td>
         <td>${c.telefone||'—'}</td>
@@ -1054,6 +1068,7 @@ function imprimirPDFLeads() {
         <td>${c.prefecture||'—'}</td>
         <td>${c.city||'—'}</td>
         <td>${c.nivel_japones?.split('〜')[0]||'—'}</td>
+        <td>${c.precisa_apartamento ? '必要' : '不要'}</td>
       </tr>`).join('')
   }).join('')
 
@@ -1075,7 +1090,7 @@ function imprimirPDFLeads() {
     <p>出力日：${new Date().toLocaleDateString('ja-JP')}　総件数: ${leads.length}名</p>
     <button onclick="window.print()" style="margin-bottom:14px;padding:7px 18px;background:#1e88e5;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px">印刷 / PDF保存</button>
     <table>
-      <thead><tr><th>氏名</th><th>電話番号</th><th>工場</th><th>都道府県</th><th>市区町村</th><th>日本語</th></tr></thead>
+      <thead><tr><th>氏名</th><th>電話番号</th><th>工場</th><th>都道府県</th><th>市区町村</th><th>日本語</th><th>アパート</th></tr></thead>
       <tbody>${linhas}</tbody>
     </table></body></html>`)
   w.document.close()
@@ -1762,9 +1777,21 @@ function renderLeads() {
   if (sel) sel.innerHTML = '<option value="">Todas as fábricas</option>' + fabs.map(f => `<option value="${f}" ${f===cur?'selected':''}>${f}</option>`).join('')
 
   const search = document.getElementById('searchInput')?.value.toLowerCase() || ''
+  const f = activeFilters
   const leads = allLeads.filter(c => {
     if (fabFilter && c.fabrica !== fabFilter) return false
     if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
+    if (f.jp?.length    && !f.jp.includes(c.nivel_japones))     return false
+    if (f.emp?.length   && !f.emp.includes(c.esta_empregado))    return false
+    if (f.nac?.length   && !f.nac.includes(c.nacionalidade))     return false
+    if (f.pref?.length  && !f.pref.includes(c.prefecture))       return false
+    if (f.turno?.length  && !(c.turnos_possiveis||[]).some(t => f.turno.includes(t)))   return false
+    if (f.menkyo?.length && !(c.habilitacao||[]).some(m => f.menkyo.includes(m)))       return false
+    if (f.exp?.length    && !(c.experiencia||[]).some(e => f.exp.includes(e)))          return false
+    if (f.apt            && String(c.precisa_apartamento) !== f.apt)                    return false
+    if (f.sexo           && c.sexo !== f.sexo)                                          return false
+    if (f.move           && String(c.pode_mudar) !== f.move)                            return false
+    if (f.ageMax         && (c.idade > f.ageMax))                                       return false
     return true
   })
 
@@ -1774,7 +1801,7 @@ function renderLeads() {
 
   document.getElementById('leads-count').textContent = `(${leads.length})`
 
-  const colHeader = `<div class="lead-col-header"><span>Nome</span><span>Telefone</span><span>Fábrica</span><span>Estado</span><span>Cidade</span><span>G</span><span>Idade</span><span>Japonês</span><span>Ações</span></div>`
+  const colHeader = `<div class="lead-col-header"><span>Nome</span><span>Telefone</span><span>Fábrica</span><span>Estado</span><span>Cidade</span><span>G</span><span>Idade</span><span>Japonês</span><span>Apto</span><span>Ações</span></div>`
 
   document.getElementById('leadsStages').innerHTML = LEAD_STAGES.map(stage => {
     const list = grouped[stage.key]
@@ -1820,6 +1847,7 @@ function renderLeads() {
           <span>${c.sexo === '男性' ? 'M' : c.sexo === '女性' ? 'F' : '—'}</span>
           <span>${c.idade || '—'}</span>
           <span style="font-size:11px">${c.nivel_japones?.split(' ')[0] || '—'}</span>
+          <span style="font-size:11px">${c.precisa_apartamento ? '必要' : '不要'}</span>
           <span>${actions}</span>
         </div>`
       }).join('') + (hasMore ? `<div style="padding:7px 16px;font-size:12px;color:#1e88e5;cursor:pointer" onclick="_leadExpanded.add('${stage.key}');renderLeads()">+ さらに ${list.length - 5} 件</div>` : '')
