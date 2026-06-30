@@ -1108,7 +1108,8 @@ function getFiltrados() {
   const f = activeFilters
 
   return todosOsCandidatos.filter(c => {
-    if (c.origem === 'web' || c.origem === 'web_stock' || c.dt_stock_geral) return false
+    if (c.origem === 'web' || c.origem === 'web_stock') return false
+    if (c.dt_stock_geral && !c.dt_ng) return false
     if (fabricaAtiva && fabricaEfetiva(c) !== fabricaAtiva) return false
     if (shokaiAtivo && c.shokai !== shokaiAtivo) return false
     if (sexo   && c.sexo !== sexo)                                            return false
