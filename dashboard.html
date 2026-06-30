@@ -1659,7 +1659,8 @@ function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy
 
 function renderCharts() {
   const fab = document.getElementById('chartFabrica').value
-  const dados = fab ? todosOsCandidatos.filter(c => fabricaEfetiva(c) === fab) : todosOsCandidatos
+  const candidatosValidos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock')
+  const dados = fab ? candidatosValidos.filter(c => fabricaEfetiva(c) === fab) : candidatosValidos
 
   // Esconde/mostra gráfico de fábricas quando filtrado
   document.getElementById('cardFabrica').style.display = fab ? 'none' : ''
@@ -1691,7 +1692,7 @@ function renderCharts() {
   // Por fábrica (só geral)
   if (!fab) {
     const fabMap = {}
-    todosOsCandidatos.forEach(c => { const f = fabricaEfetiva(c); if (f) fabMap[f] = (fabMap[f] || 0) + 1 })
+    candidatosValidos.forEach(c => { const f = fabricaEfetiva(c); if (f) fabMap[f] = (fabMap[f] || 0) + 1 })
     const fabLabels = Object.keys(fabMap).sort((a,b) => fabMap[b] - fabMap[a])
     const fabCounts = fabLabels.map(f => fabMap[f])
     destroyChart('chartFabrica')
