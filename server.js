@@ -1,5 +1,6 @@
 const express = require('express')
 const path    = require('path')
+const fs      = require('fs')
 
 const app = express()
 
@@ -94,8 +95,26 @@ async function sendTelegram(text) {
 }
 
 // ─── Google Contacts ──────────────────────────────────────────
-const REDIRECT_URI = 'https://crm-recrutamento-production.up.railway.app/oauth/callback'
+const REDIRECT_URI      = 'https://crm-recrutamento-production.up.railway.app/oauth/callback'
+const RENEWED_AT_FILE   = '/tmp/token_renewed_at.txt'
 let currentRefreshToken = process.env.GOOGLE_REFRESH_TOKEN
+let reminderTimeout     = null
+
+function scheduleReminder(renewedAt) {
+  if (reminderTimeout) clearTimeout(reminderTimeout)
+  const SIX_DAYS = 6 * 24 * 60 * 60 * 1000
+  const delay    = Math.max(SIX_DAYS - (Date.now() - renewedAt), 0)
+  reminderTimeout = setTimeout(() => {
+    const link = 'https://crm-recrutamento-production.up.railway.app/reauth'
+    sendTelegram(`⚠️ Token Google Contacts vence AMANHÃ!\n\nRenove agora acessando:\n${link}`).catch(console.warn)
+  }, delay)
+}
+
+// Ao iniciar, recupera timer se o servidor reiniciou antes do lembrete
+try {
+  const saved = parseInt(fs.readFileSync(RENEWED_AT_FILE, 'utf8'))
+  if (!isNaN(saved)) scheduleReminder(saved)
+} catch (_) {}
 
 app.get('/reauth', (req, res) => {
   const url = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
@@ -127,7 +146,13 @@ app.get('/oauth/callback', async (req, res) => {
     const data = await tokenRes.json()
     if (data.refresh_token) {
       currentRefreshToken = data.refresh_token
-      res.send('✅ Google Contacts reautorizado! Token atualizado.')
+      const now      = Date.now()
+      const vence    = new Date(now + 7 * 24 * 60 * 60 * 1000)
+      const venceStr = `${vence.getFullYear()}/${String(vence.getMonth()+1).padStart(2,'0')}/${String(vence.getDate()).padStart(2,'0')}`
+      try { fs.writeFileSync(RENEWED_AT_FILE, now.toString()) } catch (_) {}
+      scheduleReminder(now)
+      sendTelegram(`✅ Google Contacts reautorizado!\n\n📅 Lembrete agendado para ${venceStr} (1 dia antes de vencer)`).catch(console.warn)
+      res.send(`✅ Google Contacts reautorizado! Token válido até ${venceStr}. Lembrete agendado no Telegram.`)
     } else {
       res.send('⚠️ Token não retornou refresh_token. Tente /reauth novamente.')
     }
@@ -204,6 +229,9 @@ app.post('/api/google-contact', async (req, res) => {
 
     if (gData.error) {
       console.error('Google Contacts erro:', gData.error)
+      if (gData.error.status === 'UNAUTHENTICATED' || gData.error.code === 401) {
+        sendTelegram(`⚠️ Token Google Contacts EXPIRADO!\n\nRenove agora:\nhttps://crm-recrutamento-production.up.railway.app/reauth`).catch(console.warn)
+      }
       return res.status(500).json({ ok: false, error: gData.error.message })
     }
 
