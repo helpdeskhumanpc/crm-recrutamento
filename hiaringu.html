@@ -20,60 +20,60 @@
     .save-status.success { color:#2e7d32; background:#e8f5e9; }
     .save-status.error   { color:#c62828; background:#ffebee; font-weight:700; }
 
-    .card { background:white; border-radius:8px; padding:0; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; }
+    .card { background:white; border-radius:8px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden; }
     .card-title { background:#00695c; color:white; padding:10px 16px; font-size:13px; font-weight:700; }
-    .card-body { padding:16px; }
-    .grid   { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .grid-3 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .grid-4 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .field { margin-bottom:12px; }
-    .field label {
-      font-size:10px; font-weight:700; display:block; margin-bottom:4px;
-      color:#004d40; background:#e0f2f1; padding:2px 8px; border-radius:3px;
-      border-left:3px solid #00695c; letter-spacing:0.3px;
+
+    /* 4 colunas: pergunta | resposta | pergunta | resposta */
+    .card-body { display:grid; grid-template-columns:165px 1fr 165px 1fr; gap:0; }
+
+    .field {
+      grid-column:span 2;
+      display:grid; grid-template-columns:165px 1fr;
+      align-items:start; gap:8px;
+      padding:6px 10px; border-bottom:1px solid #f0f0f0;
+    }
+    .field.full { grid-column:span 4; }
+    .field:last-child { border-bottom:none; }
+
+    .field > label {
+      font-size:10px; color:#004d40; font-weight:700;
+      background:#e0f2f1; padding:3px 8px; border-radius:3px;
+      border-left:3px solid #00695c; align-self:start;
+      margin-top:3px; line-height:1.4; display:block;
     }
     .field input, .field select, .field textarea {
-      width:100%; padding:8px 6px; border:none; border-bottom:2px solid #b2dfdb;
-      border-radius:0; font-size:14px; color:#1565c0; font-weight:600; background:transparent;
+      width:100%; padding:5px 4px; border:none;
+      border-bottom:2px solid #b2dfdb; border-radius:0;
+      font-size:13px; color:#1565c0; font-weight:600; background:transparent;
     }
-    .field input[disabled], .field select[disabled] {
-      color:#555; font-weight:400; border-bottom-color:#e0e0e0;
-    }
-    .field textarea { resize:vertical; }
-    .field input:focus, .field select:focus, .field textarea:focus {
-      outline:none; border-bottom-color:#00695c; background:#f9fffe;
-    }
-    .radio-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:4px; }
-    .radio-row label { display:flex; align-items:center; gap:4px; font-size:13px; font-weight:normal; cursor:pointer; }
+    .field input[disabled], .field select[disabled] { color:#555; font-weight:400; border-bottom-color:#e0e0e0; }
+    .field textarea { resize:vertical; min-height:44px; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline:none; border-bottom-color:#00695c; background:#f9fffe; }
 
-    /* 注意フラグ（赤） - 画面・印刷共通 */
+    .radio-row { display:flex; gap:12px; flex-wrap:wrap; padding-top:4px; }
+    .radio-row label { display:flex; align-items:center; gap:4px; font-size:13px; font-weight:normal; cursor:pointer; color:#333; }
+
+    /* Alertas vermelho */
     .radio-row label:has(input[value="不可"]:checked),
     .radio-row label:has(input[name="tattoo_umu"][value="あり"]:checked),
     .radio-row label:has(input[name="genshoku_umu"][value="なし"]:checked),
-    .radio-row label:has(input[name="kotai_keiken"][value="なし"]:checked) {
-      color:#c62828; font-weight:700;
-    }
+    .radio-row label:has(input[name="kotai_keiken"][value="なし"]:checked) { color:#c62828; font-weight:700; }
     #jp_kaiwa:has(option[value="2.0"]:checked),
-    #hiragana_yomi:has(option[value="読み"]:checked),
-    #hiragana_yomi:has(option[value="読めない"]:checked),
-    #katakana_yomi:has(option[value="読み"]:checked),
-    #katakana_yomi:has(option[value="読めない"]:checked) {
-      color:#c62828; font-weight:700;
-    }
+    #hiragana_yomi:has(option[value="読み"]:checked), #hiragana_yomi:has(option[value="読めない"]:checked),
+    #katakana_yomi:has(option[value="読み"]:checked), #katakana_yomi:has(option[value="読めない"]:checked) { color:#c62828; font-weight:700; }
 
     .print-date { display:none; }
-    .print-only { display:none; }
+    .print-only { display:none !important; }
     .print-footer { display:none; }
-    .shokureki-title { font-weight:700; color:#00695c; font-size:13px; margin:12px 0 8px; border-left:3px solid #00695c; padding-left:8px; }
     .loading { text-align:center; padding:40px; color:#aaa; }
 
-    @media (max-width:600px) { .grid,.grid-3,.grid-4 { grid-template-columns:1fr; } }
+    @media (max-width:768px) {
+      .card-body { grid-template-columns:110px 1fr; }
+      .field, .field.full { grid-column:span 1; grid-template-columns:110px 1fr; }
+    }
 
     /* PRINT */
-    @page {
-      margin: 8mm 8mm 14mm 8mm;
-      @bottom-center { content: counter(page) " / " counter(pages); font-size:7pt; color:#999; }
-    }
+    @page { margin:8mm 8mm 14mm 8mm; }
     @media print {
       * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
       body { background:white; padding:0; font-size:8pt; font-family:'MS Gothic',Arial,sans-serif; }
@@ -83,23 +83,21 @@
       .print-header .ph-meta { display:block; font-size:8pt; color:#333; }
       .card { box-shadow:none; border:1px solid #aaa; margin-bottom:3px; border-radius:0; page-break-inside:avoid; }
       .card-title { background:#b2dfdb !important; color:#00695c !important; padding:2px 6px; font-size:8pt; }
-      .card-body { padding:5px; }
-      .field { margin-bottom:4px; }
-      .field label { font-size:7pt; background:#e0f2f1 !important; color:#004d40 !important; padding:1px 5px; border-radius:2px; border-left:2px solid #00695c; font-weight:700; }
-      .field input, .field select, .field textarea { border:none; border-bottom:1px solid #aaa; border-radius:0; padding:1px 3px; font-size:9pt; background:transparent; color:#1565c0; font-weight:600; }
-      .field:has(input[id$="_hantei"]) label { color:#00695c; }
+      .card-body { display:grid; grid-template-columns:110px 1fr 110px 1fr; gap:0; }
+      .field { grid-column:span 2; display:grid; grid-template-columns:110px 1fr; gap:4px; padding:2px 4px; border-bottom:1px solid #e8e8e8; align-items:start; }
+      .field.full { grid-column:span 4; grid-template-columns:110px 1fr; }
+      .field > label { font-size:6.5pt; background:#e0f2f1 !important; color:#004d40 !important; padding:1px 5px; border-left:2px solid #00695c; border-radius:2px; font-weight:700; align-self:start; margin-top:1px; line-height:1.3; }
+      .field input, .field select, .field textarea { font-size:8pt; color:#1565c0; font-weight:600; border:none; border-bottom:1px solid #bbb; padding:1px 2px; background:transparent; width:100%; }
+      .field input[disabled], .field select[disabled] { color:#444; font-weight:400; border-bottom-color:#ddd; }
+      .field:has(input[id$="_hantei"]) > label { background:#e8f5e9 !important; border-left-color:#2e7d32; }
       .field input[type="date"], .field input[type="month"] { display:none; }
-      .print-date { display:block; border-bottom:1px solid #aaa; padding:1px 3px; font-size:8pt; color:#1565c0; min-height:1.2em; }
-      .print-only { display:block; }
-      .print-hide { display:none; }
+      .print-date { display:block; border-bottom:1px solid #bbb; padding:1px 2px; font-size:8pt; color:#1565c0; font-weight:600; min-height:1.2em; }
+      .print-only { display:grid !important; }
+      .print-hide { display:none !important; }
+      .radio-row { gap:6px; padding-top:1px; }
+      .radio-row label { font-size:8pt; }
       .radio-row label:has(input:checked) { color:#1565c0; font-weight:700; }
       #kyuyo_kibou_riyu { min-height:36px; }
-      .grid { gap:5px; }
-      .grid-3, .grid-4 { gap:4px; }
-      .radio-row { gap:6px; margin-top:2px; }
-      .shokureki-title { font-size:8pt; margin:3px 0 2px; }
-      .radio-row label { font-size:8pt; }
-      .print-header { display:block !important; }
       .print-footer { display:block; position:fixed; bottom:0; left:0; right:0; font-size:7pt; color:#999; text-align:center; padding-top:2px; border-top:1px solid #ddd; }
     }
     .print-header { display:none; }
@@ -144,7 +142,6 @@ async function carregar() {
   candidateId = params.get('id')
   if (!candidateId) { document.getElementById('content').innerHTML = '<div class="loading">ID não informado.</div>'; return }
 
-  // Busca dados do candidato
   const [resCand, resHia] = await Promise.all([
     sb.from('candidates').select('shimei,telefone,shokai,nacionalidade,visa,data_nascimento,idade').eq('id', candidateId).single(),
     sb.from('hiaringu').select('*').eq('candidate_id', candidateId).order('updated_at', { ascending: false }).limit(1)
@@ -178,7 +175,6 @@ function formatMonthJP(monthStr) {
   return `${y}年${parseInt(m,10)}月`
 }
 
-// 印刷前に .print-date を入力欄の現在値で更新（保存直後にリロードせず印刷しても反映されるように）
 function syncPrintDates() {
   document.querySelectorAll('#content .field').forEach(field => {
     const input = field.querySelector('input[type="date"], input[type="month"]')
@@ -196,16 +192,41 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">面談情報</div>
     <div class="card-body">
-      <div class="grid-4">
-        <div class="field"><label>ヒアリング日 <span style="color:#00695c;font-size:10px">→ 見学・ヒアリング 自動反映</span></label><input type="date" id="hiaringu_bi" value="${h.hiaringu_bi||''}"><span class="print-date">${formatDateJP(h.hiaringu_bi)}</span></div>
-        <div class="field"><label>入社予定日 <span style="color:#00695c;font-size:10px">→ 入社 自動反映</span></label><input type="date" id="nyusha_yotei_bi" value="${h.nyusha_yotei_bi||''}"><span class="print-date">${formatDateJP(h.nyusha_yotei_bi)}</span></div>
-        <div class="field"><label>面談日</label><input type="date" id="mensadan_bi" value="${h.mensadan_bi||''}"><span class="print-date">${formatDateJP(h.mensadan_bi)}</span></div>
-        <div class="field"><label>面談者</label><input type="text" id="mensadan_sha" value="${h.mensadan_sha||''}" placeholder="担当者名"></div>
-        <div class="field"><label>国籍</label><input type="text" value="${cand.nacionalidade||''}" disabled></div>
-        <div class="field print-hide"><label>生年月日</label><input type="text" value="${formatDateJP(cand.data_nascimento)}" disabled></div>
-        <div class="field"><label>年齢</label><input type="text" value="${cand.idade!=null ? cand.idade+'歳' : ''}" disabled></div>
-        <div class="field"><label>ビザ</label><input type="text" value="${cand.visa||''}" disabled></div>
-        <div class="field print-only"><label>紹介者</label><span class="print-date" id="shokaiSha"></span></div>
+      <div class="field">
+        <label>ヒアリング日 <span style="color:#00695c;font-size:9px">→ 見学・ヒアリング 自動反映</span></label>
+        <div><input type="date" id="hiaringu_bi" value="${h.hiaringu_bi||''}"><span class="print-date">${formatDateJP(h.hiaringu_bi)}</span></div>
+      </div>
+      <div class="field">
+        <label>入社予定日 <span style="color:#00695c;font-size:9px">→ 入社 自動反映</span></label>
+        <div><input type="date" id="nyusha_yotei_bi" value="${h.nyusha_yotei_bi||''}"><span class="print-date">${formatDateJP(h.nyusha_yotei_bi)}</span></div>
+      </div>
+      <div class="field">
+        <label>面談日</label>
+        <div><input type="date" id="mensadan_bi" value="${h.mensadan_bi||''}"><span class="print-date">${formatDateJP(h.mensadan_bi)}</span></div>
+      </div>
+      <div class="field">
+        <label>面談者</label>
+        <input type="text" id="mensadan_sha" value="${h.mensadan_sha||''}" placeholder="担当者名">
+      </div>
+      <div class="field">
+        <label>国籍</label>
+        <input type="text" value="${cand.nacionalidade||''}" disabled>
+      </div>
+      <div class="field print-hide">
+        <label>生年月日</label>
+        <input type="text" value="${formatDateJP(cand.data_nascimento)}" disabled>
+      </div>
+      <div class="field">
+        <label>年齢</label>
+        <input type="text" value="${cand.idade!=null ? cand.idade+'歳' : ''}" disabled>
+      </div>
+      <div class="field">
+        <label>ビザ</label>
+        <input type="text" value="${cand.visa||''}" disabled>
+      </div>
+      <div class="field print-only">
+        <label>紹介者</label>
+        <span class="print-date" id="shokaiSha"></span>
       </div>
     </div>
   </div>
@@ -214,41 +235,50 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">日本語力</div>
     <div class="card-body">
-      <div class="grid-3">
-        <div class="field">
-          <label>会話レベル</label>
-          <select id="jp_kaiwa">
-            <option value="">選択</option>
-            <option value="4.0" ${h.jp_kaiwa==='4.0'?'selected':''}>4.0（高卒レベル）</option>
-            <option value="3.0" ${h.jp_kaiwa==='3.0'?'selected':''}>3.0（流暢に話す）</option>
-            <option value="2.5" ${h.jp_kaiwa==='2.5'?'selected':''}>2.5（言葉を選べば可）</option>
-            <option value="2.0" ${h.jp_kaiwa==='2.0'?'selected':''}>2.0（かたこと）</option>
-          </select>
-        </div>
-        <div class="field"><label>漢字</label><select id="kanji_yomi">
+      <div class="field">
+        <label>会話レベル</label>
+        <select id="jp_kaiwa">
+          <option value="">選択</option>
+          <option value="4.0" ${h.jp_kaiwa==='4.0'?'selected':''}>4.0（高卒レベル）</option>
+          <option value="3.0" ${h.jp_kaiwa==='3.0'?'selected':''}>3.0（流暢に話す）</option>
+          <option value="2.5" ${h.jp_kaiwa==='2.5'?'selected':''}>2.5（言葉を選べば可）</option>
+          <option value="2.0" ${h.jp_kaiwa==='2.0'?'selected':''}>2.0（かたこと）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>漢字</label>
+        <select id="kanji_yomi">
           <option value="">選択</option>
           <option value="読み書き" ${h.kanji_yomi==='読み書き'?'selected':''}>読み書き</option>
           <option value="読み" ${h.kanji_yomi==='読み'?'selected':''}>読み</option>
           <option value="読めない" ${h.kanji_yomi==='読めない'?'selected':''}>読めない</option>
-        </select></div>
+        </select>
       </div>
-      <div class="grid-3">
-        <div class="field"><label>ひらがな</label><select id="hiragana_yomi">
+      <div class="field">
+        <label>ひらがな</label>
+        <select id="hiragana_yomi">
           <option value="">選択</option>
           <option value="読み書き" ${h.hiragana_yomi==='読み書き'?'selected':''}>読み書き</option>
           <option value="読み" ${h.hiragana_yomi==='読み'?'selected':''}>読み</option>
           <option value="読めない" ${h.hiragana_yomi==='読めない'?'selected':''}>読めない</option>
-        </select></div>
-        <div class="field"><label>カタカナ</label><select id="katakana_yomi">
+        </select>
+      </div>
+      <div class="field">
+        <label>カタカナ</label>
+        <select id="katakana_yomi">
           <option value="">選択</option>
           <option value="読み書き" ${h.katakana_yomi==='読み書き'?'selected':''}>読み書き</option>
           <option value="読み" ${h.katakana_yomi==='読み'?'selected':''}>読み</option>
           <option value="読めない" ${h.katakana_yomi==='読めない'?'selected':''}>読めない</option>
-        </select></div>
+        </select>
       </div>
-      <div class="grid">
-        <div class="field"><label>コメント</label><textarea id="jp_comment" rows="2">${h.jp_comment||''}</textarea></div>
-        <div class="field"><label>判定</label><input type="text" id="jp_hantei" value="${h.jp_hantei||''}"></div>
+      <div class="field full">
+        <label>コメント</label>
+        <textarea id="jp_comment" rows="2">${h.jp_comment||''}</textarea>
+      </div>
+      <div class="field">
+        <label>判定</label>
+        <input type="text" id="jp_hantei" value="${h.jp_hantei||''}">
       </div>
     </div>
   </div>
@@ -257,23 +287,37 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">身体・健康</div>
     <div class="card-body">
-      <div class="grid-4">
-        <div class="field"><label>視力（裸眼）右</label><input type="text" id="shiryoku_migi" value="${h.shiryoku_migi||''}"></div>
-        <div class="field"><label>視力（裸眼）左</label><input type="text" id="shiryoku_hidari" value="${h.shiryoku_hidari||''}"></div>
-        <div class="field"><label>メガネ・コンタクト 右</label><input type="text" id="megane_migi" value="${h.megane_migi||''}"></div>
-        <div class="field"><label>メガネ・コンタクト 左</label><input type="text" id="megane_hidari" value="${h.megane_hidari||''}"></div>
+      <div class="field">
+        <label>視力（裸眼）右</label>
+        <input type="text" id="shiryoku_migi" value="${h.shiryoku_migi||''}">
       </div>
-      <div class="grid">
-        <div class="field">
-          <label>利き手</label>
-          <div class="radio-row">
-            <label><input type="radio" name="kikite" value="右" ${h.kikite==='右'?'checked':''}> 右</label>
-            <label><input type="radio" name="kikite" value="左" ${h.kikite==='左'?'checked':''}> 左</label>
-          </div>
+      <div class="field">
+        <label>視力（裸眼）左</label>
+        <input type="text" id="shiryoku_hidari" value="${h.shiryoku_hidari||''}">
+      </div>
+      <div class="field">
+        <label>メガネ・コンタクト 右</label>
+        <input type="text" id="megane_migi" value="${h.megane_migi||''}">
+      </div>
+      <div class="field">
+        <label>メガネ・コンタクト 左</label>
+        <input type="text" id="megane_hidari" value="${h.megane_hidari||''}">
+      </div>
+      <div class="field">
+        <label>利き手</label>
+        <div class="radio-row">
+          <label><input type="radio" name="kikite" value="右" ${h.kikite==='右'?'checked':''}> 右</label>
+          <label><input type="radio" name="kikite" value="左" ${h.kikite==='左'?'checked':''}> 左</label>
         </div>
-        <div class="field"><label>判定</label><input type="text" id="shintai_hantei" value="${h.shintai_hantei||''}"></div>
       </div>
-      <div class="field"><label>既往歴・通院中の病気・最後に受診した日理由</label><textarea id="kiourekki" rows="2">${h.kiourekki||''}</textarea></div>
+      <div class="field">
+        <label>判定</label>
+        <input type="text" id="shintai_hantei" value="${h.shintai_hantei||''}">
+      </div>
+      <div class="field full">
+        <label>既往歴・通院中の病気・最後に受診した日理由</label>
+        <textarea id="kiourekki" rows="2">${h.kiourekki||''}</textarea>
+      </div>
     </div>
   </div>
 
@@ -281,17 +325,24 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">タトゥー</div>
     <div class="card-body">
-      <div class="grid-4">
-        <div class="field">
-          <label>タトゥーの有無</label>
-          <div class="radio-row">
-            <label><input type="radio" name="tattoo_umu" value="あり" ${h.tattoo_umu==='あり'?'checked':''}> あり</label>
-            <label><input type="radio" name="tattoo_umu" value="なし" ${h.tattoo_umu==='なし'?'checked':''}> なし</label>
-          </div>
+      <div class="field">
+        <label>タトゥーの有無</label>
+        <div class="radio-row">
+          <label><input type="radio" name="tattoo_umu" value="あり" ${h.tattoo_umu==='あり'?'checked':''}> あり</label>
+          <label><input type="radio" name="tattoo_umu" value="なし" ${h.tattoo_umu==='なし'?'checked':''}> なし</label>
         </div>
-        <div class="field"><label>タトゥーの場所</label><input type="text" id="tattoo_basho" value="${h.tattoo_basho||''}"></div>
-        <div class="field"><label>服・化粧で対応できるか</label><input type="text" id="tattoo_taiou" value="${h.tattoo_taiou||''}"></div>
-        <div class="field"><label>判定</label><input type="text" id="tattoo_hantei" value="${h.tattoo_hantei||''}"></div>
+      </div>
+      <div class="field">
+        <label>タトゥーの場所</label>
+        <input type="text" id="tattoo_basho" value="${h.tattoo_basho||''}">
+      </div>
+      <div class="field">
+        <label>服・化粧で対応できるか</label>
+        <input type="text" id="tattoo_taiou" value="${h.tattoo_taiou||''}">
+      </div>
+      <div class="field">
+        <label>判定</label>
+        <input type="text" id="tattoo_hantei" value="${h.tattoo_hantei||''}">
       </div>
     </div>
   </div>
@@ -300,15 +351,21 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">家族について</div>
     <div class="card-body">
-      <div class="grid">
-        <div>
-          <div class="field"><label>同居の家族（独身/既婚・配偶者・子供・病院対応など）</label><textarea id="doukyo_kazoku" rows="3">${h.doukyo_kazoku||''}</textarea></div>
-          <div class="field"><label>同居 判定</label><input type="text" id="doukyo_hantei" value="${h.doukyo_hantei||''}"></div>
-        </div>
-        <div>
-          <div class="field"><label>別居の家族（続柄・年齢・仕事・健康・帰国・仕送りの必要性）</label><textarea id="bekkyo_kazoku" rows="3">${h.bekkyo_kazoku||''}</textarea></div>
-          <div class="field"><label>別居 判定</label><input type="text" id="bekkyo_hantei" value="${h.bekkyo_hantei||''}"></div>
-        </div>
+      <div class="field full">
+        <label>同居の家族（独身/既婚・配偶者・子供・病院対応など）</label>
+        <textarea id="doukyo_kazoku" rows="3">${h.doukyo_kazoku||''}</textarea>
+      </div>
+      <div class="field">
+        <label>同居 判定</label>
+        <input type="text" id="doukyo_hantei" value="${h.doukyo_hantei||''}">
+      </div>
+      <div class="field full">
+        <label>別居の家族（続柄・年齢・仕事・健康・帰国・仕送りの必要性）</label>
+        <textarea id="bekkyo_kazoku" rows="3">${h.bekkyo_kazoku||''}</textarea>
+      </div>
+      <div class="field">
+        <label>別居 判定</label>
+        <input type="text" id="bekkyo_hantei" value="${h.bekkyo_hantei||''}">
       </div>
     </div>
   </div>
@@ -317,23 +374,34 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">三菱自動車入社歴</div>
     <div class="card-body">
-      <div class="grid-4">
-        <div class="field">
-          <label>入社歴</label>
-          <select id="nyusha_umu">
-            <option value="">選択</option>
-            <option value="ある（ヒューマン）" ${h.nyusha_umu==='ある（ヒューマン）'?'selected':''}>ある（ヒューマン）</option>
-            <option value="ある（他社）" ${h.nyusha_umu==='ある（他社）'?'selected':''}>ある（他社）</option>
-            <option value="ない" ${h.nyusha_umu==='ない'?'selected':''}>ない</option>
-          </select>
-        </div>
-        <div class="field"><label>企業名</label><input type="text" id="nyusha_kigyo" value="${h.nyusha_kigyo||''}"></div>
-        <div class="field"><label>入社時期</label><input type="text" id="nyusha_jiki" value="${h.nyusha_jiki||''}"></div>
-        <div class="field"><label>退社時期</label><input type="text" id="taisha_jiki" value="${h.taisha_jiki||''}"></div>
+      <div class="field">
+        <label>入社歴</label>
+        <select id="nyusha_umu">
+          <option value="">選択</option>
+          <option value="ある（ヒューマン）" ${h.nyusha_umu==='ある（ヒューマン）'?'selected':''}>ある（ヒューマン）</option>
+          <option value="ある（他社）" ${h.nyusha_umu==='ある（他社）'?'selected':''}>ある（他社）</option>
+          <option value="ない" ${h.nyusha_umu==='ない'?'selected':''}>ない</option>
+        </select>
       </div>
-      <div class="grid">
-        <div class="field"><label>退社理由</label><input type="text" id="taisha_riyu" value="${h.taisha_riyu||''}"></div>
-        <div class="field"><label>判定</label><input type="text" id="nyusha_hantei" value="${h.nyusha_hantei||''}"></div>
+      <div class="field">
+        <label>企業名</label>
+        <input type="text" id="nyusha_kigyo" value="${h.nyusha_kigyo||''}">
+      </div>
+      <div class="field">
+        <label>入社時期</label>
+        <input type="text" id="nyusha_jiki" value="${h.nyusha_jiki||''}">
+      </div>
+      <div class="field">
+        <label>退社時期</label>
+        <input type="text" id="taisha_jiki" value="${h.taisha_jiki||''}">
+      </div>
+      <div class="field">
+        <label>退社理由</label>
+        <input type="text" id="taisha_riyu" value="${h.taisha_riyu||''}">
+      </div>
+      <div class="field">
+        <label>判定</label>
+        <input type="text" id="nyusha_hantei" value="${h.nyusha_hantei||''}">
       </div>
     </div>
   </div>
@@ -342,26 +410,30 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">現職・就業状況</div>
     <div class="card-body">
-      <div class="grid-4">
-        <div class="field">
-          <label>現職の有無</label>
-          <div class="radio-row">
-            <label><input type="radio" name="genshoku_umu" value="あり" ${h.genshoku_umu==='あり'?'checked':''}> あり</label>
-            <label><input type="radio" name="genshoku_umu" value="なし" ${h.genshoku_umu==='なし'?'checked':''}> なし</label>
-          </div>
+      <div class="field">
+        <label>現職の有無</label>
+        <div class="radio-row">
+          <label><input type="radio" name="genshoku_umu" value="あり" ${h.genshoku_umu==='あり'?'checked':''}> あり</label>
+          <label><input type="radio" name="genshoku_umu" value="なし" ${h.genshoku_umu==='なし'?'checked':''}> なし</label>
         </div>
-        <div class="field">
-          <label>就業状況</label>
-          <select id="genshoku_status">
-            <option value="">選択</option>
-            <option value="正社員" ${h.genshoku_status==='正社員'?'selected':''}>正社員</option>
-            <option value="派遣" ${h.genshoku_status==='派遣'?'selected':''}>派遣</option>
-            <option value="アルバイト" ${h.genshoku_status==='アルバイト'?'selected':''}>アルバイト</option>
-            <option value="その他" ${h.genshoku_status==='その他'?'selected':''}>その他</option>
-          </select>
-        </div>
-        <div class="field"><label>退職できる時期</label><input type="text" id="genshoku_taishoku" value="${h.genshoku_taishoku||''}"></div>
-        <div class="field"><label>競合他社の検討状況</label><input type="text" id="kyogo_status" value="${h.kyogo_status||''}"></div>
+      </div>
+      <div class="field">
+        <label>就業状況</label>
+        <select id="genshoku_status">
+          <option value="">選択</option>
+          <option value="正社員" ${h.genshoku_status==='正社員'?'selected':''}>正社員</option>
+          <option value="派遣" ${h.genshoku_status==='派遣'?'selected':''}>派遣</option>
+          <option value="アルバイト" ${h.genshoku_status==='アルバイト'?'selected':''}>アルバイト</option>
+          <option value="その他" ${h.genshoku_status==='その他'?'selected':''}>その他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>退職できる時期</label>
+        <input type="text" id="genshoku_taishoku" value="${h.genshoku_taishoku||''}">
+      </div>
+      <div class="field">
+        <label>競合他社の検討状況</label>
+        <input type="text" id="kyogo_status" value="${h.kyogo_status||''}">
       </div>
     </div>
   </div>
@@ -370,43 +442,54 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">勤務条件</div>
     <div class="card-body">
-      <div class="grid-4" style="margin-bottom:10px">
-        <div class="field">
-          <label>交代勤務</label>
-          <div class="radio-row">
-            <label><input type="radio" name="kotai_kinmu" value="可" ${h.kotai_kinmu==='可'?'checked':''}> 可</label>
-            <label><input type="radio" name="kotai_kinmu" value="不可" ${h.kotai_kinmu==='不可'?'checked':''}> 不可</label>
-          </div>
+      <div class="field">
+        <label>交代勤務</label>
+        <div class="radio-row">
+          <label><input type="radio" name="kotai_kinmu" value="可" ${h.kotai_kinmu==='可'?'checked':''}> 可</label>
+          <label><input type="radio" name="kotai_kinmu" value="不可" ${h.kotai_kinmu==='不可'?'checked':''}> 不可</label>
         </div>
-        <div class="field">
-          <label>交代勤務経験</label>
-          <div class="radio-row">
-            <label><input type="radio" name="kotai_keiken" value="あり" ${h.kotai_keiken==='あり'?'checked':''}> あり</label>
-            <label><input type="radio" name="kotai_keiken" value="なし" ${h.kotai_keiken==='なし'?'checked':''}> なし</label>
-          </div>
-        </div>
-        <div class="field">
-          <label>残業対応</label>
-          <div class="radio-row">
-            <label><input type="radio" name="zangyou_taiou" value="可" ${h.zangyou_taiou==='可'?'checked':''}> 可</label>
-            <label><input type="radio" name="zangyou_taiou" value="不可" ${h.zangyou_taiou==='不可'?'checked':''}> 不可</label>
-          </div>
-        </div>
-        <div class="field"><label>一日可能な残業時間</label><input type="text" id="zangyou_jikan" value="${h.zangyou_jikan||''}"></div>
       </div>
-      <div class="grid-4">
-        <div class="field">
-          <label>休日出勤</label>
-          <div class="radio-row">
-            <label><input type="radio" name="kyujitsu_shukkin" value="可" ${h.kyujitsu_shukkin==='可'?'checked':''}> 可</label>
-            <label><input type="radio" name="kyujitsu_shukkin" value="不可" ${h.kyujitsu_shukkin==='不可'?'checked':''}> 不可</label>
-          </div>
+      <div class="field">
+        <label>交代勤務経験</label>
+        <div class="radio-row">
+          <label><input type="radio" name="kotai_keiken" value="あり" ${h.kotai_keiken==='あり'?'checked':''}> あり</label>
+          <label><input type="radio" name="kotai_keiken" value="なし" ${h.kotai_keiken==='なし'?'checked':''}> なし</label>
         </div>
-        <div class="field"><label>判定</label><input type="text" id="kinmu_hantei" value="${h.kinmu_hantei||''}"></div>
-        <div class="field"><label>残業・休出 問題有無</label><input type="text" id="zangyou_mondai" value="${h.zangyou_mondai||''}"></div>
-        <div class="field"><label>早い時間の出勤に慣れているか</label><input type="text" id="hayai_shukkin" value="${h.hayai_shukkin||''}"></div>
       </div>
-      <div class="field"><label>コメント</label><textarea id="kinmu_comment" rows="2">${h.kinmu_comment||''}</textarea></div>
+      <div class="field">
+        <label>残業対応</label>
+        <div class="radio-row">
+          <label><input type="radio" name="zangyou_taiou" value="可" ${h.zangyou_taiou==='可'?'checked':''}> 可</label>
+          <label><input type="radio" name="zangyou_taiou" value="不可" ${h.zangyou_taiou==='不可'?'checked':''}> 不可</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>一日可能な残業時間</label>
+        <input type="text" id="zangyou_jikan" value="${h.zangyou_jikan||''}">
+      </div>
+      <div class="field">
+        <label>休日出勤</label>
+        <div class="radio-row">
+          <label><input type="radio" name="kyujitsu_shukkin" value="可" ${h.kyujitsu_shukkin==='可'?'checked':''}> 可</label>
+          <label><input type="radio" name="kyujitsu_shukkin" value="不可" ${h.kyujitsu_shukkin==='不可'?'checked':''}> 不可</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>判定</label>
+        <input type="text" id="kinmu_hantei" value="${h.kinmu_hantei||''}">
+      </div>
+      <div class="field">
+        <label>残業・休出 問題有無</label>
+        <input type="text" id="zangyou_mondai" value="${h.zangyou_mondai||''}">
+      </div>
+      <div class="field">
+        <label>早い時間の出勤に慣れているか</label>
+        <input type="text" id="hayai_shukkin" value="${h.hayai_shukkin||''}">
+      </div>
+      <div class="field full">
+        <label>コメント</label>
+        <textarea id="kinmu_comment" rows="2">${h.kinmu_comment||''}</textarea>
+      </div>
     </div>
   </div>
 
@@ -414,16 +497,33 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">住所・通勤</div>
     <div class="card-body">
-      <div class="field"><label>現在住所</label><input type="text" id="genzai_jusho" value="${h.genzai_jusho||''}" placeholder="〒000-0000 ..."></div>
-      <div class="grid-4">
-        <div class="field"><label>通勤方法</label><input type="text" id="tsukin_houhou" value="${h.tsukin_houhou||''}" placeholder="自転車・車・電車..."></div>
-        <div class="field"><label>メーカー・車種</label><input type="text" id="tsukin_maker" value="${h.tsukin_maker||''}"></div>
-        <div class="field"><label>通勤距離</label><input type="text" id="tsukin_kyori" value="${h.tsukin_kyori||''}"></div>
-        <div class="field"><label>通勤時間</label><input type="text" id="tsukin_jikan" value="${h.tsukin_jikan||''}"></div>
+      <div class="field full">
+        <label>現在住所</label>
+        <input type="text" id="genzai_jusho" value="${h.genzai_jusho||''}" placeholder="〒000-0000 ...">
       </div>
-      <div class="grid">
-        <div class="field"><label>前職の職場までの距離・通勤時間</label><input type="text" id="mae_kyori" value="${h.mae_kyori||''}"></div>
-        <div class="field"><label>判定</label><input type="text" id="tsukin_hantei" value="${h.tsukin_hantei||''}"></div>
+      <div class="field">
+        <label>通勤方法</label>
+        <input type="text" id="tsukin_houhou" value="${h.tsukin_houhou||''}" placeholder="自転車・車・電車...">
+      </div>
+      <div class="field">
+        <label>メーカー・車種</label>
+        <input type="text" id="tsukin_maker" value="${h.tsukin_maker||''}">
+      </div>
+      <div class="field">
+        <label>通勤距離</label>
+        <input type="text" id="tsukin_kyori" value="${h.tsukin_kyori||''}">
+      </div>
+      <div class="field">
+        <label>通勤時間</label>
+        <input type="text" id="tsukin_jikan" value="${h.tsukin_jikan||''}">
+      </div>
+      <div class="field">
+        <label>前職 距離・通勤時間</label>
+        <input type="text" id="mae_kyori" value="${h.mae_kyori||''}">
+      </div>
+      <div class="field">
+        <label>判定</label>
+        <input type="text" id="tsukin_hantei" value="${h.tsukin_hantei||''}">
       </div>
     </div>
   </div>
@@ -432,25 +532,29 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">住居</div>
     <div class="card-body">
-      <div class="grid-4">
-        <div class="field">
-          <label>住居種類</label>
-          <select id="jutaku_shurui">
-            <option value="">選択</option>
-            <option value="賃貸アパート" ${h.jutaku_shurui==='賃貸アパート'?'selected':''}>賃貸アパート</option>
-            <option value="自己所有" ${h.jutaku_shurui==='自己所有'?'selected':''}>自己所有</option>
-            <option value="派遣アパート" ${h.jutaku_shurui==='派遣アパート'?'selected':''}>派遣アパート</option>
-            <option value="その他" ${h.jutaku_shurui==='その他'?'selected':''}>その他</option>
-          </select>
-        </div>
-        <div class="field"><label>居住年数</label><input type="text" id="kyoju_nensu" value="${h.kyoju_nensu||''}"></div>
-        <div class="field"><label>現在の家賃</label><input type="number" id="genzai_yachin" value="${h.genzai_yachin||''}"></div>
-        <div class="field">
-          <label>引越し</label>
-          <div class="radio-row">
-            <label><input type="radio" name="hikkoshi" value="可" ${h.hikkoshi==='可'?'checked':''}> 可</label>
-            <label><input type="radio" name="hikkoshi" value="不可" ${h.hikkoshi==='不可'?'checked':''}> 不可</label>
-          </div>
+      <div class="field">
+        <label>住居種類</label>
+        <select id="jutaku_shurui">
+          <option value="">選択</option>
+          <option value="賃貸アパート" ${h.jutaku_shurui==='賃貸アパート'?'selected':''}>賃貸アパート</option>
+          <option value="自己所有" ${h.jutaku_shurui==='自己所有'?'selected':''}>自己所有</option>
+          <option value="派遣アパート" ${h.jutaku_shurui==='派遣アパート'?'selected':''}>派遣アパート</option>
+          <option value="その他" ${h.jutaku_shurui==='その他'?'selected':''}>その他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>居住年数</label>
+        <input type="text" id="kyoju_nensu" value="${h.kyoju_nensu||''}">
+      </div>
+      <div class="field">
+        <label>現在の家賃</label>
+        <input type="number" id="genzai_yachin" value="${h.genzai_yachin||''}">
+      </div>
+      <div class="field">
+        <label>引越し</label>
+        <div class="radio-row">
+          <label><input type="radio" name="hikkoshi" value="可" ${h.hikkoshi==='可'?'checked':''}> 可</label>
+          <label><input type="radio" name="hikkoshi" value="不可" ${h.hikkoshi==='不可'?'checked':''}> 不可</label>
         </div>
       </div>
     </div>
@@ -460,9 +564,18 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">給与・応募動機</div>
     <div class="card-body">
-      <div class="field"><label>より高い給与を希望する理由</label><textarea id="kyuyo_kibou_riyu" rows="2">${h.kyuyo_kibou_riyu||''}</textarea></div>
-      <div class="field"><label>給与明細の控除（差し引き）の内容</label><textarea id="kyuyo_kokyo" rows="2">${h.kyuyo_kokyo||''}</textarea></div>
-      <div class="field"><label>応募動機（高収入を得なければならない理由・月々の返済・仕送り・治療費など）</label><textarea id="obo_douki" rows="3">${h.obo_douki||''}</textarea></div>
+      <div class="field full">
+        <label>より高い給与を希望する理由</label>
+        <textarea id="kyuyo_kibou_riyu" rows="2">${h.kyuyo_kibou_riyu||''}</textarea>
+      </div>
+      <div class="field full">
+        <label>給与明細の控除（差し引き）の内容</label>
+        <textarea id="kyuyo_kokyo" rows="2">${h.kyuyo_kokyo||''}</textarea>
+      </div>
+      <div class="field full">
+        <label>応募動機（高収入を得なければならない理由・月々の返済・仕送り・治療費など）</label>
+        <textarea id="obo_douki" rows="3">${h.obo_douki||''}</textarea>
+      </div>
     </div>
   </div>
 
@@ -471,34 +584,64 @@ function renderForm(h, cand = {}) {
   <div class="card">
     <div class="card-title">職歴詳細 ${'①②③'[n-1]}</div>
     <div class="card-body">
-      <div class="grid-4">
-        <div class="field"><label>開始</label><input type="month" id="s${n}_kaishi" value="${h[`s${n}_kaishi`]||''}"><span class="print-date">${formatMonthJP(h[`s${n}_kaishi`])}</span></div>
-        <div class="field"><label>終了</label><input type="month" id="s${n}_shuryo" value="${h[`s${n}_shuryo`]||''}"><span class="print-date">${formatMonthJP(h[`s${n}_shuryo`])}</span></div>
-        <div class="field"><label>社名</label><input type="text" id="s${n}_sha" value="${h[`s${n}_sha`]||''}"></div>
-        <div class="field"><label>勤務地</label><input type="text" id="s${n}_kinmuchi" value="${h[`s${n}_kinmuchi`]||''}"></div>
+      <div class="field">
+        <label>開始</label>
+        <div><input type="month" id="s${n}_kaishi" value="${h[`s${n}_kaishi`]||''}"><span class="print-date">${formatMonthJP(h[`s${n}_kaishi`])}</span></div>
       </div>
-      <div class="grid-3">
-        <div class="field"><label>時給</label><input type="number" id="s${n}_jikyu" value="${h[`s${n}_jikyu`]||''}"></div>
-        <div class="field"><label>総支給額</label><input type="number" id="s${n}_sosshikyu" value="${h[`s${n}_sosshikyu`]||''}"></div>
-        <div class="field"><label>手取り</label><input type="number" id="s${n}_tedori" value="${h[`s${n}_tedori`]||''}"></div>
+      <div class="field">
+        <label>終了</label>
+        <div><input type="month" id="s${n}_shuryo" value="${h[`s${n}_shuryo`]||''}"><span class="print-date">${formatMonthJP(h[`s${n}_shuryo`])}</span></div>
       </div>
-      <div class="field"><label>退社理由</label><input type="text" id="s${n}_taisha" value="${h[`s${n}_taisha`]||''}"></div>
-      <div class="field"><label>何を作っていたか・どんなことをしていたか</label><textarea id="s${n}_naiyou" rows="2">${h[`s${n}_naiyou`]||''}</textarea></div>
-      <div class="field"><label>部品の重さ・速さ・大変だった点・難しかった点</label><textarea id="s${n}_taihen" rows="2">${h[`s${n}_taihen`]||''}</textarea></div>
-      <div class="grid">
-        <div class="field"><label>その仕事を始めた理由</label><input type="text" id="s${n}_douki" value="${h[`s${n}_douki`]||''}"></div>
-        <div class="field">
-          <label>住居種類（当時）</label>
-          <select id="s${n}_jutaku">
-            <option value="">選択</option>
-            <option value="賃貸アパート" ${h[`s${n}_jutaku`]==='賃貸アパート'?'selected':''}>賃貸アパート</option>
-            <option value="自己所有" ${h[`s${n}_jutaku`]==='自己所有'?'selected':''}>自己所有</option>
-            <option value="派遣アパート" ${h[`s${n}_jutaku`]==='派遣アパート'?'selected':''}>派遣アパート</option>
-            <option value="その他" ${h[`s${n}_jutaku`]==='その他'?'selected':''}>その他</option>
-          </select>
-        </div>
+      <div class="field">
+        <label>社名</label>
+        <input type="text" id="s${n}_sha" value="${h[`s${n}_sha`]||''}">
       </div>
-      <div class="field"><label>当時の家賃</label><input type="number" id="s${n}_yachin" value="${h[`s${n}_yachin`]||''}"></div>
+      <div class="field">
+        <label>勤務地</label>
+        <input type="text" id="s${n}_kinmuchi" value="${h[`s${n}_kinmuchi`]||''}">
+      </div>
+      <div class="field">
+        <label>時給</label>
+        <input type="number" id="s${n}_jikyu" value="${h[`s${n}_jikyu`]||''}">
+      </div>
+      <div class="field">
+        <label>総支給額</label>
+        <input type="number" id="s${n}_sosshikyu" value="${h[`s${n}_sosshikyu`]||''}">
+      </div>
+      <div class="field">
+        <label>手取り</label>
+        <input type="number" id="s${n}_tedori" value="${h[`s${n}_tedori`]||''}">
+      </div>
+      <div class="field">
+        <label>退社理由</label>
+        <input type="text" id="s${n}_taisha" value="${h[`s${n}_taisha`]||''}">
+      </div>
+      <div class="field full">
+        <label>何を作っていたか・どんなことをしていたか</label>
+        <textarea id="s${n}_naiyou" rows="2">${h[`s${n}_naiyou`]||''}</textarea>
+      </div>
+      <div class="field full">
+        <label>部品の重さ・速さ・大変だった点・難しかった点</label>
+        <textarea id="s${n}_taihen" rows="2">${h[`s${n}_taihen`]||''}</textarea>
+      </div>
+      <div class="field">
+        <label>その仕事を始めた理由</label>
+        <input type="text" id="s${n}_douki" value="${h[`s${n}_douki`]||''}">
+      </div>
+      <div class="field">
+        <label>住居種類（当時）</label>
+        <select id="s${n}_jutaku">
+          <option value="">選択</option>
+          <option value="賃貸アパート" ${h[`s${n}_jutaku`]==='賃貸アパート'?'selected':''}>賃貸アパート</option>
+          <option value="自己所有" ${h[`s${n}_jutaku`]==='自己所有'?'selected':''}>自己所有</option>
+          <option value="派遣アパート" ${h[`s${n}_jutaku`]==='派遣アパート'?'selected':''}>派遣アパート</option>
+          <option value="その他" ${h[`s${n}_jutaku`]==='その他'?'selected':''}>その他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>当時の家賃</label>
+        <input type="number" id="s${n}_yachin" value="${h[`s${n}_yachin`]||''}">
+      </div>
     </div>
   </div>`).join('')}
   `
@@ -516,7 +659,7 @@ function setSaveStatus(text, cls) {
 async function salvar() {
   const btnSave = document.querySelector('.btn-save')
   const btnBack = document.querySelector('.btn-back')
-  if (btnSave?.disabled) return false // evita duplo clique / envio duplicado
+  if (btnSave?.disabled) return false
   if (btnSave) btnSave.disabled = true
   if (btnBack) btnBack.disabled = true
   setSaveStatus('保存中...', 'saving')
@@ -525,7 +668,6 @@ async function salvar() {
   const hiariguBi = g('hiaringu_bi')
   const nyushaYoteiBi = g('nyusha_yotei_bi')
 
-  // Atualiza dt_kengaku (見学・ヒアリング) e dt_nyusha (入社) no candidates
   const candidateUpdates = {}
   if (hiariguBi)     { candidateUpdates.dt_kengaku = hiariguBi }
   if (nyushaYoteiBi) { candidateUpdates.dt_nyusha = nyushaYoteiBi }
@@ -569,7 +711,6 @@ async function salvar() {
     kyuyo_kibou_riyu: g('kyuyo_kibou_riyu'), kyuyo_kokyo: g('kyuyo_kokyo'), obo_douki: g('obo_douki'),
   }
 
-  // 職歴 ①②③
   for (const n of [1,2,3]) {
     payload[`s${n}_kaishi`]    = g(`s${n}_kaishi`)
     payload[`s${n}_shuryo`]    = g(`s${n}_shuryo`)
