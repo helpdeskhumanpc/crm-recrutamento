@@ -94,6 +94,48 @@ async function sendTelegram(text) {
 }
 
 // ─── Google Contacts ──────────────────────────────────────────
+const REDIRECT_URI = 'https://crm-recrutamento-production.up.railway.app/oauth/callback'
+let currentRefreshToken = process.env.GOOGLE_REFRESH_TOKEN
+
+app.get('/reauth', (req, res) => {
+  const url = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+    client_id:     process.env.GOOGLE_CLIENT_ID,
+    redirect_uri:  REDIRECT_URI,
+    response_type: 'code',
+    scope:         'https://www.googleapis.com/auth/contacts',
+    access_type:   'offline',
+    prompt:        'consent',
+  })
+  res.redirect(url)
+})
+
+app.get('/oauth/callback', async (req, res) => {
+  const { code, error } = req.query
+  if (error || !code) return res.send(`❌ Erro: ${error || 'sem código'}`)
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id:     process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri:  REDIRECT_URI,
+        code,
+        grant_type:    'authorization_code',
+      }),
+    })
+    const data = await tokenRes.json()
+    if (data.refresh_token) {
+      currentRefreshToken = data.refresh_token
+      res.send('✅ Google Contacts reautorizado! Token atualizado.')
+    } else {
+      res.send('⚠️ Token não retornou refresh_token. Tente /reauth novamente.')
+    }
+  } catch (err) {
+    res.send('❌ Erro ao trocar token: ' + err.message)
+  }
+})
+
 async function getAccessToken() {
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -101,7 +143,7 @@ async function getAccessToken() {
     body: new URLSearchParams({
       client_id:     process.env.GOOGLE_CLIENT_ID,
       client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+      refresh_token: currentRefreshToken,
       grant_type:    'refresh_token',
     }),
   })
