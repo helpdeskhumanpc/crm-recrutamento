@@ -489,7 +489,7 @@
         <canvas id="chartMes"></canvas>
       </div>
       <div class="chart-card">
-        <h3>紹介者 ランキング（上位10）</h3>
+        <h3>紹介者</h3>
         <canvas id="chartShokai"></canvas>
       </div>
     </div>
@@ -1721,7 +1721,7 @@ function renderCharts() {
   // Ranking 紹介者
   const shMap = {}
   dados.forEach(c => { if (c.shokai) shMap[c.shokai] = (shMap[c.shokai] || 0) + 1 })
-  const shLabels = Object.keys(shMap).sort((a,b) => shMap[b] - shMap[a]).slice(0, 10)
+  const shLabels = Object.keys(shMap).sort((a,b) => shMap[b] - shMap[a])
   destroyChart('chartShokai')
   chartInstances['chartShokai'] = new Chart(document.getElementById('chartShokai'), {
     type: 'bar',
