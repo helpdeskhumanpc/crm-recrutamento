@@ -1,6 +1,5 @@
 const express = require('express')
 const path    = require('path')
-const fs      = require('fs')
 
 const app = express()
 
@@ -94,9 +93,45 @@ async function sendTelegram(text) {
   })
 }
 
+// ─── Supabase app_settings (persistência entre deploys) ──────
+const SUPABASE_URL         = 'https://xzxfwrbebkwagnropgfb.supabase.co'
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY
+
+async function loadSettings() {
+  if (!SUPABASE_SERVICE_KEY) return {}
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/app_settings?select=key,value`, {
+      headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+    })
+    const rows = await res.json()
+    if (!Array.isArray(rows)) { console.warn('app_settings load:', JSON.stringify(rows)); return {} }
+    return Object.fromEntries(rows.map(r => [r.key, r.value]))
+  } catch (err) {
+    console.warn('app_settings load:', err.message)
+    return {}
+  }
+}
+
+async function saveSetting(key, value) {
+  if (!SUPABASE_SERVICE_KEY) return
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/app_settings`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify([{ key, value, updated_at: new Date().toISOString() }]),
+    })
+  } catch (err) {
+    console.warn('app_settings save:', err.message)
+  }
+}
+
 // ─── Google Contacts ──────────────────────────────────────────
 const REDIRECT_URI      = 'https://crm-recrutamento-production.up.railway.app/oauth/callback'
-const RENEWED_AT_FILE   = '/tmp/token_renewed_at.txt'
 let currentRefreshToken = process.env.GOOGLE_REFRESH_TOKEN
 let reminderTimeout     = null
 
@@ -110,11 +145,15 @@ function scheduleReminder(renewedAt) {
   }, delay)
 }
 
-// Ao iniciar, recupera timer se o servidor reiniciou antes do lembrete
-try {
-  const saved = parseInt(fs.readFileSync(RENEWED_AT_FILE, 'utf8'))
-  if (!isNaN(saved)) scheduleReminder(saved)
-} catch (_) {}
+// Ao iniciar, recupera token renovado e lembrete do Supabase (sobrevive a redeploy)
+loadSettings().then(settings => {
+  if (settings.google_refresh_token) {
+    currentRefreshToken = settings.google_refresh_token
+    console.log('Refresh token carregado do Supabase (app_settings)')
+  }
+  const renewedAt = parseInt(settings.token_renewed_at)
+  if (!isNaN(renewedAt)) scheduleReminder(renewedAt)
+})
 
 app.get('/reauth', (req, res) => {
   const url = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
@@ -149,7 +188,8 @@ app.get('/oauth/callback', async (req, res) => {
       const now      = Date.now()
       const vence    = new Date(now + 7 * 24 * 60 * 60 * 1000)
       const venceStr = `${vence.getFullYear()}/${String(vence.getMonth()+1).padStart(2,'0')}/${String(vence.getDate()).padStart(2,'0')}`
-      try { fs.writeFileSync(RENEWED_AT_FILE, now.toString()) } catch (_) {}
+      saveSetting('google_refresh_token', data.refresh_token)
+      saveSetting('token_renewed_at', now.toString())
       scheduleReminder(now)
       sendTelegram(`✅ Google Contacts reautorizado!\n\n📅 Lembrete agendado para ${venceStr} (1 dia antes de vencer)`).catch(console.warn)
       res.send(`✅ Google Contacts reautorizado! Token válido até ${venceStr}. Lembrete agendado no Telegram.`)

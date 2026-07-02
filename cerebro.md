@@ -648,6 +648,9 @@ git push
 | `GOOGLE_REFRESH_TOKEN` | Refresh token com escopo `auth/contacts` |
 | `TELEGRAM_BOT_TOKEN` | Token do bot Telegram para notificações |
 | `TELEGRAM_CHAT_ID` | ID do grupo/canal que recebe as notificações (valor em `chaves-locais.md`) |
+| `SUPABASE_SERVICE_KEY` | Service role key do Supabase — usada pelo server.js para ler/gravar `app_settings` |
+
+**Tabela `app_settings` (Supabase):** guarda o refresh token do Google renovado via `/reauth` e o timestamp do lembrete, para sobreviver a redeploys. RLS ativado SEM políticas — só o service role acessa. Chaves usadas: `google_refresh_token`, `token_renewed_at`.
 
 **Para testar localmente:**
 ```bash
