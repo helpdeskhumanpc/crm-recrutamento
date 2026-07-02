@@ -29,6 +29,9 @@
   <div class="sidebar-item sidebar-nav" id="btnLeadsTab" style="display:none" onclick="showTab('leads', this)">
     <div class="factory-name">Leads do Site</div>
   </div>
+  <div class="sidebar-item sidebar-nav" id="btnShokaiTab" style="display:none" onclick="showTab('shokai', this)">
+    <div class="factory-name">紹介者分析</div>
+  </div>
   <div class="sidebar-item sidebar-nav sidebar-special" id="btnPoolTab" onclick="showTab('stockpool', this)">
     <div class="factory-name">全体ストック</div>
   </div>
@@ -213,6 +216,27 @@
         <span>Nome</span><span>Telefone</span><span>Fábrica pref.</span><span>Visto</span><span>Gên.</span><span>Idade</span><span>Japonês</span><span>Ação</span>
       </div>
       <div id="poolBody"></div>
+    </div>
+  </div>
+
+  <!-- SHOKAI ANALYSIS VIEW (admin only) -->
+  <div id="shokaiView">
+    <div style="background:white;border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+      <span style="font-size:14px;font-weight:700;color:#00695c">紹介者分析</span>
+      <select id="shokaiPeriodo" style="padding:4px 10px;border:1px solid #ddd;border-radius:4px;font-size:12px" onchange="renderShokaiAnalise()">
+        <option value="">全期間</option>
+        <option value="mes">今月</option>
+        <option value="3">過去3ヶ月</option>
+        <option value="6">過去6ヶ月</option>
+        <option value="12">過去12ヶ月</option>
+      </select>
+      <span id="shokai-resumo" style="font-size:12px;color:#888;margin-left:auto"></span>
+    </div>
+    <div style="background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow-x:auto">
+      <div id="shokaiTable"></div>
+    </div>
+    <div style="font-size:11px;color:#999;padding:0 4px">
+      ※ 入社率 = 入社（在籍含む）÷ 紹介数。紹介数3名未満の紹介者は表の下部に表示されます。
     </div>
   </div>
 

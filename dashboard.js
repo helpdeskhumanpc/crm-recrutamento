@@ -917,8 +917,9 @@ function showTab(tab, btn) {
   document.getElementById('chartsView').style.display    = tab === 'charts'    ? 'flex'  : 'none'
   document.getElementById('leadsView').style.display     = tab === 'leads'     ? 'flex'  : 'none'
   document.getElementById('stockPoolView').style.display = tab === 'stockpool' ? 'flex'  : 'none'
+  document.getElementById('shokaiView').style.display    = tab === 'shokai'    ? 'flex'  : 'none'
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-  if (tab === 'leads' || tab === 'stockpool') {
+  if (tab === 'leads' || tab === 'stockpool' || tab === 'shokai') {
     document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
     if (btn) btn.classList.add('active')
   } else {
@@ -933,6 +934,79 @@ function showTab(tab, btn) {
   if (tab === 'charts')    renderCharts()
   if (tab === 'leads')     renderLeads()
   if (tab === 'stockpool') renderStockPool()
+  if (tab === 'shokai')    renderShokaiAnalise()
+}
+
+// ─── SHOKAI ANALYSIS (admin) ─────────────────────────────────
+function renderShokaiAnalise() {
+  const periodo = document.getElementById('shokaiPeriodo').value
+  let corte = null
+  if (periodo === 'mes') {
+    const h = new Date()
+    corte = new Date(h.getFullYear(), h.getMonth(), 1)
+  } else if (periodo) {
+    corte = new Date()
+    corte.setMonth(corte.getMonth() - parseInt(periodo))
+  }
+
+  const dados = todosOsCandidatos.filter(c => {
+    if (!c.shokai) return false
+    if (corte && new Date(c.created_at) < corte) return false
+    return true
+  })
+
+  const mapa = {}
+  dados.forEach(c => {
+    const m = mapa[c.shokai] || (mapa[c.shokai] = { total: 0, nyusha: 0, ng: 0, andamento: 0 })
+    m.total++
+    if (c.dt_nyusha) m.nyusha++
+    else if (c.dt_ng || c.is_blacklisted) m.ng++
+    else m.andamento++
+  })
+
+  const linhas = Object.entries(mapa).map(([nome, m]) => ({
+    nome, ...m, rate: m.total ? m.nyusha / m.total : 0,
+  }))
+
+  // 3+ indicações primeiro (por taxa, depois por volume); menos de 3 vão para o fim
+  linhas.sort((a, b) => {
+    const aOk = a.total >= 3, bOk = b.total >= 3
+    if (aOk !== bOk) return aOk ? -1 : 1
+    return (b.rate - a.rate) || (b.nyusha - a.nyusha) || (b.total - a.total)
+  })
+
+  const totalGeral  = linhas.reduce((s, l) => s + l.total, 0)
+  const nyushaGeral = linhas.reduce((s, l) => s + l.nyusha, 0)
+  document.getElementById('shokai-resumo').textContent =
+    `紹介者 ${linhas.length}名 ・ 紹介 ${totalGeral}件 ・ 入社 ${nyushaGeral}件（全体 ${totalGeral ? Math.round(nyushaGeral / totalGeral * 100) : 0}%）`
+
+  const corRate = r => r >= 0.5 ? '#2e7d32' : r >= 0.25 ? '#ef6c00' : '#c62828'
+
+  const rows = linhas.map(l => {
+    const pct = Math.round(l.rate * 100)
+    const cor = l.total >= 3 ? corRate(l.rate) : '#999'
+    return `<tr class="${l.total < 3 ? 'poucos' : ''}">
+      <td>${l.nome}</td>
+      <td class="num">${l.total}</td>
+      <td class="num">${l.nyusha}</td>
+      <td class="num">${l.ng}</td>
+      <td class="num">${l.andamento}</td>
+      <td class="num" style="white-space:nowrap">
+        <span class="shokai-bar" style="width:${Math.max(pct, 2) * 0.6}px;background:${cor}"></span>
+        <span class="shokai-rate" style="color:${cor}">${pct}%</span>
+      </td>
+    </tr>`
+  }).join('')
+
+  document.getElementById('shokaiTable').innerHTML = linhas.length ? `
+    <table class="shokai-table">
+      <thead><tr>
+        <th>紹介者</th><th class="num">紹介数</th><th class="num">入社</th>
+        <th class="num">NG</th><th class="num">進行中</th><th class="num">入社率</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`
+    : '<div style="padding:30px;text-align:center;color:#aaa;font-size:13px">この期間の紹介はありません</div>'
 }
 
 // ─── CHARTS ──────────────────────────────────────────────────
@@ -1355,6 +1429,7 @@ async function iniciarDashboard() {
 
   if (profile?.role === 'admin') {
     document.getElementById('btnLeadsTab').style.display = ''
+    document.getElementById('btnShokaiTab').style.display = ''
   }
   document.getElementById('btnPoolTab').style.display = ''
 
