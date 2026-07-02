@@ -59,8 +59,8 @@
     .col-header.col-nyusha, .candidate-row.col-nyusha { grid-template-columns: 140px 85px 105px 90px 85px 55px 45px 90px 55px 90px; }
     .col-header.col-kengaku, .candidate-row.col-kengaku { grid-template-columns: 120px 75px 95px 75px 75px 45px 40px 75px 50px 70px 70px 140px; }
     .col-header.col-zaiseki, .candidate-row.col-zaiseki { grid-template-columns: 130px 80px 100px 80px 80px 50px 40px 80px 50px 80px 90px; }
-    .col-header.col-actions4, .candidate-row.col-actions4 { grid-template-columns: 130px 80px 100px 80px 80px 50px 40px 80px 50px 300px; }
-    .col-header.col-actions3, .candidate-row.col-actions3 { grid-template-columns: 135px 80px 100px 85px 80px 50px 40px 85px 50px 220px; }
+    .col-header.col-actions4, .candidate-row.col-actions4 { grid-template-columns: 130px 80px 100px 80px 80px 50px 40px 80px 50px 300px minmax(100px, 1fr); }
+    .col-header.col-actions3, .candidate-row.col-actions3 { grid-template-columns: 135px 80px 100px 85px 80px 50px 40px 85px 50px 220px minmax(100px, 1fr); }
     .candidate-row:hover { background: #f0f7ff; }
     .candidate-row:last-child { border-bottom: none; }
     .black-flag { color: #c62828; font-weight: 700; font-size: 10px; }

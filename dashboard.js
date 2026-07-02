@@ -449,6 +449,12 @@ function renderAlerts() {
     alerts.map(c => `<span class="alert-chip" onclick="abrirModal('${c.id}')">${c.shimei}</span>`).join('')
 }
 
+function comentarioCol(c) {
+  const txt = (c.tantousha_comentario || '').trim()
+  const attr = txt.replace(/"/g, '&quot;').replace(/</g, '&lt;')
+  return `<span style="font-size:11px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${attr}">${attr || '—'}</span>`
+}
+
 const _expandedStages = new Set()
 
 function renderPipeline() {
@@ -494,7 +500,7 @@ function renderPipeline() {
     if (showNyushaCol)       extraHeader = '<span>入社日</span>'
     else if (showKengakuCol) extraHeader = '<span>見学日</span><span>入社日</span><span>アクション</span>'
     else if (showZaisekiCol) extraHeader = '<span>入社日</span><span></span>'
-    else if (showActions4 || showActions3) extraHeader = '<span>アクション</span>'
+    else if (showActions4 || showActions3) extraHeader = '<span>アクション</span><span>コメント</span>'
 
     const rowsHtml = list.length === 0
       ? `<div class="stage-empty">候補者なし</div>`
@@ -509,11 +515,11 @@ function renderPipeline() {
           else if (showZaisekiCol)
             extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()"><button class="btn-lead blue" onclick="taisha(event,'${c.id}')">退社</button></span>`
           else if (showActions4)
-            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead amber" onclick="avancarEtapa(event,'${c.id}','dt_taiochu')">対応中</button><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
+            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead amber" onclick="avancarEtapa(event,'${c.id}','dt_taiochu')">対応中</button><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>${comentarioCol(c)}`
           else if (showActions3) {
             const proxField = stage.key === 'taiochu' ? 'dt_mensetsu' : 'dt_kengaku'
             const proxLabel = stage.key === 'taiochu' ? '面接' : '見学'
-            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','${proxField}')">${proxLabel}</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
+            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','${proxField}')">${proxLabel}</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>${comentarioCol(c)}`
           }
           return `<div class="candidate-row${colClass}" onclick="abrirModal('${c.id}')">
             <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}">${c.is_blacklisted ? '<span class="black-flag">⚠</span> ' : ''}${c.shimei || '—'}</span>
