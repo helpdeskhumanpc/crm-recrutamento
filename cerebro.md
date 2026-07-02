@@ -647,7 +647,7 @@ git push
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret |
 | `GOOGLE_REFRESH_TOKEN` | Refresh token com escopo `auth/contacts` |
 | `TELEGRAM_BOT_TOKEN` | Token do bot Telegram para notificações |
-| `TELEGRAM_CHAT_ID` | ID do grupo/canal que recebe as notificações (`-5181155523`) |
+| `TELEGRAM_CHAT_ID` | ID do grupo/canal que recebe as notificações (valor em `chaves-locais.md`) |
 
 **Para testar localmente:**
 ```bash
@@ -684,11 +684,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 ```
 
 ### Credenciais já obtidas (canal "通知" no provider "Eder")
-- **Channel ID:** `2010343284`
-- **Channel secret:** `cd8495194fa2a2b7e314690e80b61c6b`
-- **Bot basic ID:** `@207sktgh`
-- **Channel Access Token (long-lived):** `aSk0XxIBYUGXxK/5ZMaicRuutZuus3mm8AoogVJgI1lPlDT3i0Mw9qMuNWvFTSkDwBDktaZ9rPY0hTgaCUiPyxyq035buos4VpgURbT7mNg68cpSAzkF1YalBjxdb0ZeFI6KT6eBopxjgYE4E2QjbgdB04t89/1O/w1cDnyilFU=`
-- **User ID pessoal do Eder (LINE):** `U60d8255b3e3483f02d10d06494b192c0`
+- Salvas localmente em `chaves-locais.md` (arquivo NÃO versionado, só no PC do Eder)
+- ⚠️ O Channel Access Token foi exposto no histórico do git — **regenerar no LINE Developers Console antes de usar**
 
 ### Destino da notificação
 - **Decidido:** enviar para um **grupo do LINE** (não para o User ID pessoal)
