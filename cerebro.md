@@ -340,10 +340,15 @@ created_at  timestamp with time zone default now()
 ```sql
 -- candidates
 create policy "insert publico"   on candidates for insert with check (true);
-create policy "select por cargo" on candidates for select using (...); -- filtro por role
-create policy "update por cargo" on candidates for update using (...); -- filtro por role
-create policy "anon select temp" on candidates for select using (auth.uid() is null and is_deleted = false);
--- ⚠️ anon select temp: remover quando todos usuários estiverem usando login
+create policy "select por cargo" on candidates for select using (...); -- filtro por role (admin/jimusho/tantousha/shokaisha)
+create policy "update por cargo" on candidates for update using (...); -- mesmo filtro do select
+create policy "admin update all" on candidates for update using (...); -- admin
+-- 2026-07-02: acesso anônimo (auth.uid() is null) REMOVIDO do select — só logados leem candidates
+-- 2026-07-02: bug do filtro jimusho corrigido (era p.jimusho = p.jimusho, sempre true;
+--             agora locations.jimusho = p.jimusho) no select e no update
+
+-- app_settings (persistência do server.js)
+-- RLS ativado SEM políticas — só o service role (SUPABASE_SERVICE_KEY) acessa
 
 -- profiles
 create policy "ver proprio perfil" on profiles for select using (auth.uid() = id);
@@ -760,3 +765,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-06-18 | Leads do Site: coluna Visto substituída por Estado e Cidade |
 | 2026-06-18 | Admin passa a ver TODAS as fábricas (inclusive `ativo=false` e sem candidato) na sidebar e nos dropdowns; demais perfis continuam só com `ativo=true` e/ou com candidato |
 | 2026-06-18 | hiaringu.html: `hiaringu_bi` deixou de marcar `dt_naitei` automaticamente — só reflete em `dt_kengaku`. 内定 agora é decisão manual |
+| 2026-07-01 | hiaringu.html: layout de impressão 4 colunas (pergunta\|resposta\|pergunta\|resposta), textareas e labels longos em largura total |
+| 2026-07-02 | Credenciais sensíveis removidas do cerebro.md → `chaves-locais.md` (gitignored, só no PC do Eder) |
+| 2026-07-02 | Tabela `app_settings` criada — token do /reauth e timestamp do lembrete persistem entre deploys (env `SUPABASE_SERVICE_KEY` no Railway) |
+| 2026-07-02 | RLS candidates: acesso anônimo removido do select; bug do filtro jimusho (`p.jimusho = p.jimusho`) corrigido no select e update |
+| 2026-07-02 | dashboard.html separado em dashboard.html + dashboard.css + dashboard.js (split mecânico, sem mudança de código) |
