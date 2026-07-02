@@ -500,11 +500,11 @@ function renderPipeline() {
     if (showNyushaCol)       extraHeader = '<span>入社日</span>'
     else if (showKengakuCol) extraHeader = '<span>見学日</span><span>入社日</span><span>アクション</span>'
     else if (showZaisekiCol) extraHeader = '<span>入社日</span><span></span>'
-    else if (showActions4 || showActions3) extraHeader = '<span>アクション</span><span>コメント</span>'
+    else if (showActions4 || showActions3) extraHeader = '<span>アクション</span>'
 
     const rowsHtml = list.length === 0
       ? `<div class="stage-empty">候補者なし</div>`
-      : `<div class="col-header${colClass}"><span>氏名</span><span>紹介者</span><span>電話番号</span><span>工場</span><span>市区町村</span><span>国籍</span><span>性別</span><span>日本語</span><span>経過</span>${extraHeader}</div>` +
+      : `<div class="col-header${colClass}"><span>氏名</span><span>紹介者</span><span>電話番号</span><span>工場</span><span>市区町村</span><span>国籍</span><span>性別</span><span>日本語</span><span>経過</span>${extraHeader}<span>コメント</span></div>` +
         show.map(c => {
           const d = diasNaEtapa(c)
           let extraCols = ''
@@ -515,11 +515,11 @@ function renderPipeline() {
           else if (showZaisekiCol)
             extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()"><button class="btn-lead blue" onclick="taisha(event,'${c.id}')">退社</button></span>`
           else if (showActions4)
-            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead amber" onclick="avancarEtapa(event,'${c.id}','dt_taiochu')">対応中</button><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>${comentarioCol(c)}`
+            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead amber" onclick="avancarEtapa(event,'${c.id}','dt_taiochu')">対応中</button><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           else if (showActions3) {
             const proxField = stage.key === 'taiochu' ? 'dt_mensetsu' : 'dt_kengaku'
             const proxLabel = stage.key === 'taiochu' ? '面接' : '見学'
-            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','${proxField}')">${proxLabel}</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>${comentarioCol(c)}`
+            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','${proxField}')">${proxLabel}</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           }
           return `<div class="candidate-row${colClass}" onclick="abrirModal('${c.id}')">
             <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}">${c.is_blacklisted ? '<span class="black-flag">⚠</span> ' : ''}${c.shimei || '—'}</span>
@@ -532,6 +532,7 @@ function renderPipeline() {
             <span style="font-size:11px">${c.nivel_japones?.split('（')[0] || '—'}</span>
             <span class="dias-badge ${d.alert ? 'alert' : ''}">${d.text}</span>
             ${extraCols}
+            ${comentarioCol(c)}
           </div>`
         }).join('') +
         (hasMore ? `<div style="padding:7px 16px;font-size:12px;color:#1e88e5;cursor:pointer" onclick="expandStage('${stage.key}')">+ さらに ${list.length - 5} 件</div>` : '')

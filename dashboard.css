@@ -54,11 +54,11 @@
     .stage-count { background: rgba(255,255,255,0.3); border-radius: 12px; padding: 1px 8px; font-size: 11px; }
     .stage-body { background: white; }
     .stage-empty { padding: 10px 16px; color: #aaa; font-size: 12px; font-style: italic; }
-    .col-header { display: grid; grid-template-columns: 140px 85px 105px 90px 85px 55px 45px 90px 55px; gap: 6px; padding: 5px 16px; background: #f5f5f5; font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; }
-    .candidate-row { display: grid; grid-template-columns: 140px 85px 105px 90px 85px 55px 45px 90px 55px; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; cursor: pointer; transition: background 0.1s; }
-    .col-header.col-nyusha, .candidate-row.col-nyusha { grid-template-columns: 140px 85px 105px 90px 85px 55px 45px 90px 55px 90px; }
-    .col-header.col-kengaku, .candidate-row.col-kengaku { grid-template-columns: 120px 75px 95px 75px 75px 45px 40px 75px 50px 70px 70px 140px; }
-    .col-header.col-zaiseki, .candidate-row.col-zaiseki { grid-template-columns: 130px 80px 100px 80px 80px 50px 40px 80px 50px 80px 90px; }
+    .col-header { display: grid; grid-template-columns: 140px 85px 105px 90px 85px 55px 45px 90px 55px minmax(100px, 1fr); gap: 6px; padding: 5px 16px; background: #f5f5f5; font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; }
+    .candidate-row { display: grid; grid-template-columns: 140px 85px 105px 90px 85px 55px 45px 90px 55px minmax(100px, 1fr); gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; cursor: pointer; transition: background 0.1s; }
+    .col-header.col-nyusha, .candidate-row.col-nyusha { grid-template-columns: 140px 85px 105px 90px 85px 55px 45px 90px 55px 90px minmax(100px, 1fr); }
+    .col-header.col-kengaku, .candidate-row.col-kengaku { grid-template-columns: 120px 75px 95px 75px 75px 45px 40px 75px 50px 70px 70px 140px minmax(90px, 1fr); }
+    .col-header.col-zaiseki, .candidate-row.col-zaiseki { grid-template-columns: 130px 80px 100px 80px 80px 50px 40px 80px 50px 80px 90px minmax(100px, 1fr); }
     .col-header.col-actions4, .candidate-row.col-actions4 { grid-template-columns: 130px 80px 100px 80px 80px 50px 40px 80px 50px 300px minmax(100px, 1fr); }
     .col-header.col-actions3, .candidate-row.col-actions3 { grid-template-columns: 135px 80px 100px 85px 80px 50px 40px 85px 50px 220px minmax(100px, 1fr); }
     .candidate-row:hover { background: #f0f7ff; }
@@ -267,6 +267,7 @@
       .candidate-row > span:nth-child(10),
       .candidate-row > span:nth-child(11),
       .candidate-row > span:nth-child(12),
+      .candidate-row > span:nth-child(13),
       .col-header > span:nth-child(2),
       .col-header > span:nth-child(4),
       .col-header > span:nth-child(5),
@@ -275,7 +276,8 @@
       .col-header > span:nth-child(8),
       .col-header > span:nth-child(10),
       .col-header > span:nth-child(11),
-      .col-header > span:nth-child(12) { display:none; }
+      .col-header > span:nth-child(12),
+      .col-header > span:nth-child(13) { display:none; }
 
       /* Espaço para bottom nav */
       #pipeline, #calendarView, #chartsView, #leadsView, #stockPoolView, #shokaiView { padding-bottom: 65px; }
