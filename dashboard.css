@@ -244,7 +244,7 @@
       #topbar h1 { display:none; }
       .tab-btn { display:none; }
       .btn-hamburger { display:block; }
-      #filterSexo, #filterIdade, #filterJP { display:none; }
+      #filterSexo, #filterIdade, #filterJP, #periodoWrap { display:none !important; }
       #searchInput { flex:1; min-width:0; }
       .btn-refresh[onclick="carregarDados()"] { display:none; }
       div[style*="position:relative"] { display:none; } /* ステージ dropdown */

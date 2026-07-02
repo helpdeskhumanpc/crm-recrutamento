@@ -382,6 +382,28 @@ function imprimirPDFLeads() {
   w.document.close()
 }
 
+// Filtro global por data de cadastro (created_at).
+// comExcecao=true: candidatos em 入社/在籍 nunca somem, independente do período.
+function dentroDoPeriodo(c, comExcecao = true) {
+  if (comExcecao) {
+    const st = getStage(c)
+    if (st === 'nyusha' || st === 'zaiseki') return true
+  }
+  const ini = document.getElementById('filterDtIni')?.value
+  const fim = document.getElementById('filterDtFim')?.value
+  const d = (c.created_at || '').split('T')[0]
+  if (ini && d < ini) return false
+  if (fim && d > fim) return false
+  return true
+}
+
+function onPeriodoChange() {
+  renderPipeline()
+  if (document.getElementById('calendarView').style.display !== 'none') renderCalendar()
+  if (document.getElementById('chartsView').style.display   !== 'none') renderCharts()
+  if (document.getElementById('shokaiView').style.display   !== 'none') renderShokaiAnalise()
+}
+
 function getFiltrados() {
   const search = document.getElementById('searchInput').value.toLowerCase()
   const sexo   = document.getElementById('filterSexo').value
@@ -392,6 +414,7 @@ function getFiltrados() {
   return todosOsCandidatos.filter(c => {
     if (c.origem === 'web' || c.origem === 'web_stock') return false
     if (c.dt_stock_geral && !c.dt_ng) return false
+    if (!dentroDoPeriodo(c)) return false
     if (fabricaAtiva && fabricaEfetiva(c) !== fabricaAtiva) return false
     if (shokaiAtivo && c.shokai !== shokaiAtivo) return false
     if (sexo   && c.sexo !== sexo)                                            return false
@@ -554,6 +577,7 @@ function renderCalendar() {
 
   todosOsCandidatos
     .filter(c => !fabFilter || fabricaEfetiva(c) === fabFilter)
+    .filter(c => dentroDoPeriodo(c))
     .forEach(c => {
       add(c.dt_mensetsu, 'mensetsu', c.shimei, c.fabrica, c.id)
       add(c.dt_kengaku,  'kengaku',  c.shimei, c.fabrica, c.id)
@@ -939,21 +963,9 @@ function showTab(tab, btn) {
 
 // ─── SHOKAI ANALYSIS (admin) ─────────────────────────────────
 function renderShokaiAnalise() {
-  const periodo = document.getElementById('shokaiPeriodo').value
-  let corte = null
-  if (periodo === 'mes') {
-    const h = new Date()
-    corte = new Date(h.getFullYear(), h.getMonth(), 1)
-  } else if (periodo) {
-    corte = new Date()
-    corte.setMonth(corte.getMonth() - parseInt(periodo))
-  }
-
-  const dados = todosOsCandidatos.filter(c => {
-    if (!c.shokai) return false
-    if (corte && new Date(c.created_at) < corte) return false
-    return true
-  })
+  // usa o período global do topo, SEM exceção de 入社/在籍:
+  // a taxa compara "dos cadastrados no período, quantos entraram"
+  const dados = todosOsCandidatos.filter(c => c.shokai && dentroDoPeriodo(c, false))
 
   const mapa = {}
   dados.forEach(c => {
@@ -1016,7 +1028,7 @@ function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy
 
 function renderCharts() {
   const fab = document.getElementById('chartFabrica').value
-  const candidatosValidos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock')
+  const candidatosValidos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock' && dentroDoPeriodo(c))
   const dados = fab ? candidatosValidos.filter(c => fabricaEfetiva(c) === fab) : candidatosValidos
 
   // Esconde/mostra gráfico de fábricas quando filtrado
@@ -1432,6 +1444,14 @@ async function iniciarDashboard() {
     document.getElementById('btnShokaiTab').style.display = ''
   }
   document.getElementById('btnPoolTab').style.display = ''
+
+  // Período padrão: 3 meses atrás → hoje (登録日)
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  const hoje = new Date()
+  const tresMeses = new Date(hoje)
+  tresMeses.setMonth(tresMeses.getMonth() - 3)
+  document.getElementById('filterDtIni').value = iso(tresMeses)
+  document.getElementById('filterDtFim').value = iso(hoje)
 
   showTab('pipeline')
   await carregarDados()
