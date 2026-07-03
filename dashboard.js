@@ -1097,11 +1097,17 @@ function renderCharts() {
   const shMap = {}
   dados.forEach(c => { if (c.shokai) shMap[c.shokai] = (shMap[c.shokai] || 0) + 1 })
   const shLabels = Object.keys(shMap).sort((a,b) => shMap[b] - shMap[a])
+  // altura dinâmica: cresce com a quantidade de 紹介者 para mostrar todos os nomes
+  document.getElementById('chartShokaiWrap').style.height = Math.max(200, shLabels.length * 28 + 40) + 'px'
   destroyChart('chartShokai')
   chartInstances['chartShokai'] = new Chart(document.getElementById('chartShokai'), {
     type: 'bar',
     data: { labels: shLabels, datasets: [{ data: shLabels.map(s => shMap[s]), backgroundColor: '#e8621a', borderRadius: 4 }] },
-    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { autoSkip: false } } }
+    }
   })
 }
 

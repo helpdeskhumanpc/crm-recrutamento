@@ -135,6 +135,7 @@
     .chart-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .chart-card h3 { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 12px; }
     .chart-card canvas { max-height: 280px; }
+    #chartShokaiWrap canvas { max-height: none; }
     .conversion-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .conv-card { background: white; border-radius: 8px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-align: center; }
     .conv-pct { font-size: 28px; font-weight: 700; color: #1e88e5; }
