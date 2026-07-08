@@ -298,6 +298,7 @@ function imprimirPDF() {
     }).join('')
 
   const w = window.open('', '_blank')
+  if (!w) { alert('⚠️ ポップアップがブロックされました。\nブラウザのアドレスバーでこのサイトのポップアップを許可してください。'); return }
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>候補者リスト</title>
     <style>
       body { font-family: 'Helvetica Neue', sans-serif; font-size: 11px; padding: 20px; color: #333; }
@@ -325,25 +326,8 @@ function imprimirPDF() {
 function imprimirPDFLeads() {
   const fabFilter = document.getElementById('leadsFilter')?.value || ''
   const fab = fabFilter ? `【${fabFilter}】` : '【全体】'
-  const search = document.getElementById('searchInput')?.value.toLowerCase() || ''
-  const f = activeFilters
-  const leads = todosOsCandidatos.filter(c => {
-    if (c.origem !== 'web' && c.origem !== 'web_indicado' && c.origem !== 'web_stock') return false
-    if (fabFilter && c.fabrica !== fabFilter) return false
-    if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
-    if (f.jp?.length    && !f.jp.includes(c.nivel_japones))     return false
-    if (f.emp?.length   && !f.emp.includes(c.esta_empregado))    return false
-    if (f.nac?.length   && !f.nac.includes(c.nacionalidade))     return false
-    if (f.pref?.length  && !f.pref.includes(c.prefecture))       return false
-    if (f.turno?.length  && !(c.turnos_possiveis||[]).some(t => f.turno.includes(t)))   return false
-    if (f.menkyo?.length && !(c.habilitacao||[]).some(m => f.menkyo.includes(m)))       return false
-    if (f.exp?.length    && !(c.experiencia||[]).some(e => f.exp.includes(e)))          return false
-    if (f.apt            && String(c.precisa_apartamento) !== f.apt)                    return false
-    if (f.sexo           && c.sexo !== f.sexo)                                          return false
-    if (f.move           && String(c.pode_mudar) !== f.move)                            return false
-    if (f.ageMax         && (c.idade > f.ageMax))                                       return false
-    return true
-  })
+  // mesma lógica de filtro da tela — o PDF imprime exatamente o que está visível
+  const leads = getLeadsFiltrados()
 
   const linhas = LEAD_STAGES.map(stage => {
     const list = leads.filter(c => getLeadsStage(c) === stage.key)
@@ -361,6 +345,7 @@ function imprimirPDFLeads() {
   }).join('')
 
   const w = window.open('', '_blank')
+  if (!w) { alert('⚠️ ポップアップがブロックされました。\nブラウザのアドレスバーでこのサイトのポップアップを許可してください。'); return }
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Leads do Site</title>
     <style>
       body { font-family: 'Helvetica Neue', sans-serif; font-size: 11px; padding: 20px; color: #333; }
@@ -1169,22 +1154,15 @@ function getLeadsStage(c) {
   return 'renrakumae'
 }
 
-function renderLeads() {
-  const sel = document.getElementById('leadsFilter')
-  const fabFilter = sel?.value || ''
-
-  // Popula dropdown de fábricas
-  const allLeads = todosOsCandidatos.filter(c => c.origem === 'web' || c.origem === 'web_indicado' || c.origem === 'web_stock')
-  const fabs = [...new Set(allLeads.map(c => c.fabrica).filter(Boolean))].sort()
-  const cur  = sel?.value || ''
-  if (sel) sel.innerHTML = '<option value="">Todas as fábricas</option>' + fabs.map(f => `<option value="${f}" ${f===cur?'selected':''}>${f}</option>`).join('')
-
+function getLeadsFiltrados() {
+  const fabFilter = document.getElementById('leadsFilter')?.value || ''
   const search = document.getElementById('searchInput')?.value.toLowerCase() || ''
   const sexo   = document.getElementById('filterSexo')?.value || ''
   const jp     = document.getElementById('filterJP')?.value || ''
   const idade  = parseInt(document.getElementById('filterIdade')?.value) || null
   const f = activeFilters
-  const leads = allLeads.filter(c => {
+  return todosOsCandidatos.filter(c => {
+    if (c.origem !== 'web' && c.origem !== 'web_indicado' && c.origem !== 'web_stock') return false
     if (!dentroDoPeriodo(c)) return false
     if (fabFilter && c.fabrica !== fabFilter) return false
     if (sexo   && c.sexo !== sexo)                                            return false
@@ -1205,6 +1183,18 @@ function renderLeads() {
     if (f.ageMax         && (c.idade > f.ageMax))                                       return false
     return true
   })
+}
+
+function renderLeads() {
+  const sel = document.getElementById('leadsFilter')
+
+  // Popula dropdown de fábricas
+  const allLeads = todosOsCandidatos.filter(c => c.origem === 'web' || c.origem === 'web_indicado' || c.origem === 'web_stock')
+  const fabs = [...new Set(allLeads.map(c => c.fabrica).filter(Boolean))].sort()
+  const cur  = sel?.value || ''
+  if (sel) sel.innerHTML = '<option value="">Todas as fábricas</option>' + fabs.map(f => `<option value="${f}" ${f===cur?'selected':''}>${f}</option>`).join('')
+
+  const leads = getLeadsFiltrados()
 
   const grouped = {}
   LEAD_STAGES.forEach(s => grouped[s.key] = [])
