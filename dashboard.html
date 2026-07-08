@@ -61,12 +61,12 @@
       <input type="date" id="filterDtFim" class="filter-select" style="width:130px" onchange="onPeriodoChange()">
     </span>
     <input type="text" id="searchInput" placeholder="氏名・電話で検索" oninput="renderPipeline(); renderLeads()">
-    <select class="filter-select" id="filterSexo" onchange="renderPipeline()">
+    <select class="filter-select" id="filterSexo" onchange="renderPipeline(); renderLeads()">
       <option value="">性別：全て</option>
       <option value="男性">男性</option><option value="女性">女性</option>
     </select>
-    <input type="number" id="filterIdade" class="filter-select" placeholder="年齢上限" style="width:90px" oninput="renderPipeline()">
-    <select class="filter-select" id="filterJP" onchange="renderPipeline()">
+    <input type="number" id="filterIdade" class="filter-select" placeholder="年齢上限" style="width:90px" oninput="renderPipeline(); renderLeads()">
+    <select class="filter-select" id="filterJP" onchange="renderPipeline(); renderLeads()">
       <option value="">日本語：全て</option>
       <option value="0%（日本語不可）">0%</option>
       <option value="N5 10%〜（少し話せる）">N5</option>

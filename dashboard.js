@@ -1180,10 +1180,16 @@ function renderLeads() {
   if (sel) sel.innerHTML = '<option value="">Todas as fábricas</option>' + fabs.map(f => `<option value="${f}" ${f===cur?'selected':''}>${f}</option>`).join('')
 
   const search = document.getElementById('searchInput')?.value.toLowerCase() || ''
+  const sexo   = document.getElementById('filterSexo')?.value || ''
+  const jp     = document.getElementById('filterJP')?.value || ''
+  const idade  = parseInt(document.getElementById('filterIdade')?.value) || null
   const f = activeFilters
   const leads = allLeads.filter(c => {
     if (!dentroDoPeriodo(c)) return false
     if (fabFilter && c.fabrica !== fabFilter) return false
+    if (sexo   && c.sexo !== sexo)                                            return false
+    if (jp     && c.nivel_japones !== jp)                                     return false
+    if (idade  && c.idade > idade)                                            return false
     if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
     if (f.jp?.length    && !f.jp.includes(c.nivel_japones))     return false
     if (f.emp?.length   && !f.emp.includes(c.esta_empregado))    return false
