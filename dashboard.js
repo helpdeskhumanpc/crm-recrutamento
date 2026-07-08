@@ -404,6 +404,7 @@ function onPeriodoChange() {
   if (document.getElementById('calendarView').style.display !== 'none') renderCalendar()
   if (document.getElementById('chartsView').style.display   !== 'none') renderCharts()
   if (document.getElementById('shokaiView').style.display   !== 'none') renderShokaiAnalise()
+  if (document.getElementById('leadsView').style.display    !== 'none') renderLeads()
 }
 
 function getFiltrados() {
@@ -1181,6 +1182,7 @@ function renderLeads() {
   const search = document.getElementById('searchInput')?.value.toLowerCase() || ''
   const f = activeFilters
   const leads = allLeads.filter(c => {
+    if (!dentroDoPeriodo(c)) return false
     if (fabFilter && c.fabrica !== fabFilter) return false
     if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
     if (f.jp?.length    && !f.jp.includes(c.nivel_japones))     return false
