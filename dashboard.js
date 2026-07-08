@@ -1192,6 +1192,7 @@ function renderLeads() {
     if (idade  && c.idade > idade)                                            return false
     if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
     if (f.jp?.length    && !f.jp.includes(c.nivel_japones))     return false
+    if (f.stage?.length && !f.stage.includes(getLeadsStage(c))) return false
     if (f.emp?.length   && !f.emp.includes(c.esta_empregado))    return false
     if (f.nac?.length   && !f.nac.includes(c.nacionalidade))     return false
     if (f.pref?.length  && !f.pref.includes(c.prefecture))       return false
