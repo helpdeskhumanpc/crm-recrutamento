@@ -369,6 +369,16 @@ function imprimirPDFLeads() {
   w.document.close()
 }
 
+// Normaliza campo que deveria ser array mas pode vir como texto do banco
+function asArr(v) {
+  if (Array.isArray(v)) return v
+  if (v == null || v === '') return []
+  if (typeof v === 'string') {
+    try { const p = JSON.parse(v); return Array.isArray(p) ? p : [v] } catch (_) { return [v] }
+  }
+  return []
+}
+
 // Filtro global por data de cadastro (created_at).
 // comExcecao=true: candidatos em 入社/在籍 nunca somem, independente do período.
 function dentroDoPeriodo(c, comExcecao = true) {
@@ -415,9 +425,9 @@ function getFiltrados() {
     if (f.emp?.length   && !f.emp.includes(c.esta_empregado))    return false
     if (f.nac?.length   && !f.nac.includes(c.nacionalidade))     return false
     if (f.pref?.length  && !f.pref.includes(c.prefecture))       return false
-    if (f.turno?.length  && !(c.turnos_possiveis||[]).some(t => f.turno.includes(t)))   return false
-    if (f.menkyo?.length && !(c.habilitacao||[]).some(m => f.menkyo.includes(m)))       return false
-    if (f.exp?.length    && !(c.experiencia||[]).some(e => f.exp.includes(e)))          return false
+    if (f.turno?.length  && !asArr(c.turnos_possiveis).some(t => f.turno.includes(t)))   return false
+    if (f.menkyo?.length && !asArr(c.habilitacao).some(m => f.menkyo.includes(m)))       return false
+    if (f.exp?.length    && !asArr(c.experiencia).some(e => f.exp.includes(e)))          return false
     if (f.apt            && String(c.precisa_apartamento) !== f.apt)                    return false
     if (f.sexo           && c.sexo !== f.sexo)                                          return false
     if (f.move           && String(c.pode_mudar) !== f.move)                            return false
@@ -1174,9 +1184,9 @@ function getLeadsFiltrados() {
     if (f.emp?.length   && !f.emp.includes(c.esta_empregado))    return false
     if (f.nac?.length   && !f.nac.includes(c.nacionalidade))     return false
     if (f.pref?.length  && !f.pref.includes(c.prefecture))       return false
-    if (f.turno?.length  && !(c.turnos_possiveis||[]).some(t => f.turno.includes(t)))   return false
-    if (f.menkyo?.length && !(c.habilitacao||[]).some(m => f.menkyo.includes(m)))       return false
-    if (f.exp?.length    && !(c.experiencia||[]).some(e => f.exp.includes(e)))          return false
+    if (f.turno?.length  && !asArr(c.turnos_possiveis).some(t => f.turno.includes(t)))   return false
+    if (f.menkyo?.length && !asArr(c.habilitacao).some(m => f.menkyo.includes(m)))       return false
+    if (f.exp?.length    && !asArr(c.experiencia).some(e => f.exp.includes(e)))          return false
     if (f.apt            && String(c.precisa_apartamento) !== f.apt)                    return false
     if (f.sexo           && c.sexo !== f.sexo)                                          return false
     if (f.move           && String(c.pode_mudar) !== f.move)                            return false
