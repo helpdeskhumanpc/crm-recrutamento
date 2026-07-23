@@ -805,7 +805,9 @@ function abrirModal(id) {
     <div class="modal-section">
       <div class="modal-section-title">パイプライン日付</div>
       <div class="modal-grid-3">
-        <div class="modal-field"><label>応募日</label><input type="text" value="${c.created_at ? fmtDataPT(c.created_at.slice(0,10)) : '—'}" disabled style="background:#f5f5f5;color:#666"></div>
+        <div class="modal-field"><label>応募日</label>${currentProfile?.role === 'admin'
+          ? `<input type="date" id="f_oubo" value="${c.created_at ? c.created_at.slice(0,10) : ''}">`
+          : `<input type="text" value="${c.created_at ? fmtDataPT(c.created_at.slice(0,10)) : '—'}" disabled style="background:#f5f5f5;color:#666">`}</div>
         <div class="modal-field"><label>対応中</label><div class="date-with-btn"><input type="date" id="f_taio" value="${c.dt_taiochu||''}"><button class="btn-hoje" onclick="hoje('f_taio')">今日</button></div></div>
         <div class="modal-field"><label>面接日</label><div class="date-with-btn"><input type="date" id="f_mens" value="${c.dt_mensetsu||''}"><button class="btn-hoje" onclick="hoje('f_mens')">今日</button></div></div>
         <div class="modal-field"><label>面接時間</label><input type="time" id="f_menshora" value="${c.mensetsu_hora||''}"></div>
@@ -892,6 +894,12 @@ async function salvarCandidato() {
     alerta_nota:          g('f_alertnota').value || null,
     comentario:           g('f_com').value     || null,
     tantousha_comentario: g('f_tancom').value  || null,
+  }
+
+  const fOubo = g('f_oubo')
+  if (fOubo && fOubo.value) {
+    const horaOriginal = candidatoAtivo.created_at ? candidatoAtivo.created_at.slice(10) : 'T00:00:00.000Z'
+    payload.created_at = fOubo.value + horaOriginal
   }
 
   const { error } = await sb.from('candidates').update(payload).eq('id', candidatoAtivo.id)
