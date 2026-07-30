@@ -1042,7 +1042,7 @@ function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy
 
 function renderCharts() {
   const fab = document.getElementById('chartFabrica').value
-  const candidatosValidos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock' && dentroDoPeriodo(c))
+  const candidatosValidos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock' && dentroDoPeriodo(c, false))
   const dados = fab ? candidatosValidos.filter(c => fabricaEfetiva(c) === fab) : candidatosValidos
 
   // Esconde/mostra gráfico de fábricas quando filtrado
