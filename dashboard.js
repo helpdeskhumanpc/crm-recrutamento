@@ -332,10 +332,11 @@ function imprimirPDFLeads() {
   const linhas = LEAD_STAGES.map(stage => {
     const list = leads.filter(c => getLeadsStage(c) === stage.key)
     if (!list.length) return ''
-    return `<tr class="stage-row"><td colspan="7">${stage.label}（${list.length}名）</td></tr>` +
+    return `<tr class="stage-row"><td colspan="8">${stage.label}（${list.length}名）</td></tr>` +
       list.map((c, i) => `<tr class="${i%2===0?'even':''}">
         <td>${c.shimei||'—'}</td>
         <td>${c.telefone||'—'}</td>
+        <td>${c.idade||'—'}</td>
         <td>${c.fabrica||'—'}</td>
         <td>${c.prefecture||'—'}</td>
         <td>${c.city||'—'}</td>
@@ -363,7 +364,7 @@ function imprimirPDFLeads() {
     <p>出力日：${new Date().toLocaleDateString('ja-JP')}　総件数: ${leads.length}名</p>
     <button onclick="window.print()" style="margin-bottom:14px;padding:7px 18px;background:#1e88e5;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px">印刷 / PDF保存</button>
     <table>
-      <thead><tr><th>氏名</th><th>電話番号</th><th>工場</th><th>都道府県</th><th>市区町村</th><th>日本語</th><th>アパート</th></tr></thead>
+      <thead><tr><th>氏名</th><th>電話番号</th><th>年齢</th><th>工場</th><th>都道府県</th><th>市区町村</th><th>日本語</th><th>アパート</th></tr></thead>
       <tbody>${linhas}</tbody>
     </table></body></html>`)
   w.document.close()
