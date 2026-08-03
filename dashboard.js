@@ -403,7 +403,7 @@ function onPeriodoChange() {
   if (document.getElementById('leadsView').style.display    !== 'none') renderLeads()
 }
 
-function getFiltrados() {
+function getFiltrados(comExcecaoPeriodo = true) {
   const search = document.getElementById('searchInput').value.toLowerCase()
   const sexo   = document.getElementById('filterSexo').value
   const jp     = document.getElementById('filterJP').value
@@ -413,7 +413,7 @@ function getFiltrados() {
   return todosOsCandidatos.filter(c => {
     if (c.origem === 'web' || c.origem === 'web_stock') return false
     if (c.dt_stock_geral && !c.dt_ng) return false
-    if (!dentroDoPeriodo(c)) return false
+    if (!dentroDoPeriodo(c, comExcecaoPeriodo)) return false
     if (fabricaAtiva && fabricaEfetiva(c) !== fabricaAtiva) return false
     if (shokaiAtivo && c.shokai !== shokaiAtivo) return false
     if (sexo   && c.sexo !== sexo)                                            return false
@@ -1042,7 +1042,7 @@ function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy
 
 function renderCharts() {
   const fab = document.getElementById('chartFabrica').value
-  const candidatosValidos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock' && dentroDoPeriodo(c, false))
+  const candidatosValidos = getFiltrados(false)
   const dados = fab ? candidatosValidos.filter(c => fabricaEfetiva(c) === fab) : candidatosValidos
 
   // Esconde/mostra gráfico de fábricas quando filtrado
