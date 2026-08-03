@@ -29,7 +29,7 @@ const STAGES = [
   { key:'renrakumae', label:'連絡前',  cls:'stage-renrakumae' },
   { key:'taiochu',   label:'対応中',  cls:'stage-taiochu'    },
   { key:'mensetsu',  label:'面接',    cls:'stage-mensetsu'   },
-  { key:'kengaku',   label:'見学・ヒアリング済み',    cls:'stage-kengaku'    },
+  { key:'kengaku',   label:'見学・ヒアリング',    cls:'stage-kengaku'    },
   { key:'naitei',    label:'内定',    cls:'stage-naitei'     },
   { key:'nyusha',    label:'入社',    cls:'stage-nyusha'     },
   { key:'zaiseki',   label:'在籍',    cls:'stage-zaiseki'    },
@@ -591,7 +591,7 @@ function renderCalendar() {
       if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, c.fabrica, c.id)
     })
 
-  const tipoLabel = { mensetsu:'面接', kengaku:'見学・ヒアリング済み', nyusha:'入社', alerta:'アラート' }
+  const tipoLabel = { mensetsu:'面接', kengaku:'見学・ヒアリング', nyusha:'入社', alerta:'アラート' }
 
   // ── GRID (desktop) ──────────────────────────────────────
   const grid = document.getElementById('calGrid')
@@ -1060,7 +1060,7 @@ function renderCharts() {
   document.getElementById('cv-nyu').textContent   = pct(comNyu, comNait)
 
   // Funil
-  const stageLabels = ['連絡前','対応中','面接','見学・ヒアリング済み','内定','入社','在籍','工場ストック','NG','ブラック']
+  const stageLabels = ['連絡前','対応中','面接','見学・ヒアリング','内定','入社','在籍','工場ストック','NG','ブラック']
   const stageKeys   = ['renrakumae','taiochu','mensetsu','kengaku','naitei','nyusha','zaiseki','stock','ng','black']
   const stageCounts = stageKeys.map(k => dados.filter(c => getStage(c) === k).length)
   const stageColors = ['#1e88e5','#f57c00','#00897b','#5e35b1','#2e7d32','#7b1fa2','#00695c','#e91e8c','#c62828','#212121']
