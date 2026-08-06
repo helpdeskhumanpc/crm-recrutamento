@@ -503,7 +503,7 @@ function renderPipeline() {
 
     const rowsHtml = list.length === 0
       ? `<div class="stage-empty">候補者なし</div>`
-      : `<div class="col-header${colClass}"><span>氏名</span><span>紹介者</span><span>電話番号</span><span>工場</span><span>市区町村</span><span>国籍</span><span>性別</span><span>日本語</span><span>経過</span>${extraHeader}<span>コメント</span></div>` +
+      : `<div class="col-header${colClass}"><span>番号</span><span>氏名</span><span>紹介者</span><span>電話番号</span><span>工場</span><span>市区町村</span><span>国籍</span><span>性別</span><span>日本語</span><span>経過</span>${extraHeader}<span>コメント</span></div>` +
         show.map(c => {
           const d = diasNaEtapa(c)
           let extraCols = ''
@@ -521,6 +521,7 @@ function renderPipeline() {
             extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','${proxField}')">${proxLabel}</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           }
           return `<div class="candidate-row${colClass}" onclick="abrirModal('${c.id}')">
+            <span style="font-size:11px;color:#999">${c.numero_cadastro ?? '—'}</span>
             <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}">${c.is_blacklisted ? '<span class="black-flag">⚠</span> ' : ''}${c.shimei || '—'}</span>
             <span style="font-size:11px;color:#666">${c.shokai || '—'}</span>
             <span>${c.telefone || '—'}</span>
