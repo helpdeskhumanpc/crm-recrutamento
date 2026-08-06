@@ -770,3 +770,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-07-02 | Tabela `app_settings` criada — token do /reauth e timestamp do lembrete persistem entre deploys (env `SUPABASE_SERVICE_KEY` no Railway) |
 | 2026-07-02 | RLS candidates: acesso anônimo removido do select; bug do filtro jimusho (`p.jimusho = p.jimusho`) corrigido no select e update |
 | 2026-07-02 | dashboard.html separado em dashboard.html + dashboard.css + dashboard.js (split mecânico, sem mudança de código) |
+
+## Pendências
+
+- **curriculo-edit.html e hiaringu.html sem controle de acesso**: as páginas não checam login (sem `auth.getUser()`) — qualquer pessoa com o link pode abrir e editar. A tabela `curriculos` não tem política de UPDATE no RLS nem coluna de fábrica/candidate_id (é buscada só por telefone), então não dá pra restringir por cargo/fábrica sem antes: (1) ligar RLS na tabela, (2) adicionar login nas duas páginas, (3) decidir como vincular `curriculos` a uma fábrica (hoje não tem esse dado). Adiado a pedido do Eder em 2026-08-06 — resolver depois.

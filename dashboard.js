@@ -728,6 +728,16 @@ function copiarDados(btn) {
   })
 }
 
+function podeEditar(c) {
+  const role = currentProfile?.role
+  if (role === 'admin' || role === 'jimusho') return true
+  if (role === 'tantousha') {
+    const fabricas = currentProfile?.fabricas || []
+    return fabricas.includes(c.fabrica) || fabricas.includes(c.fabrica2)
+  }
+  return false
+}
+
 function abrirModal(id) {
   const c = todosOsCandidatos.find(x => x.id == id)
   if (!c) return
@@ -845,11 +855,23 @@ function abrirModal(id) {
       <button class="btn-hoje" style="margin-top:8px" onclick="copiarDados(this)">コピー</button>
     </div>
   `
+
+  const editavel = podeEditar(c)
+  document.getElementById('modalReadOnlyNote').style.display = editavel ? 'none' : ''
+  document.querySelector('#modal .btn-delete').style.display = editavel ? '' : 'none'
+  document.querySelector('#modal .btn-save').style.display   = editavel ? '' : 'none'
+  if (!editavel) {
+    document.querySelectorAll('#modalBody input, #modalBody select, #modalBody textarea').forEach(el => {
+      if (el.id !== 'f_copytext') el.disabled = true
+    })
+  }
+
   document.getElementById('modal').style.display = 'flex'
 }
 
 async function salvarCandidato() {
   if (!candidatoAtivo) return
+  if (!podeEditar(candidatoAtivo)) { alert('編集権限がありません。'); return }
   const g = id => document.getElementById(id)
   const chks = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value)
 
@@ -918,6 +940,7 @@ async function salvarCandidato() {
 
 async function deletarCandidato() {
   if (!candidatoAtivo) return
+  if (!podeEditar(candidatoAtivo)) { alert('編集権限がありません。'); return }
   if (!confirm(`「${candidatoAtivo.shimei}」を非表示にしますか？\n（データはシステムに保持されます）`)) return
   const id = candidatoAtivo.id
   const { error } = await sb.rpc('deletar_candidato', { candidate_id: id })
