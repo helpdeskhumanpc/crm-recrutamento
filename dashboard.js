@@ -485,6 +485,7 @@ function renderPipeline() {
     const showActions3   = stage.key === 'taiochu' || stage.key === 'mensetsu'
     if (showNyushaCol || showZaisekiCol) list.sort((a, b) => (a.dt_nyusha || '').localeCompare(b.dt_nyusha || ''))
     if (showKengakuCol) list.sort((a, b) => (b.dt_kengaku || '').localeCompare(a.dt_kengaku || ''))
+    if (stage.key === 'mensetsu') list.sort((a, b) => `${a.dt_mensetsu||'9999-99-99'} ${a.mensetsu_hora||'99:99'}`.localeCompare(`${b.dt_mensetsu||'9999-99-99'} ${b.mensetsu_hora||'99:99'}`))
     const expanded = _expandedStages.has(stage.key)
     const show = expanded ? list : list.slice(0, 5)
     const hasMore = list.length > 5 && !expanded
