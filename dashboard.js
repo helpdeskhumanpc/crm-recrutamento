@@ -276,7 +276,8 @@ function getStagesVisiveis() {
 function imprimirPDF() {
   if (document.getElementById('leadsView').style.display === 'flex') { imprimirPDFLeads(); return }
   const fab = fabricaAtiva ? `【${fabricaAtiva}】` : '【全体】'
-  const candidatos = getFiltrados()
+  let candidatos = getFiltrados()
+  if (_selecionadosImpressao.size > 0) candidatos = candidatos.filter(c => _selecionadosImpressao.has(c.id))
   const stagesVisiveis = getStagesVisiveis()
 
   const linhas = STAGES
@@ -284,9 +285,10 @@ function imprimirPDF() {
     .map(stage => {
       const list = candidatos.filter(c => getStage(c) === stage.key)
       if (!list.length) return ''
-      return `<tr class="stage-row"><td colspan="8">${stage.label}（${list.length}名）</td></tr>` +
+      return `<tr class="stage-row"><td colspan="9">${stage.label}（${list.length}名）</td></tr>` +
         list.map((c, i) => `<tr class="${i%2===0?'even':''}">
           <td>${c.shimei||'—'}</td>
+          <td>${c.idade||'—'}</td>
           <td>${c.telefone||'—'}</td>
           <td>${c.fabrica||'—'}</td>
           <td>${c.shokai||'—'}</td>
@@ -317,7 +319,7 @@ function imprimirPDF() {
     <p>出力日：${new Date().toLocaleDateString('ja-JP')}　総候補者: ${candidatos.length}名</p>
     <button onclick="window.print()" style="margin-bottom:14px;padding:7px 18px;background:#1e88e5;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px">印刷 / PDF保存</button>
     <table>
-      <thead><tr><th>氏名</th><th>電話番号</th><th>工場</th><th>紹介者</th><th>日本語</th><th>都道府県</th><th>市区町村</th><th>コメント</th></tr></thead>
+      <thead><tr><th>氏名</th><th>年齢</th><th>電話番号</th><th>工場</th><th>紹介者</th><th>日本語</th><th>都道府県</th><th>市区町村</th><th>コメント</th></tr></thead>
       <tbody>${linhas}</tbody>
     </table></body></html>`)
   w.document.close()
@@ -455,6 +457,22 @@ function comentarioCol(c) {
 }
 
 const _expandedStages = new Set()
+const _selecionadosImpressao = new Set()
+
+function toggleSelecaoImpressao(id, checked) {
+  if (checked) _selecionadosImpressao.add(id)
+  else _selecionadosImpressao.delete(id)
+}
+
+function selecionarTodosImpressao() {
+  getFiltrados().forEach(c => _selecionadosImpressao.add(c.id))
+  renderPipeline()
+}
+
+function limparSelecaoImpressao() {
+  _selecionadosImpressao.clear()
+  renderPipeline()
+}
 
 function renderPipeline() {
   const candidatos = getFiltrados()
@@ -504,7 +522,7 @@ function renderPipeline() {
 
     const rowsHtml = list.length === 0
       ? `<div class="stage-empty">候補者なし</div>`
-      : `<div class="col-header${colClass}"><span>番号</span><span>氏名</span><span>紹介者</span><span>電話番号</span><span>工場</span><span>市区町村</span><span>国籍</span><span>性別</span><span>日本語</span><span>経過</span>${extraHeader}<span>コメント</span></div>` +
+      : `<div class="col-header${colClass}"><span></span><span>番号</span><span>氏名</span><span>紹介者</span><span>電話番号</span><span>工場</span><span>市区町村</span><span>国籍</span><span>性別</span><span>日本語</span><span>経過</span>${extraHeader}<span>コメント</span></div>` +
         show.map(c => {
           const d = diasNaEtapa(c)
           let extraCols = ''
@@ -522,6 +540,7 @@ function renderPipeline() {
             extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','${proxField}')">${proxLabel}</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           }
           return `<div class="candidate-row${colClass}" onclick="abrirModal('${c.id}')">
+            <span onclick="event.stopPropagation()"><input type="checkbox" onchange="toggleSelecaoImpressao('${c.id}', this.checked)" ${_selecionadosImpressao.has(c.id) ? 'checked' : ''}></span>
             <span style="font-size:11px;color:#999">${c.numero_cadastro ?? '—'}</span>
             <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}">${c.is_blacklisted ? '<span class="black-flag">⚠</span> ' : ''}${c.shimei || '—'}</span>
             <span style="font-size:11px;color:#666">${c.shokai || '—'}</span>
