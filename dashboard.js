@@ -285,11 +285,12 @@ function imprimirPDF() {
     .map(stage => {
       const list = candidatos.filter(c => getStage(c) === stage.key)
       if (!list.length) return ''
-      return `<tr class="stage-row"><td colspan="10">${stage.label}（${list.length}名）</td></tr>` +
+      return `<tr class="stage-row"><td colspan="11">${stage.label}（${list.length}名）</td></tr>` +
         list.map((c, i) => `<tr class="${i%2===0?'even':''}">
           <td>${c.shimei||'—'}</td>
           <td>${c.idade||'—'}</td>
           <td>${c.sexo==='男性'?'男':c.sexo==='女性'?'女':'—'}</td>
+          <td>${c.created_at ? fmtDataPT(c.created_at.slice(0,10)) : '—'}</td>
           <td>${c.telefone||'—'}</td>
           <td>${c.fabrica||'—'}</td>
           <td>${c.shokai||'—'}</td>
@@ -320,7 +321,125 @@ function imprimirPDF() {
     <p>出力日：${new Date().toLocaleDateString('ja-JP')}　総候補者: ${candidatos.length}名</p>
     <button onclick="window.print()" style="margin-bottom:14px;padding:7px 18px;background:#1e88e5;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px">印刷 / PDF保存</button>
     <table>
-      <thead><tr><th>氏名</th><th>年齢</th><th>性別</th><th>電話番号</th><th>工場</th><th>紹介者</th><th>日本語</th><th>都道府県</th><th>市区町村</th><th>コメント</th></tr></thead>
+      <thead><tr><th>氏名</th><th>年齢</th><th>性別</th><th>登録日</th><th>電話番号</th><th>工場</th><th>紹介者</th><th>日本語</th><th>都道府県</th><th>市区町村</th><th>コメント</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table></body></html>`)
+  w.document.close()
+}
+
+const CAMPOS_PDF = [
+  { key: 'numero_cadastro',      label: '番号',        get: c => c.numero_cadastro ?? '—' },
+  { key: 'shimei',                label: '氏名',        get: c => c.shimei || '—' },
+  { key: 'idade',                 label: '年齢',        get: c => c.idade || '—' },
+  { key: 'sexo',                  label: '性別',        get: c => c.sexo==='男性'?'男':c.sexo==='女性'?'女':'—' },
+  { key: 'data_nascimento',       label: '生年月日',     get: c => c.data_nascimento ? fmtDataPT(c.data_nascimento) : '—' },
+  { key: 'nacionalidade',         label: '国籍',        get: c => c.nacionalidade || '—' },
+  { key: 'telefone',              label: '電話番号',     get: c => c.telefone || '—' },
+  { key: 'postal_code',           label: '〒',          get: c => c.postal_code || '—' },
+  { key: 'prefecture',            label: '都道府県',     get: c => c.prefecture || '—' },
+  { key: 'city',                  label: '市区町村',     get: c => c.city || '—' },
+  { key: 'visa',                  label: 'ビザ',        get: c => c.visa || '—' },
+  { key: 'nivel_japones',         label: '日本語力',     get: c => c.nivel_japones || '—' },
+  { key: 'hiragana',              label: 'ひらがな',     get: c => c.hiragana || '—' },
+  { key: 'katakana',              label: 'カタカナ',     get: c => c.katakana || '—' },
+  { key: 'fala_ingles',           label: '英語会話',     get: c => c.fala_ingles ? 'はい' : 'いいえ' },
+  { key: 'habilitacao',           label: '免許・資格',   get: c => (c.habilitacao||[]).join('・') || '—' },
+  { key: 'tem_carro',             label: '車の所有',     get: c => c.tem_carro ? 'あり' : 'なし' },
+  { key: 'experiencia',           label: '工場経験',     get: c => (c.experiencia||[]).join('・') || '—' },
+  { key: 'turnos_possiveis',      label: '可能な直',     get: c => (c.turnos_possiveis||[]).join('・') || '—' },
+  { key: 'precisa_apartamento',   label: 'アパート必要', get: c => c.precisa_apartamento ? '必要' : '不要' },
+  { key: 'pode_mudar',            label: '引っ越し',     get: c => c.pode_mudar ? '可能' : '不可' },
+  { key: 'esta_empregado',        label: '現在仕事中',   get: c => c.esta_empregado || '—' },
+  { key: 'fabrica',               label: '工場',        get: c => c.fabrica || '—' },
+  { key: 'fabrica2',              label: '工場２',       get: c => c.fabrica2 || '—' },
+  { key: 'shokai',                label: '紹介者',       get: c => c.shokai || '—' },
+  { key: 'created_at',            label: '登録日',       get: c => c.created_at ? fmtDataPT(c.created_at.slice(0,10)) : '—' },
+  { key: 'dt_taiochu',            label: '対応中',       get: c => c.dt_taiochu ? fmtDataPT(c.dt_taiochu) : '—' },
+  { key: 'dt_mensetsu',           label: '面接日',       get: c => c.dt_mensetsu ? fmtDataPT(c.dt_mensetsu) : '—' },
+  { key: 'mensetsu_hora',         label: '面接時間',     get: c => c.mensetsu_hora || '—' },
+  { key: 'dt_kengaku',            label: '見学・ヒアリング日', get: c => c.dt_kengaku ? fmtDataPT(c.dt_kengaku) : '—' },
+  { key: 'dt_naitei',             label: '内定日',       get: c => c.dt_naitei ? fmtDataPT(c.dt_naitei) : '—' },
+  { key: 'dt_nyusha',             label: '入社日',       get: c => c.dt_nyusha ? fmtDataPT(c.dt_nyusha) : '—' },
+  { key: 'dt_stock',              label: '工場ストック日', get: c => c.dt_stock ? fmtDataPT(c.dt_stock) : '—' },
+  { key: 'dt_stock_geral',        label: '全体ストック日', get: c => c.dt_stock_geral ? fmtDataPT(c.dt_stock_geral) : '—' },
+  { key: 'dt_ng',                 label: 'NG日',        get: c => c.dt_ng ? fmtDataPT(c.dt_ng) : '—' },
+  { key: 'alerta_data',           label: 'アラート日時', get: c => c.alerta_data ? fmtDataPT(c.alerta_data.slice(0,10)) : '—' },
+  { key: 'alerta_nota',           label: 'アラート内容', get: c => c.alerta_nota || '—' },
+  { key: 'is_blacklisted',        label: 'ブラック登録', get: c => c.is_blacklisted ? 'はい' : 'いいえ' },
+  { key: 'blacklist_motivo',      label: 'ブラック理由', get: c => c.blacklist_motivo || '—' },
+  { key: 'comentario',            label: 'コメント',     get: c => (c.comentario||'—').toString().replace(/</g,'&lt;') },
+  { key: 'tantousha_comentario',  label: '担当者コメント', get: c => (c.tantousha_comentario||'—').toString().replace(/</g,'&lt;') },
+]
+
+let _colunasSelecionadasPDF = []
+
+function abrirPdfColModal() {
+  _colunasSelecionadasPDF = []
+  renderPdfColList()
+  document.getElementById('pdfColModal').style.display = 'flex'
+}
+
+function fecharPdfColModal() {
+  document.getElementById('pdfColModal').style.display = 'none'
+}
+
+function renderPdfColList() {
+  document.getElementById('pdfColList').innerHTML = CAMPOS_PDF.map(f => {
+    const idx = _colunasSelecionadasPDF.indexOf(f.key)
+    const ordem = idx >= 0 ? ` (${idx + 1})` : ''
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #eee;border-radius:4px;cursor:pointer">
+      <input type="checkbox" ${idx >= 0 ? 'checked' : ''} onchange="toggleColunaPDF('${f.key}')">
+      <span>${f.label}${ordem}</span>
+    </label>`
+  }).join('')
+}
+
+function toggleColunaPDF(key) {
+  const idx = _colunasSelecionadasPDF.indexOf(key)
+  if (idx >= 0) _colunasSelecionadasPDF.splice(idx, 1)
+  else _colunasSelecionadasPDF.push(key)
+  renderPdfColList()
+}
+
+function imprimirPDFCustom() {
+  if (_colunasSelecionadasPDF.length === 0) { alert('少なくとも1つの項目を選んでください。'); return }
+  const campos = _colunasSelecionadasPDF.map(key => CAMPOS_PDF.find(f => f.key === key))
+  fecharPdfColModal()
+
+  const fab = fabricaAtiva ? `【${fabricaAtiva}】` : '【全体】'
+  let candidatos = getFiltrados()
+  if (_selecionadosImpressao.size > 0) candidatos = candidatos.filter(c => _selecionadosImpressao.has(c.id))
+  const stagesVisiveis = getStagesVisiveis()
+
+  const linhas = STAGES
+    .filter(s => stagesVisiveis.includes(s.key))
+    .map(stage => {
+      const list = candidatos.filter(c => getStage(c) === stage.key)
+      if (!list.length) return ''
+      return `<tr class="stage-row"><td colspan="${campos.length}">${stage.label}（${list.length}名）</td></tr>` +
+        list.map((c, i) => `<tr class="${i%2===0?'even':''}">${campos.map(f => `<td>${f.get(c)}</td>`).join('')}</tr>`).join('')
+    }).join('')
+
+  const w = window.open('', '_blank')
+  if (!w) { alert('⚠️ ポップアップがブロックされました。\nブラウザのアドレスバーでこのサイトのポップアップを許可してください。'); return }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>候補者リスト</title>
+    <style>
+      body { font-family: 'Helvetica Neue', sans-serif; font-size: 11px; padding: 20px; color: #333; }
+      h2 { font-size: 15px; margin-bottom: 4px; }
+      p { font-size: 12px; color: #666; margin-bottom: 12px; }
+      table { width: 100%; border-collapse: collapse; }
+      th { background: #333; color: white; padding: 6px 8px; text-align: left; font-size: 11px; }
+      td { padding: 5px 8px; border-bottom: 1px solid #eee; }
+      tr.even td { background: #f9f9f9; }
+      tr.stage-row td { background: #e8f0fe; font-weight: 700; font-size: 12px; padding: 6px 8px; color: #1a237e; }
+      @media print { button { display: none } }
+    </style>
+    </head><body>
+    <h2>候補者リスト ${fab}</h2>
+    <p>出力日：${new Date().toLocaleDateString('ja-JP')}　総候補者: ${candidatos.length}名</p>
+    <button onclick="window.print()" style="margin-bottom:14px;padding:7px 18px;background:#1e88e5;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px">印刷 / PDF保存</button>
+    <table>
+      <thead><tr>${campos.map(f => `<th>${f.label}</th>`).join('')}</tr></thead>
       <tbody>${linhas}</tbody>
     </table></body></html>`)
   w.document.close()
@@ -465,13 +584,12 @@ function toggleSelecaoImpressao(id, checked) {
   else _selecionadosImpressao.delete(id)
 }
 
-function selecionarTodosImpressao() {
-  getFiltrados().forEach(c => _selecionadosImpressao.add(c.id))
-  renderPipeline()
-}
-
-function limparSelecaoImpressao() {
-  _selecionadosImpressao.clear()
+function toggleSelecaoEtapa(stageKey, checked) {
+  const list = window._grouped?.[stageKey] || []
+  list.forEach(c => {
+    if (checked) _selecionadosImpressao.add(c.id)
+    else _selecionadosImpressao.delete(c.id)
+  })
   renderPipeline()
 }
 
@@ -558,8 +676,10 @@ function renderPipeline() {
         }).join('') +
         (hasMore ? `<div style="padding:7px 16px;font-size:12px;color:#1e88e5;cursor:pointer" onclick="expandStage('${stage.key}')">+ さらに ${list.length - 5} 件</div>` : '')
 
+    const allSelected = list.length > 0 && list.every(c => _selecionadosImpressao.has(c.id))
     return `<div class="stage-section ${stage.cls}">
       <div class="stage-header" onclick="toggleStage('${stage.key}')">
+        <input type="checkbox" onclick="event.stopPropagation()" onchange="toggleSelecaoEtapa('${stage.key}', this.checked)" ${allSelected ? 'checked' : ''} style="margin-right:8px;vertical-align:middle">
         ${stage.label} <span class="stage-count">${list.length}</span>
       </div>
       <div class="stage-body" id="body-${stage.key}">${rowsHtml}</div>
