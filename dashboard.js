@@ -285,10 +285,11 @@ function imprimirPDF() {
     .map(stage => {
       const list = candidatos.filter(c => getStage(c) === stage.key)
       if (!list.length) return ''
-      return `<tr class="stage-row"><td colspan="9">${stage.label}（${list.length}名）</td></tr>` +
+      return `<tr class="stage-row"><td colspan="10">${stage.label}（${list.length}名）</td></tr>` +
         list.map((c, i) => `<tr class="${i%2===0?'even':''}">
           <td>${c.shimei||'—'}</td>
           <td>${c.idade||'—'}</td>
+          <td><span class="sexo-mark ${c.sexo==='男性'?'active':''}">男</span>・<span class="sexo-mark ${c.sexo==='女性'?'active':''}">女</span></td>
           <td>${c.telefone||'—'}</td>
           <td>${c.fabrica||'—'}</td>
           <td>${c.shokai||'—'}</td>
@@ -312,6 +313,8 @@ function imprimirPDF() {
       tr.even td { background: #f9f9f9; }
       tr.stage-row td { background: #e8f0fe; font-weight: 700; font-size: 12px; padding: 6px 8px; color: #1a237e; }
       td.comment { font-size: 10px; color: #555; max-width: 220px; }
+      .sexo-mark { display:inline-block; width:16px; height:16px; line-height:14px; text-align:center; border-radius:50%; }
+      .sexo-mark.active { border:2px solid #1565c0; font-weight:700; }
       @media print { button { display: none } }
     </style>
     </head><body>
@@ -319,7 +322,7 @@ function imprimirPDF() {
     <p>出力日：${new Date().toLocaleDateString('ja-JP')}　総候補者: ${candidatos.length}名</p>
     <button onclick="window.print()" style="margin-bottom:14px;padding:7px 18px;background:#1e88e5;color:white;border:none;border-radius:4px;cursor:pointer;font-size:13px">印刷 / PDF保存</button>
     <table>
-      <thead><tr><th>氏名</th><th>年齢</th><th>電話番号</th><th>工場</th><th>紹介者</th><th>日本語</th><th>都道府県</th><th>市区町村</th><th>コメント</th></tr></thead>
+      <thead><tr><th>氏名</th><th>年齢</th><th>性別</th><th>電話番号</th><th>工場</th><th>紹介者</th><th>日本語</th><th>都道府県</th><th>市区町村</th><th>コメント</th></tr></thead>
       <tbody>${linhas}</tbody>
     </table></body></html>`)
   w.document.close()
