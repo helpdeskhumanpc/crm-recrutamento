@@ -289,7 +289,7 @@ function imprimirPDF() {
         list.map((c, i) => `<tr class="${i%2===0?'even':''}">
           <td>${c.shimei||'—'}</td>
           <td>${c.idade||'—'}</td>
-          <td><span class="sexo-mark ${c.sexo==='男性'?'active':''}">男</span>・<span class="sexo-mark ${c.sexo==='女性'?'active':''}">女</span></td>
+          <td>${c.sexo==='男性'?'男':c.sexo==='女性'?'女':'—'}</td>
           <td>${c.telefone||'—'}</td>
           <td>${c.fabrica||'—'}</td>
           <td>${c.shokai||'—'}</td>
@@ -313,8 +313,6 @@ function imprimirPDF() {
       tr.even td { background: #f9f9f9; }
       tr.stage-row td { background: #e8f0fe; font-weight: 700; font-size: 12px; padding: 6px 8px; color: #1a237e; }
       td.comment { font-size: 10px; color: #555; max-width: 220px; }
-      .sexo-mark { display:inline-block; width:16px; height:16px; line-height:14px; text-align:center; border-radius:50%; }
-      .sexo-mark.active { border:2px solid #1565c0; font-weight:700; }
       @media print { button { display: none } }
     </style>
     </head><body>
