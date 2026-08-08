@@ -1,7 +1,7 @@
 # Cérebro — CRM Recrutamento Japão
 
 > Documento de referência do projeto. Reflete o estado atual construído.
-> Última atualização: 2026-06-18
+> Última atualização: 2026-08-08
 
 ---
 
@@ -88,20 +88,25 @@ Campo `fabricas` é um array — formato JSON:
 
 ### Políticas RLS ativas
 - `insert publico` — anon pode inserir (formulário público)
-- `select por cargo` — filtro por role (admin/jimusho/tantousha/shokaisha)
-- `update por cargo` — mesmo filtro do select
+- `select por cargo` — filtro por role (admin/jimusho/tantousha/shokaisha) — quem cada cargo **vê**
+- `update por cargo` — a partir de 2026-08-08, **diferente** do select: `shokaisha` não tem UPDATE nenhum; `tantousha` só edita candidatos cuja `fabrica`/`fabrica2` esteja no seu array `fabricas` (perdeu o bypass de editar por indicação/`shokai`)
 - `anon select temp` — anon pode ler tudo (temporário, remover quando todos migrarem para login)
+
+### Ver vs Editar (importante, não confundir)
+- **Ver (select):** `shokaisha` vê o que indicou; `tantousha` vê suas fábricas + o que indicou — não mudou
+- **Editar (update):** `shokaisha` nunca edita; `tantousha` só edita se a fábrica do candidato for uma das suas — indicação não basta
+- Reforçado também no frontend (`dashboard.js`, função `podeEditar(c)`): quando o usuário não pode editar, o modal do candidato mostra os campos desabilitados, some com os botões 保存/削除 e aparece o aviso "🔒 閲覧のみ（編集不可）"
 
 ---
 
 ## Usuários
 
-| Perfil | Acesso | Responsabilidade |
-|--------|--------|-----------------|
-| `admin` | Total | Todos os candidatos, todas as fábricas |
-| `jimusho` | Seu escritório | Todas as fábricas do seu escritório |
-| `tantousha` | Suas fábricas + indicados | Candidatos das fábricas que gerencia |
-| `shokaisha` | Só seus indicados | Ver candidatos que indicou |
+| Perfil | Vê | Edita |
+|--------|-----|-------|
+| `admin` | Todos os candidatos, todas as fábricas | Tudo |
+| `jimusho` | Todas as fábricas do seu escritório | Tudo do seu escritório |
+| `tantousha` | Suas fábricas + indicados | Só as suas fábricas (indicação não dá direito de editar) |
+| `shokaisha` | Só quem indicou | Nada — somente leitura |
 
 ---
 
@@ -147,6 +152,7 @@ Campo `fabricas` é um array — formato JSON:
 
 ```sql
 id                    uuid PK default gen_random_uuid()
+numero_cadastro       integer NOT NULL UNIQUE default nextval('candidates_numero_cadastro_seq')  -- 番号, sequencial, gerado automaticamente (adicionado 2026-08-08)
 shokai                text          -- 紹介者
 shimei                text NOT NULL -- 氏名
 telefone              text          -- 電話番号
@@ -341,11 +347,19 @@ created_at  timestamp with time zone default now()
 -- candidates
 create policy "insert publico"   on candidates for insert with check (true);
 create policy "select por cargo" on candidates for select using (...); -- filtro por role (admin/jimusho/tantousha/shokaisha)
-create policy "update por cargo" on candidates for update using (...); -- mesmo filtro do select
+create policy "update por cargo" on candidates for update using (
+  admin
+  OR (is_deleted = false AND (
+    jimusho com fabrica no seu escritorio
+    OR tantousha com fabrica/fabrica2 no seu array fabricas
+  ))
+); -- shokaisha SEM update; tantousha sem bypass por indicacao (mudou em 2026-08-08)
 create policy "admin update all" on candidates for update using (...); -- admin
 -- 2026-07-02: acesso anônimo (auth.uid() is null) REMOVIDO do select — só logados leem candidates
 -- 2026-07-02: bug do filtro jimusho corrigido (era p.jimusho = p.jimusho, sempre true;
 --             agora locations.jimusho = p.jimusho) no select e no update
+-- 2026-08-08: "update por cargo" alterada — shokaisha perdeu UPDATE; tantousha perdeu o
+--             bypass "OR shokai = p.shokai_nome" (só edita pela fabrica agora)
 
 -- app_settings (persistência do server.js)
 -- RLS ativado SEM políticas — só o service role (SUPABASE_SERVICE_KEY) acessa
@@ -770,6 +784,22 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-07-02 | Tabela `app_settings` criada — token do /reauth e timestamp do lembrete persistem entre deploys (env `SUPABASE_SERVICE_KEY` no Railway) |
 | 2026-07-02 | RLS candidates: acesso anônimo removido do select; bug do filtro jimusho (`p.jimusho = p.jimusho`) corrigido no select e update |
 | 2026-07-02 | dashboard.html separado em dashboard.html + dashboard.css + dashboard.js (split mecânico, sem mudança de código) |
+| 2026-08-08 | Controle de acesso: shokaisha perde permissão de editar (RLS + frontend `podeEditar()`); tantousha só edita as próprias fábricas (perdeu bypass por indicação) |
+| 2026-08-08 | `numero_cadastro` criado em `candidates` — número sequencial único, gerado automaticamente via sequence, exibido antes do nome em todas as etapas do pipeline |
+| 2026-08-08 | Etapa 面接 passa a ordenar por `dt_mensetsu` + `mensetsu_hora` (mais próximo no topo; sem data vai para o final) |
+| 2026-08-08 | PDF impresso (`imprimirPDF`): colunas 年齢, 性別 (男/女) e 登録日 adicionadas |
+| 2026-08-08 | Seleção de candidatos para impressão: checkbox por candidato + checkbox de "selecionar tudo" no cabeçalho de cada etapa (substituiu os antigos botões globais 全選択/選択解除) |
+| 2026-08-08 | Botão 項目選択印刷 criado — modal para escolher quais campos aparecem no PDF e em que ordem (ordem = ordem de clique), campos agrupados por categoria (基本情報, 仕事情報, スキル, パイプライン日付, アラート・メモ, ブラックリスト) |
+| 2026-08-08 | Sistema de versão implantado: badge `vX.XX` no canto superior do dashboard + tag do git correspondente a cada versão publicada (permite reverter pro estado exato de qualquer versão) |
+
+## Sistema de Versão
+
+- Badge visível no topo do dashboard (`採用管理 vX.XX`), ao lado do título
+- A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
+- Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
+- Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
+- Versão atual: **v1.02**
+- Tags criadas até agora: `v1.00`, `v1.01`, `v1.02`
 
 ## Pendências
 
