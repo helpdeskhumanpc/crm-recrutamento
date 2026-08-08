@@ -328,47 +328,47 @@ function imprimirPDF() {
 }
 
 const CAMPOS_PDF = [
-  { key: 'numero_cadastro',      label: '番号',        get: c => c.numero_cadastro ?? '—' },
-  { key: 'shimei',                label: '氏名',        get: c => c.shimei || '—' },
-  { key: 'idade',                 label: '年齢',        get: c => c.idade || '—' },
-  { key: 'sexo',                  label: '性別',        get: c => c.sexo==='男性'?'男':c.sexo==='女性'?'女':'—' },
-  { key: 'data_nascimento',       label: '生年月日',     get: c => c.data_nascimento ? fmtDataPT(c.data_nascimento) : '—' },
-  { key: 'nacionalidade',         label: '国籍',        get: c => c.nacionalidade || '—' },
-  { key: 'telefone',              label: '電話番号',     get: c => c.telefone || '—' },
-  { key: 'postal_code',           label: '〒',          get: c => c.postal_code || '—' },
-  { key: 'prefecture',            label: '都道府県',     get: c => c.prefecture || '—' },
-  { key: 'city',                  label: '市区町村',     get: c => c.city || '—' },
-  { key: 'visa',                  label: 'ビザ',        get: c => c.visa || '—' },
-  { key: 'nivel_japones',         label: '日本語力',     get: c => c.nivel_japones || '—' },
-  { key: 'hiragana',              label: 'ひらがな',     get: c => c.hiragana || '—' },
-  { key: 'katakana',              label: 'カタカナ',     get: c => c.katakana || '—' },
-  { key: 'fala_ingles',           label: '英語会話',     get: c => c.fala_ingles ? 'はい' : 'いいえ' },
-  { key: 'habilitacao',           label: '免許・資格',   get: c => (c.habilitacao||[]).join('・') || '—' },
-  { key: 'tem_carro',             label: '車の所有',     get: c => c.tem_carro ? 'あり' : 'なし' },
-  { key: 'experiencia',           label: '工場経験',     get: c => (c.experiencia||[]).join('・') || '—' },
-  { key: 'turnos_possiveis',      label: '可能な直',     get: c => (c.turnos_possiveis||[]).join('・') || '—' },
-  { key: 'precisa_apartamento',   label: 'アパート必要', get: c => c.precisa_apartamento ? '必要' : '不要' },
-  { key: 'pode_mudar',            label: '引っ越し',     get: c => c.pode_mudar ? '可能' : '不可' },
-  { key: 'esta_empregado',        label: '現在仕事中',   get: c => c.esta_empregado || '—' },
-  { key: 'fabrica',               label: '工場',        get: c => c.fabrica || '—' },
-  { key: 'fabrica2',              label: '工場２',       get: c => c.fabrica2 || '—' },
-  { key: 'shokai',                label: '紹介者',       get: c => c.shokai || '—' },
-  { key: 'created_at',            label: '登録日',       get: c => c.created_at ? fmtDataPT(c.created_at.slice(0,10)) : '—' },
-  { key: 'dt_taiochu',            label: '対応中',       get: c => c.dt_taiochu ? fmtDataPT(c.dt_taiochu) : '—' },
-  { key: 'dt_mensetsu',           label: '面接日',       get: c => c.dt_mensetsu ? fmtDataPT(c.dt_mensetsu) : '—' },
-  { key: 'mensetsu_hora',         label: '面接時間',     get: c => c.mensetsu_hora || '—' },
-  { key: 'dt_kengaku',            label: '見学・ヒアリング日', get: c => c.dt_kengaku ? fmtDataPT(c.dt_kengaku) : '—' },
-  { key: 'dt_naitei',             label: '内定日',       get: c => c.dt_naitei ? fmtDataPT(c.dt_naitei) : '—' },
-  { key: 'dt_nyusha',             label: '入社日',       get: c => c.dt_nyusha ? fmtDataPT(c.dt_nyusha) : '—' },
-  { key: 'dt_stock',              label: '工場ストック日', get: c => c.dt_stock ? fmtDataPT(c.dt_stock) : '—' },
-  { key: 'dt_stock_geral',        label: '全体ストック日', get: c => c.dt_stock_geral ? fmtDataPT(c.dt_stock_geral) : '—' },
-  { key: 'dt_ng',                 label: 'NG日',        get: c => c.dt_ng ? fmtDataPT(c.dt_ng) : '—' },
-  { key: 'alerta_data',           label: 'アラート日時', get: c => c.alerta_data ? fmtDataPT(c.alerta_data.slice(0,10)) : '—' },
-  { key: 'alerta_nota',           label: 'アラート内容', get: c => c.alerta_nota || '—' },
-  { key: 'is_blacklisted',        label: 'ブラック登録', get: c => c.is_blacklisted ? 'はい' : 'いいえ' },
-  { key: 'blacklist_motivo',      label: 'ブラック理由', get: c => c.blacklist_motivo || '—' },
-  { key: 'comentario',            label: 'コメント',     get: c => (c.comentario||'—').toString().replace(/</g,'&lt;') },
-  { key: 'tantousha_comentario',  label: '担当者コメント', get: c => (c.tantousha_comentario||'—').toString().replace(/</g,'&lt;') },
+  { key: 'numero_cadastro',      label: '番号',        group: '基本情報', get: c => c.numero_cadastro ?? '—' },
+  { key: 'shimei',                label: '氏名',        group: '基本情報', get: c => c.shimei || '—' },
+  { key: 'idade',                 label: '年齢',        group: '基本情報', get: c => c.idade || '—' },
+  { key: 'sexo',                  label: '性別',        group: '基本情報', get: c => c.sexo==='男性'?'男':c.sexo==='女性'?'女':'—' },
+  { key: 'data_nascimento',       label: '生年月日',     group: '基本情報', get: c => c.data_nascimento ? fmtDataPT(c.data_nascimento) : '—' },
+  { key: 'nacionalidade',         label: '国籍',        group: '基本情報', get: c => c.nacionalidade || '—' },
+  { key: 'telefone',              label: '電話番号',     group: '基本情報', get: c => c.telefone || '—' },
+  { key: 'postal_code',           label: '〒',          group: '基本情報', get: c => c.postal_code || '—' },
+  { key: 'prefecture',            label: '都道府県',     group: '基本情報', get: c => c.prefecture || '—' },
+  { key: 'city',                  label: '市区町村',     group: '基本情報', get: c => c.city || '—' },
+  { key: 'visa',                  label: 'ビザ',        group: '仕事情報', get: c => c.visa || '—' },
+  { key: 'esta_empregado',        label: '現在仕事中',   group: '仕事情報', get: c => c.esta_empregado || '—' },
+  { key: 'fabrica',               label: '工場',        group: '仕事情報', get: c => c.fabrica || '—' },
+  { key: 'fabrica2',              label: '工場２',       group: '仕事情報', get: c => c.fabrica2 || '—' },
+  { key: 'shokai',                label: '紹介者',       group: '仕事情報', get: c => c.shokai || '—' },
+  { key: 'precisa_apartamento',   label: 'アパート必要', group: '仕事情報', get: c => c.precisa_apartamento ? '必要' : '不要' },
+  { key: 'pode_mudar',            label: '引っ越し',     group: '仕事情報', get: c => c.pode_mudar ? '可能' : '不可' },
+  { key: 'tem_carro',             label: '車の所有',     group: '仕事情報', get: c => c.tem_carro ? 'あり' : 'なし' },
+  { key: 'nivel_japones',         label: '日本語力',     group: 'スキル', get: c => c.nivel_japones || '—' },
+  { key: 'hiragana',              label: 'ひらがな',     group: 'スキル', get: c => c.hiragana || '—' },
+  { key: 'katakana',              label: 'カタカナ',     group: 'スキル', get: c => c.katakana || '—' },
+  { key: 'fala_ingles',           label: '英語会話',     group: 'スキル', get: c => c.fala_ingles ? 'はい' : 'いいえ' },
+  { key: 'habilitacao',           label: '免許・資格',   group: 'スキル', get: c => (c.habilitacao||[]).join('・') || '—' },
+  { key: 'experiencia',           label: '工場経験',     group: 'スキル', get: c => (c.experiencia||[]).join('・') || '—' },
+  { key: 'turnos_possiveis',      label: '可能な直',     group: 'スキル', get: c => (c.turnos_possiveis||[]).join('・') || '—' },
+  { key: 'created_at',            label: '登録日',       group: 'パイプライン日付', get: c => c.created_at ? fmtDataPT(c.created_at.slice(0,10)) : '—' },
+  { key: 'dt_taiochu',            label: '対応中',       group: 'パイプライン日付', get: c => c.dt_taiochu ? fmtDataPT(c.dt_taiochu) : '—' },
+  { key: 'dt_mensetsu',           label: '面接日',       group: 'パイプライン日付', get: c => c.dt_mensetsu ? fmtDataPT(c.dt_mensetsu) : '—' },
+  { key: 'mensetsu_hora',         label: '面接時間',     group: 'パイプライン日付', get: c => c.mensetsu_hora || '—' },
+  { key: 'dt_kengaku',            label: '見学・ヒアリング日', group: 'パイプライン日付', get: c => c.dt_kengaku ? fmtDataPT(c.dt_kengaku) : '—' },
+  { key: 'dt_naitei',             label: '内定日',       group: 'パイプライン日付', get: c => c.dt_naitei ? fmtDataPT(c.dt_naitei) : '—' },
+  { key: 'dt_nyusha',             label: '入社日',       group: 'パイプライン日付', get: c => c.dt_nyusha ? fmtDataPT(c.dt_nyusha) : '—' },
+  { key: 'dt_stock',              label: '工場ストック日', group: 'パイプライン日付', get: c => c.dt_stock ? fmtDataPT(c.dt_stock) : '—' },
+  { key: 'dt_stock_geral',        label: '全体ストック日', group: 'パイプライン日付', get: c => c.dt_stock_geral ? fmtDataPT(c.dt_stock_geral) : '—' },
+  { key: 'dt_ng',                 label: 'NG日',        group: 'パイプライン日付', get: c => c.dt_ng ? fmtDataPT(c.dt_ng) : '—' },
+  { key: 'alerta_data',           label: 'アラート日時', group: 'アラート・メモ', get: c => c.alerta_data ? fmtDataPT(c.alerta_data.slice(0,10)) : '—' },
+  { key: 'alerta_nota',           label: 'アラート内容', group: 'アラート・メモ', get: c => c.alerta_nota || '—' },
+  { key: 'comentario',            label: 'コメント',     group: 'アラート・メモ', get: c => (c.comentario||'—').toString().replace(/</g,'&lt;') },
+  { key: 'tantousha_comentario',  label: '担当者コメント', group: 'アラート・メモ', get: c => (c.tantousha_comentario||'—').toString().replace(/</g,'&lt;') },
+  { key: 'is_blacklisted',        label: 'ブラック登録', group: 'ブラックリスト', get: c => c.is_blacklisted ? 'はい' : 'いいえ' },
+  { key: 'blacklist_motivo',      label: 'ブラック理由', group: 'ブラックリスト', get: c => c.blacklist_motivo || '—' },
 ]
 
 let _colunasSelecionadasPDF = []
@@ -384,14 +384,24 @@ function fecharPdfColModal() {
 }
 
 function renderPdfColList() {
-  document.getElementById('pdfColList').innerHTML = CAMPOS_PDF.map(f => {
-    const idx = _colunasSelecionadasPDF.indexOf(f.key)
-    const ordem = idx >= 0 ? ` (${idx + 1})` : ''
-    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #eee;border-radius:4px;cursor:pointer">
-      <input type="checkbox" ${idx >= 0 ? 'checked' : ''} onchange="toggleColunaPDF('${f.key}')">
-      <span>${f.label}${ordem}</span>
-    </label>`
-  }).join('')
+  const grupos = {}
+  CAMPOS_PDF.forEach(f => { (grupos[f.group] = grupos[f.group] || []).push(f) })
+
+  document.getElementById('pdfColList').innerHTML = Object.entries(grupos).map(([grupo, campos]) => `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid #f0f0f0">${grupo}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:6px">
+        ${campos.map(f => {
+          const idx = _colunasSelecionadasPDF.indexOf(f.key)
+          const ordem = idx >= 0 ? ` (${idx + 1})` : ''
+          return `<label style="display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid #eee;border-radius:4px;cursor:pointer;font-size:13px">
+            <input type="checkbox" ${idx >= 0 ? 'checked' : ''} onchange="toggleColunaPDF('${f.key}')">
+            <span>${f.label}${ordem}</span>
+          </label>`
+        }).join('')}
+      </div>
+    </div>
+  `).join('')
 }
 
 function toggleColunaPDF(key) {
