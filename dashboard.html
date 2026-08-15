@@ -6,6 +6,7 @@
   <title>CRM 採用管理</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
@@ -50,7 +51,7 @@
 <div id="main">
   <div id="topbar">
     <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
-    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.02</span></h1>
+    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.03</span></h1>
     <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
     <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
@@ -98,6 +99,7 @@
     <button class="btn-refresh" style="background:#4527a0" onclick="abrirFilterPanel()">詳細フィルター<span class="filter-badge" id="filterBadge">0</span></button>
     <button class="btn-refresh" style="background:#2e7d32" onclick="imprimirPDF()">PDF印刷</button>
     <button class="btn-refresh" style="background:#8e24aa" onclick="abrirPdfColModal()">項目選択印刷</button>
+    <button class="btn-refresh" style="background:#1b5e20" onclick="abrirPdfColModal()">Excel出力</button>
     <button class="btn-refresh" onclick="carregarDados()">更新</button>
     <div class="user-info">
       <span id="userNome"></span>
@@ -427,11 +429,12 @@
 <!-- MODAL: SELECAO DE COLUNAS PARA IMPRESSAO -->
 <div id="pdfColModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center" onclick="if(event.target===this) fecharPdfColModal()">
   <div style="background:white;border-radius:8px;padding:20px;width:780px;max-width:92vw;max-height:85vh;overflow-y:auto">
-    <h3 style="margin:0 0 6px;font-size:16px">印刷する項目を選択</h3>
-    <p style="margin:0 0 14px;font-size:12px;color:#666">クリックした順番で列が並びます</p>
+    <h3 style="margin:0 0 6px;font-size:16px">出力する項目を選択</h3>
+    <p style="margin:0 0 14px;font-size:12px;color:#666">クリックした順番で列が並びます（PDF印刷・Excel出力どちらにも使えます）</p>
     <div id="pdfColList" style="display:flex;flex-direction:column;gap:6px"></div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
       <button class="btn-cancel" onclick="fecharPdfColModal()">キャンセル</button>
+      <button class="btn-save" style="background:#1b5e20" onclick="exportarExcelCustom()">Excelで出力</button>
       <button class="btn-save" onclick="imprimirPDFCustom()">印刷する</button>
     </div>
   </div>

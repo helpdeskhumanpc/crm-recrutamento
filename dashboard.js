@@ -365,8 +365,8 @@ const CAMPOS_PDF = [
   { key: 'dt_ng',                 label: 'NG日',        group: 'パイプライン日付', get: c => c.dt_ng ? fmtDataPT(c.dt_ng) : '—' },
   { key: 'alerta_data',           label: 'アラート日時', group: 'アラート・メモ', get: c => c.alerta_data ? fmtDataPT(c.alerta_data.slice(0,10)) : '—' },
   { key: 'alerta_nota',           label: 'アラート内容', group: 'アラート・メモ', get: c => c.alerta_nota || '—' },
-  { key: 'comentario',            label: 'コメント',     group: 'アラート・メモ', get: c => (c.comentario||'—').toString().replace(/</g,'&lt;') },
-  { key: 'tantousha_comentario',  label: '担当者コメント', group: 'アラート・メモ', get: c => (c.tantousha_comentario||'—').toString().replace(/</g,'&lt;') },
+  { key: 'comentario',            label: 'コメント',     group: 'アラート・メモ', get: c => c.comentario || '—' },
+  { key: 'tantousha_comentario',  label: '担当者コメント', group: 'アラート・メモ', get: c => c.tantousha_comentario || '—' },
   { key: 'is_blacklisted',        label: 'ブラック登録', group: 'ブラックリスト', get: c => c.is_blacklisted ? 'はい' : 'いいえ' },
   { key: 'blacklist_motivo',      label: 'ブラック理由', group: 'ブラックリスト', get: c => c.blacklist_motivo || '—' },
 ]
@@ -387,9 +387,23 @@ function renderPdfColList() {
   const grupos = {}
   CAMPOS_PDF.forEach(f => { (grupos[f.group] = grupos[f.group] || []).push(f) })
 
-  document.getElementById('pdfColList').innerHTML = Object.entries(grupos).map(([grupo, campos]) => `
+  const allKeys = CAMPOS_PDF.map(f => f.key)
+  const allChecked = allKeys.every(k => _colunasSelecionadasPDF.includes(k))
+
+  const headerHtml = `<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;margin-bottom:12px;background:#f5f5f5;border-radius:4px;cursor:pointer;font-weight:700;font-size:13px">
+    <input type="checkbox" ${allChecked ? 'checked' : ''} onchange="toggleColunaTodos(this.checked)">
+    <span>全て選択</span>
+  </label>`
+
+  const gruposHtml = Object.entries(grupos).map(([grupo, campos]) => {
+    const keys = campos.map(f => f.key)
+    const grupoChecked = keys.every(k => _colunasSelecionadasPDF.includes(k))
+    return `
     <div style="margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid #f0f0f0">${grupo}</div>
+      <label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid #f0f0f0;cursor:pointer">
+        <input type="checkbox" ${grupoChecked ? 'checked' : ''} onchange="toggleColunaCategoria('${grupo}', this.checked)">
+        <span style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase">${grupo}</span>
+      </label>
       <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:6px">
         ${campos.map(f => {
           const idx = _colunasSelecionadasPDF.indexOf(f.key)
@@ -401,7 +415,9 @@ function renderPdfColList() {
         }).join('')}
       </div>
     </div>
-  `).join('')
+  `}).join('')
+
+  document.getElementById('pdfColList').innerHTML = headerHtml + gruposHtml
 }
 
 function toggleColunaPDF(key) {
@@ -409,6 +425,22 @@ function toggleColunaPDF(key) {
   if (idx >= 0) _colunasSelecionadasPDF.splice(idx, 1)
   else _colunasSelecionadasPDF.push(key)
   renderPdfColList()
+}
+
+function toggleColunaCategoria(grupo, checked) {
+  const keys = CAMPOS_PDF.filter(f => f.group === grupo).map(f => f.key)
+  if (checked) keys.forEach(k => { if (!_colunasSelecionadasPDF.includes(k)) _colunasSelecionadasPDF.push(k) })
+  else _colunasSelecionadasPDF = _colunasSelecionadasPDF.filter(k => !keys.includes(k))
+  renderPdfColList()
+}
+
+function toggleColunaTodos(checked) {
+  _colunasSelecionadasPDF = checked ? CAMPOS_PDF.map(f => f.key) : []
+  renderPdfColList()
+}
+
+function escHtml(v) {
+  return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 }
 
 function imprimirPDFCustom() {
@@ -427,7 +459,7 @@ function imprimirPDFCustom() {
       const list = candidatos.filter(c => getStage(c) === stage.key)
       if (!list.length) return ''
       return `<tr class="stage-row"><td colspan="${campos.length}">${stage.label}（${list.length}名）</td></tr>` +
-        list.map((c, i) => `<tr class="${i%2===0?'even':''}">${campos.map(f => `<td>${f.get(c)}</td>`).join('')}</tr>`).join('')
+        list.map((c, i) => `<tr class="${i%2===0?'even':''}">${campos.map(f => `<td>${escHtml(f.get(c))}</td>`).join('')}</tr>`).join('')
     }).join('')
 
   const w = window.open('', '_blank')
@@ -453,6 +485,34 @@ function imprimirPDFCustom() {
       <tbody>${linhas}</tbody>
     </table></body></html>`)
   w.document.close()
+}
+
+function exportarExcelCustom() {
+  if (_colunasSelecionadasPDF.length === 0) { alert('少なくとも1つの項目を選んでください。'); return }
+  const campos = _colunasSelecionadasPDF.map(key => CAMPOS_PDF.find(f => f.key === key))
+  fecharPdfColModal()
+
+  let candidatos = getFiltrados()
+  if (_selecionadosImpressao.size > 0) candidatos = candidatos.filter(c => _selecionadosImpressao.has(c.id))
+  const stagesVisiveis = getStagesVisiveis()
+
+  const linhas = []
+  STAGES.filter(s => stagesVisiveis.includes(s.key)).forEach(stage => {
+    candidatos.filter(c => getStage(c) === stage.key).forEach(c => {
+      const row = { '状況': stage.label }
+      campos.forEach(f => { row[f.label] = f.get(c) })
+      linhas.push(row)
+    })
+  })
+
+  if (linhas.length === 0) { alert('出力する候補者がいません。'); return }
+
+  const ws = XLSX.utils.json_to_sheet(linhas)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '候補者リスト')
+  const fab = fabricaAtiva || '全体'
+  const hoje = new Date().toISOString().slice(0, 10)
+  XLSX.writeFile(wb, `候補者リスト_${fab}_${hoje}.xlsx`)
 }
 
 function imprimirPDFLeads() {
