@@ -22,6 +22,29 @@
     <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter') fazerLogin()">
     <button id="loginBtn" onclick="fazerLogin()">ログイン</button>
     <div class="login-err" id="loginErr"></div>
+    <div style="text-align:center;margin-top:6px">
+      <a href="#" onclick="toggleEsqueciSenha();return false" style="font-size:12px;color:#1e88e5;text-decoration:none">パスワードをお忘れですか？</a>
+    </div>
+    <div id="forgotBox" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid #eee">
+      <label>メールアドレス</label>
+      <input type="email" id="forgotEmail" placeholder="email@example.com" onkeydown="if(event.key==='Enter') enviarRecuperacao()">
+      <button id="forgotBtn" onclick="enviarRecuperacao()">送信</button>
+      <div class="login-err" id="forgotMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESET DE SENHA (via link de recuperação por e-mail) -->
+<div id="resetScreen" style="display:none">
+  <div class="login-card">
+    <h1>新しいパスワード</h1>
+    <p>新しいパスワードを設定してください</p>
+    <label>新しいパスワード</label>
+    <input type="password" id="novaSenha1" placeholder="••••••••">
+    <label>確認</label>
+    <input type="password" id="novaSenha2" placeholder="••••••••" onkeydown="if(event.key==='Enter') salvarNovaSenha()">
+    <button id="resetBtn" onclick="salvarNovaSenha()">保存する</button>
+    <div class="login-err" id="resetErr"></div>
   </div>
 </div>
 
@@ -35,6 +58,9 @@
   </div>
   <div class="sidebar-item sidebar-nav sidebar-special" id="btnPoolTab" onclick="showTab('stockpool', this)">
     <div class="factory-name">全体ストック</div>
+  </div>
+  <div class="sidebar-item sidebar-nav sidebar-special" id="btnVagasLinkTab" style="display:none" onclick="showTab('vagaslink', this)">
+    <div class="factory-name">🔗 Link de Vagas</div>
   </div>
   <div class="sidebar-item sidebar-special" id="btnMeuShokai" onclick="filtrarMeuShokai(this)">
     <div class="factory-name">マイ紹介</div>
@@ -51,7 +77,7 @@
 <div id="main">
   <div id="topbar">
     <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
-    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.03</span></h1>
+    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.04</span></h1>
     <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
     <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
@@ -243,6 +269,15 @@
     <div style="font-size:11px;color:#999;padding:0 4px">
       ※ 入社率 = 入社（在籍含む）÷ 紹介数。紹介数3名未満の紹介者は表の下部に表示されます。
     </div>
+  </div>
+
+  <!-- LINK DE VAGAS VIEW (só quem tem shokai_nome no perfil) -->
+  <div id="vagasLinkView">
+    <div style="background:white;border-radius:8px;padding:10px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+      <div style="font-size:14px;font-weight:700;color:#1e88e5">🔗 Link de Vagas — <span id="vagasLinkNome"></span></div>
+      <div style="font-size:11px;color:#999;margin-top:2px">Compartilhe estes links. Todo candidato que se cadastrar por eles fica vinculado a você.</div>
+    </div>
+    <div id="vagasLinkGrid" class="vagas-link-grid"></div>
   </div>
 
 </div>

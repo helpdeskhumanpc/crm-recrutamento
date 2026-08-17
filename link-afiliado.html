@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Gerar Link de Indicação — Human</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f4f6f8; color: #222; padding: 16px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 19px; margin: 8px 0 4px; }
+  .sub { color: #666; font-size: 13px; margin-bottom: 20px; }
+
+  /* ─── Tela de senha ─── */
+  #gate {
+    min-height: 70vh; display: flex; align-items: center; justify-content: center;
+  }
+  .gate-box {
+    background: #fff; border-radius: 12px; padding: 32px 24px; box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    width: 100%; max-width: 320px; text-align: center;
+  }
+  .gate-box h2 { font-size: 16px; margin-bottom: 16px; }
+  .gate-box input {
+    width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px;
+    text-align: center; margin-bottom: 12px;
+  }
+  .gate-box button, .copy-btn, .share-btn {
+    width: 100%; padding: 12px; font-size: 15px; border: none; border-radius: 8px;
+    background: #1e88e5; color: #fff; font-weight: 600; cursor: pointer;
+  }
+  .gate-box .err { color: #e53935; font-size: 13px; margin-top: 8px; display: none; }
+
+  /* ─── App principal ─── */
+  #app { display: none; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  select {
+    width: 100%; padding: 10px; font-size: 15px; border: 1px solid #ccc; border-radius: 8px; background: #fff;
+  }
+  .geral-link { display: flex; gap: 8px; margin-top: 10px; }
+  .geral-link input { flex: 1; padding: 10px; font-size: 13px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; color: #555; }
+  .geral-link button { flex-shrink: 0; padding: 10px 14px; }
+
+  #vagasList {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;
+  }
+  .vaga-item {
+    border: 1px solid #eee; border-radius: 10px; overflow: hidden; background: #fff;
+  }
+  .vaga-img {
+    width: 100%; aspect-ratio: 3/2; object-fit: cover; display: block; background: #f0f0f0;
+  }
+  .vaga-nome {
+    font-size: 12px; font-weight: 600; padding: 8px 8px 4px; line-height: 1.3;
+    display: block; min-height: 32px;
+  }
+  .vaga-actions { display: flex; gap: 6px; padding: 0 8px 8px; }
+  .btn-sm {
+    flex: 1; padding: 8px 6px; font-size: 11px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;
+  }
+  .btn-copy { background: #eef3fb; color: #1e88e5; }
+  .btn-share { background: #1e88e5; color: #fff; }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #323232; color: #fff; padding: 10px 18px; border-radius: 20px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-box">
+    <h2>🔒 Digite a senha</h2>
+    <input type="password" id="senhaInput" inputmode="numeric" placeholder="Senha">
+    <button onclick="checarSenha()">Entrar</button>
+    <div class="err" id="senhaErro">Senha incorreta.</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="wrap">
+    <h1>🔗 Gerar Link de Indicação</h1>
+    <div class="sub">Escolha seu nome e compartilhe os links das vagas. Todo candidato que se cadastrar por eles fica vinculado a você.</div>
+
+    <div class="card">
+      <label style="font-size:13px;color:#666;display:block;margin-bottom:6px">事務所 — Seu escritório</label>
+      <select id="jimushoSelect" onchange="atualizarShokaiOptions()" style="margin-bottom:14px">
+        <option value="">Selecione...</option>
+      </select>
+
+      <label style="font-size:13px;color:#666;display:block;margin-bottom:6px">紹介者 — Seu nome</label>
+      <select id="shokaiSelect" onchange="atualizarLinks()" disabled>
+        <option value="">Selecione o escritório primeiro</option>
+      </select>
+
+      <div class="geral-link" id="geralLinkBox" style="display:none">
+        <input type="text" id="geralLinkInput" readonly>
+        <button class="btn-sm btn-copy" onclick="copiarGeral()">Copiar</button>
+      </div>
+    </div>
+
+    <div class="card" id="vagasBox" style="display:none">
+      <div style="font-size:13px;color:#666;margin-bottom:6px">Ou compartilhe uma vaga específica:</div>
+      <div id="vagasList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Link copiado!</div>
+
+<script>
+const SENHA = '0246'
+const SITE_BASE = 'https://jobs-human.com/'
+
+const { createClient } = supabase
+const sb = createClient('https://xzxfwrbebkwagnropgfb.supabase.co', 'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE')
+
+// Vagas publicadas em jobs-human.com (atualizar manualmente ao adicionar/remover vaga no site)
+const VAGAS = [
+  { nome: 'Screw Sorting Factory',                        url: 'https://jobs-human.com/vagas/screw-factory-oguchi/', img: 'https://jobs-human.com/wp-content/uploads/2026/07/vagas-emprego-oguchi-aichi-human-servico-300x200.png' },
+  { nome: 'Peças Plásticas Automotivas (Tajimi)',          url: 'https://jobs-human.com/vagas/pecas-plasticas-tajimi/', img: 'https://jobs-human.com/wp-content/uploads/2026/06/emprego-homem-mulher-tajimi-human-servico-vaga-300x200.png' },
+  { nome: 'Fábrica de Peças Plásticas Automotivas (Oguchi)', url: 'https://jobs-human.com/vagas/pecas-plasticas-oguchi/', img: 'https://jobs-human.com/wp-content/uploads/2026/06/emprego-aichi-human-servico-vagas-injetora-300x200.png' },
+  { nome: 'Linha de Montagem de Motos (Kumamoto)',         url: 'https://jobs-human.com/vagas/montagem-motos-kumamoto/', img: 'https://jobs-human.com/wp-content/uploads/2026/06/kumamoto-human-vaga-servico-emprego-300x200.png' },
+  { nome: 'Logística (Nagoya)',                            url: 'https://jobs-human.com/vagas/logistica-nagoya/', img: 'https://jobs-human.com/wp-content/uploads/2026/06/human-servico-logistica-nagoya-emprego-300x200.png' },
+  { nome: 'Fábrica de Semicondutores (Ogaki)',             url: 'https://jobs-human.com/vagas/fabrica-semicondutores-ogaki/', img: 'https://jobs-human.com/wp-content/uploads/2026/05/human-servico-semicondutores-gifu-ogaki-300x200.png' },
+  { nome: 'Serviço de Lift (Chiryu)',                      url: 'https://jobs-human.com/vagas/servico-de-lift-em-chiryu/', img: 'https://jobs-human.com/wp-content/uploads/2026/05/Lift-anjo-chiryu-huma-servico-aichi-300x200.png' },
+  { nome: 'Picking de Parafuso (Gifu)',                    url: 'https://jobs-human.com/vagas/picking-parafuso/', img: 'https://jobs-human.com/wp-content/uploads/2026/04/picking-parafuso-human-emprego-servico-300x200.jpg' },
+  { nome: 'Produção Metálica de Veículos (Inabe)',         url: 'https://jobs-human.com/vagas/producao-metalica-de-veiculos-inabe/', img: 'https://jobs-human.com/wp-content/uploads/2026/04/solda-robotica-human-inabe-emprego-servico-vaga-2-300x200.png' },
+  { nome: 'Tantousha',                                     url: 'https://jobs-human.com/vagas/tantousha/', img: 'https://jobs-human.com/wp-content/uploads/2026/03/vagas-tantousha-human-emprego-aichi-kariya-mie-300x158.jpg' },
+  { nome: 'Auto Peças (Inabe)',                            url: 'https://jobs-human.com/vagas/fabrica-auto-peca-inabe/', img: 'https://jobs-human.com/wp-content/uploads/2026/03/solda-robotica-inabe-human-servico-emprego-300x200.jpg' },
+  { nome: 'Fábrica Banco de Carro (Inabe)',                url: 'https://jobs-human.com/vagas/fabrica-banco-de-carro-inabe/', img: 'https://jobs-human.com/wp-content/uploads/2026/03/banco-de-carro-inabe-servico-vaga-emprego-human-mie-300x199.jpg' },
+  { nome: 'Fábrica Banco de Carro Hayaban/Osoban',         url: 'https://jobs-human.com/vagas/fabrica-de-banco-de-carro-hayaban-osoban/', img: 'https://jobs-human.com/wp-content/uploads/2026/02/Banco-de-carro-anjo-empergo-human-aichi-servico-2-300x219.jpg' },
+  { nome: 'Fábrica Banco de Carro Nikoutai',                url: 'https://jobs-human.com/vagas/fabrica-de-banco-de-carro-nikoutai/', img: 'https://jobs-human.com/wp-content/uploads/2026/02/Banco-de-carro-anjo-empergo-human-aichi-servico-300x200.jpg' },
+  { nome: 'Fábrica de Tanque de Carro',                    url: 'https://jobs-human.com/vagas/fabrica-de-tanque-de-carro/', img: 'https://jobs-human.com/wp-content/uploads/2026/02/tanque-de-carro-toyota-human-servico-emprego-aichi-jobs-300x197.jpg' },
+  { nome: 'Fábrica Banco de Carro (Kariya)',                url: 'https://jobs-human.com/vagas/fabrica-banco-de-carro-kariya/', img: 'https://jobs-human.com/wp-content/uploads/2026/02/fabrica-banco-de-carro-kariya-servico-emprego-aichi-human-jobs-300x200.jpg' },
+  { nome: 'Linha de Montagem Automotiva',                  url: 'https://jobs-human.com/vagas/linha-de-montagem-automotiva/', img: 'https://jobs-human.com/wp-content/uploads/2026/02/Linha-de-montagem-de-automotiva-human-servico-em-aichi-japan-servico-emprego-300x200.jpg' },
+  { nome: 'Costura de Banco de Carro',                     url: 'https://jobs-human.com/vagas/costura-de-banco-de-carro/', img: 'https://jobs-human.com/wp-content/uploads/2026/02/costura-de-banco-de-carro-toyota-servico-human-empreteira-aichi-300x200.jpg' },
+  { nome: 'Empilhadeira, Tamakake e Guindaste',            url: 'https://jobs-human.com/vagas/empilhadeira-tamakake-e-guindaste/', img: 'https://jobs-human.com/wp-content/uploads/2026/02/Tamakake-empilhadeira-guindaste-servico-aichi-okazaki-human-servico-trabalho-300x200.jpg' },
+  { nome: 'Produção de Bomba Injetora',                    url: 'https://jobs-human.com/vagas/producao-de-bomba-injetora/', img: 'https://jobs-human.com/wp-content/uploads/2026/02/Servico-Okazaki-autopeca-huma-servico-emprego-aichi-300x200.jpg' },
+]
+
+function checarSenha() {
+  const val = document.getElementById('senhaInput').value.trim()
+  if (val === SENHA) {
+    document.getElementById('gate').style.display = 'none'
+    document.getElementById('app').style.display = 'block'
+    carregarShokaisha()
+  } else {
+    document.getElementById('senhaErro').style.display = 'block'
+  }
+}
+document.getElementById('senhaInput').addEventListener('keydown', e => { if (e.key === 'Enter') checarSenha() })
+
+let shokaisPorJimusho = {}
+
+async function carregarShokaisha() {
+  const jimushoSel = document.getElementById('jimushoSelect')
+  const { data, error } = await sb.from('shokaisha').select('jimusho,nome').order('jimusho').order('nome')
+  if (error || !data) { jimushoSel.innerHTML = '<option value="">Erro ao carregar</option>'; return }
+
+  shokaisPorJimusho = {}
+  data.forEach(s => {
+    if (!shokaisPorJimusho[s.jimusho]) shokaisPorJimusho[s.jimusho] = []
+    if (!shokaisPorJimusho[s.jimusho].includes(s.nome)) shokaisPorJimusho[s.jimusho].push(s.nome)
+  })
+
+  const jimushos = Object.keys(shokaisPorJimusho).sort()
+  jimushoSel.innerHTML = '<option value="">Selecione...</option>' + jimushos.map(j => `<option value="${j}">${j}</option>`).join('')
+}
+
+function atualizarShokaiOptions() {
+  const jimusho = document.getElementById('jimushoSelect').value
+  const shokaiSel = document.getElementById('shokaiSelect')
+  const nomes = shokaisPorJimusho[jimusho] || []
+  if (!jimusho) {
+    shokaiSel.innerHTML = '<option value="">Selecione o escritório primeiro</option>'
+    shokaiSel.disabled = true
+  } else {
+    shokaiSel.innerHTML = '<option value="">Selecione...</option>' + nomes.map(n => `<option value="${n}">${n}</option>`).join('')
+    shokaiSel.disabled = false
+  }
+  atualizarLinks()
+}
+
+function atualizarLinks() {
+  const nome = document.getElementById('shokaiSelect').value
+  const geralBox   = document.getElementById('geralLinkBox')
+  const vagasBox   = document.getElementById('vagasBox')
+  const vagasList  = document.getElementById('vagasList')
+
+  if (!nome) { geralBox.style.display = 'none'; vagasBox.style.display = 'none'; return }
+
+  const ref = encodeURIComponent(nome)
+
+  geralBox.style.display = 'flex'
+  document.getElementById('geralLinkInput').value = `${SITE_BASE}?ref=${ref}`
+
+  vagasBox.style.display = 'block'
+  vagasList.innerHTML = VAGAS.map((v, i) => `
+    <div class="vaga-item">
+      <img class="vaga-img" src="${v.img}" alt="${v.nome}" loading="lazy">
+      <span class="vaga-nome">${v.nome}</span>
+      <div class="vaga-actions">
+        <button class="btn-sm btn-copy" onclick="copiarVaga(${i})">Copiar</button>
+        <button class="btn-sm btn-share" onclick="compartilharVaga(${i})">Compartilhar</button>
+      </div>
+    </div>
+  `).join('')
+}
+
+function linkVaga(i) {
+  const nome = document.getElementById('shokaiSelect').value
+  return `${VAGAS[i].url}?ref=${encodeURIComponent(nome)}`
+}
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.add('show')
+  setTimeout(() => t.classList.remove('show'), 1800)
+}
+
+function copiarTexto(txt) {
+  navigator.clipboard.writeText(txt).then(() => mostrarToast('Link copiado!'))
+}
+
+function copiarGeral() { copiarTexto(document.getElementById('geralLinkInput').value) }
+function copiarVaga(i) { copiarTexto(linkVaga(i)) }
+
+function compartilharVaga(i) {
+  const url = linkVaga(i)
+  if (navigator.share) {
+    navigator.share({ title: VAGAS[i].nome, url }).catch(() => {})
+  } else {
+    copiarTexto(url)
+  }
+}
+</script>
+
+</body>
+</html>

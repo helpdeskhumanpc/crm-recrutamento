@@ -1191,8 +1191,9 @@ function showTab(tab, btn) {
   document.getElementById('leadsView').style.display     = tab === 'leads'     ? 'flex'  : 'none'
   document.getElementById('stockPoolView').style.display = tab === 'stockpool' ? 'flex'  : 'none'
   document.getElementById('shokaiView').style.display    = tab === 'shokai'    ? 'flex'  : 'none'
+  document.getElementById('vagasLinkView').style.display = tab === 'vagaslink' ? 'flex'  : 'none'
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-  if (tab === 'leads' || tab === 'stockpool' || tab === 'shokai') {
+  if (tab === 'leads' || tab === 'stockpool' || tab === 'shokai' || tab === 'vagaslink') {
     document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
     if (btn) btn.classList.add('active')
   } else {
@@ -1208,6 +1209,50 @@ function showTab(tab, btn) {
   if (tab === 'leads')     renderLeads()
   if (tab === 'stockpool') renderStockPool()
   if (tab === 'shokai')    renderShokaiAnalise()
+  if (tab === 'vagaslink') renderVagasLink()
+}
+
+// ─── LINK DE VAGAS (quem tem shokai_nome no perfil) ─────────
+async function renderVagasLink() {
+  document.getElementById('vagasLinkNome').textContent = currentProfile?.shokai_nome || '—'
+  const grid = document.getElementById('vagasLinkGrid')
+  grid.innerHTML = '<div style="padding:10px;color:#aaa;font-size:12px">読み込み中...</div>'
+
+  const { data, error } = await sb.from('locations')
+    .select('nome,link_divulgacao')
+    .eq('ativo', true)
+    .not('link_divulgacao', 'is', null)
+    .order('nome')
+
+  const vagas = (data || []).filter(v => v.link_divulgacao && v.link_divulgacao.trim())
+
+  if (error || vagas.length === 0) {
+    grid.innerHTML = '<div style="padding:10px;color:#aaa;font-size:12px">Nenhuma vaga com link de divulgação cadastrado.</div>'
+    return
+  }
+
+  const ref = encodeURIComponent(currentProfile?.shokai_nome || '')
+  grid.innerHTML = vagas.map((v, i) => `
+    <div class="vagas-link-card">
+      <div class="vagas-link-nome">${v.nome}</div>
+      <div class="vagas-link-actions">
+        <button class="btn-vlink btn-vlink-copy" onclick="copiarVagaLink(${i})">Copiar</button>
+        <button class="btn-vlink btn-vlink-share" onclick="compartilharVagaLink(${i})">Compartilhar</button>
+      </div>
+    </div>
+  `).join('')
+
+  window._vagasLinkAtuais = vagas.map(v => `${v.link_divulgacao}${v.link_divulgacao.includes('?') ? '&' : '?'}ref=${ref}`)
+}
+
+function copiarVagaLink(i) {
+  navigator.clipboard.writeText(window._vagasLinkAtuais[i]).then(() => alert('Link copiado!'))
+}
+
+function compartilharVagaLink(i) {
+  const url = window._vagasLinkAtuais[i]
+  if (navigator.share) navigator.share({ url }).catch(() => {})
+  else navigator.clipboard.writeText(url).then(() => alert('Link copiado!'))
 }
 
 // ─── SHOKAI ANALYSIS (admin) ─────────────────────────────────
@@ -1690,6 +1735,60 @@ async function fazerLogin() {
   await iniciarDashboard()
 }
 
+function toggleEsqueciSenha() {
+  const box = document.getElementById('forgotBox')
+  box.style.display = box.style.display === 'none' ? 'block' : 'none'
+  document.getElementById('forgotEmail').value = document.getElementById('loginEmail').value.trim()
+  document.getElementById('forgotMsg').textContent = ''
+}
+
+async function enviarRecuperacao() {
+  const email = document.getElementById('forgotEmail').value.trim()
+  const btn   = document.getElementById('forgotBtn')
+  const msg   = document.getElementById('forgotMsg')
+
+  if (!email) { msg.textContent = 'メールアドレスを入力してください'; return }
+
+  btn.disabled = true
+  btn.textContent = '送信中...'
+
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
+  })
+
+  btn.disabled = false
+  btn.textContent = '送信'
+
+  msg.style.color = error ? '#c62828' : '#2e7d32'
+  msg.textContent = error
+    ? 'エラーが発生しました。もう一度お試しください。'
+    : 'メールを送信しました。届いたリンクからパスワードを再設定してください。'
+}
+
+async function salvarNovaSenha() {
+  const p1  = document.getElementById('novaSenha1').value
+  const p2  = document.getElementById('novaSenha2').value
+  const btn = document.getElementById('resetBtn')
+  const err = document.getElementById('resetErr')
+
+  if (!p1 || p1.length < 6) { err.textContent = '6文字以上のパスワードを入力してください'; return }
+  if (p1 !== p2)            { err.textContent = 'パスワードが一致しません'; return }
+
+  btn.disabled = true
+  btn.textContent = '保存中...'
+
+  const { error } = await sb.auth.updateUser({ password: p1 })
+
+  btn.disabled = false
+  btn.textContent = '保存する'
+
+  if (error) { err.textContent = 'エラーが発生しました。もう一度お試しください。'; return }
+
+  document.getElementById('resetScreen').style.display = 'none'
+  history.replaceState(null, '', window.location.pathname)
+  await iniciarDashboard()
+}
+
 async function fazerLogout() {
   await sb.auth.signOut()
   currentProfile = null
@@ -1712,6 +1811,7 @@ async function iniciarDashboard() {
     document.getElementById('btnShokaiTab').style.display = ''
   }
   document.getElementById('btnPoolTab').style.display = ''
+  if (profile?.shokai_nome) document.getElementById('btnVagasLinkTab').style.display = ''
 
   // Período padrão: 3 meses atrás → hoje (登録日)
   const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -1726,10 +1826,12 @@ async function iniciarDashboard() {
 }
 
 // Verifica sessão ao carregar
+// (se for um link de recuperação de senha, o evento PASSWORD_RECOVERY abaixo cuida da tela — não abre o dashboard direto)
 sb.auth.getSession().then(({ data: { session } }) => {
-  if (session) {
+  const isRecovery = window.location.hash.includes('type=recovery')
+  if (session && !isRecovery) {
     iniciarDashboard()
-  } else {
+  } else if (!session) {
     document.getElementById('loginScreen').style.display = 'flex'
   }
 })
@@ -1738,5 +1840,9 @@ sb.auth.getSession().then(({ data: { session } }) => {
 sb.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') {
     document.getElementById('loginScreen').style.display = 'flex'
+  }
+  if (event === 'PASSWORD_RECOVERY') {
+    document.getElementById('loginScreen').style.display = 'none'
+    document.getElementById('resetScreen').style.display = 'flex'
   }
 })
