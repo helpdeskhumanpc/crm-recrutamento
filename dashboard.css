@@ -128,7 +128,6 @@
     #vagasLinkView { flex: 1; overflow-y: auto; padding: 12px; display: none; flex-direction: column; gap: 10px; }
     .vagas-link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
     .vagas-link-card { background: white; border: 1px solid #eee; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-    .vagas-link-img { width: 100%; aspect-ratio: 3/2; object-fit: cover; display: block; background: #f0f0f0; }
     .vagas-link-nome { font-size: 12.5px; font-weight: 600; padding: 10px 10px 4px; line-height: 1.3; min-height: 34px; }
     .vagas-link-actions { display: flex; gap: 6px; padding: 0 10px 10px; }
     .btn-vlink { flex: 1; padding: 8px 6px; font-size: 11px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; }

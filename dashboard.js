@@ -1219,7 +1219,7 @@ async function renderVagasLink() {
   grid.innerHTML = '<div style="padding:10px;color:#aaa;font-size:12px">読み込み中...</div>'
 
   const { data, error } = await sb.from('locations')
-    .select('nome,link_divulgacao,imagem_divulgacao')
+    .select('nome,link_divulgacao')
     .eq('ativo', true)
     .not('link_divulgacao', 'is', null)
     .order('nome')
@@ -1234,7 +1234,6 @@ async function renderVagasLink() {
   const ref = encodeURIComponent(currentProfile?.shokai_nome || '')
   grid.innerHTML = vagas.map((v, i) => `
     <div class="vagas-link-card">
-      ${v.imagem_divulgacao ? `<img class="vagas-link-img" src="${v.imagem_divulgacao}" alt="${v.nome}" loading="lazy">` : ''}
       <div class="vagas-link-nome">${v.nome}</div>
       <div class="vagas-link-actions">
         <button class="btn-vlink btn-vlink-copy" onclick="copiarVagaLink(${i})">コピー</button>
