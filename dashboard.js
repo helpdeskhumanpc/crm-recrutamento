@@ -1212,14 +1212,14 @@ function showTab(tab, btn) {
   if (tab === 'vagaslink') renderVagasLink()
 }
 
-// ─── LINK DE VAGAS (quem tem shokai_nome no perfil) ─────────
+// ─── 紹介リンク (プロフィールに shokai_nome があるユーザーのみ) ─────
 async function renderVagasLink() {
   document.getElementById('vagasLinkNome').textContent = currentProfile?.shokai_nome || '—'
   const grid = document.getElementById('vagasLinkGrid')
   grid.innerHTML = '<div style="padding:10px;color:#aaa;font-size:12px">読み込み中...</div>'
 
   const { data, error } = await sb.from('locations')
-    .select('nome,link_divulgacao')
+    .select('nome,link_divulgacao,imagem_divulgacao')
     .eq('ativo', true)
     .not('link_divulgacao', 'is', null)
     .order('nome')
@@ -1227,17 +1227,18 @@ async function renderVagasLink() {
   const vagas = (data || []).filter(v => v.link_divulgacao && v.link_divulgacao.trim())
 
   if (error || vagas.length === 0) {
-    grid.innerHTML = '<div style="padding:10px;color:#aaa;font-size:12px">Nenhuma vaga com link de divulgação cadastrado.</div>'
+    grid.innerHTML = '<div style="padding:10px;color:#aaa;font-size:12px">紹介リンクが設定された求人がありません。</div>'
     return
   }
 
   const ref = encodeURIComponent(currentProfile?.shokai_nome || '')
   grid.innerHTML = vagas.map((v, i) => `
     <div class="vagas-link-card">
+      ${v.imagem_divulgacao ? `<img class="vagas-link-img" src="${v.imagem_divulgacao}" alt="${v.nome}" loading="lazy">` : ''}
       <div class="vagas-link-nome">${v.nome}</div>
       <div class="vagas-link-actions">
-        <button class="btn-vlink btn-vlink-copy" onclick="copiarVagaLink(${i})">Copiar</button>
-        <button class="btn-vlink btn-vlink-share" onclick="compartilharVagaLink(${i})">Compartilhar</button>
+        <button class="btn-vlink btn-vlink-copy" onclick="copiarVagaLink(${i})">コピー</button>
+        <button class="btn-vlink btn-vlink-share" onclick="compartilharVagaLink(${i})">共有</button>
       </div>
     </div>
   `).join('')
@@ -1246,13 +1247,13 @@ async function renderVagasLink() {
 }
 
 function copiarVagaLink(i) {
-  navigator.clipboard.writeText(window._vagasLinkAtuais[i]).then(() => alert('Link copiado!'))
+  navigator.clipboard.writeText(window._vagasLinkAtuais[i]).then(() => alert('リンクをコピーしました！'))
 }
 
 function compartilharVagaLink(i) {
   const url = window._vagasLinkAtuais[i]
   if (navigator.share) navigator.share({ url }).catch(() => {})
-  else navigator.clipboard.writeText(url).then(() => alert('Link copiado!'))
+  else navigator.clipboard.writeText(url).then(() => alert('リンクをコピーしました！'))
 }
 
 // ─── SHOKAI ANALYSIS (admin) ─────────────────────────────────

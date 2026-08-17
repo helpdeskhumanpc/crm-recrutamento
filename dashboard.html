@@ -60,7 +60,7 @@
     <div class="factory-name">全体ストック</div>
   </div>
   <div class="sidebar-item sidebar-nav sidebar-special" id="btnVagasLinkTab" style="display:none" onclick="showTab('vagaslink', this)">
-    <div class="factory-name">🔗 Link de Vagas</div>
+    <div class="factory-name">🔗 紹介リンク</div>
   </div>
   <div class="sidebar-item sidebar-special" id="btnMeuShokai" onclick="filtrarMeuShokai(this)">
     <div class="factory-name">マイ紹介</div>
@@ -77,7 +77,7 @@
 <div id="main">
   <div id="topbar">
     <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
-    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.05</span></h1>
+    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.06</span></h1>
     <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
     <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
@@ -271,11 +271,11 @@
     </div>
   </div>
 
-  <!-- LINK DE VAGAS VIEW (só quem tem shokai_nome no perfil) -->
+  <!-- 紹介リンク VIEW (プロフィールに shokai_nome があるユーザーのみ) -->
   <div id="vagasLinkView">
     <div style="background:white;border-radius:8px;padding:10px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
-      <div style="font-size:14px;font-weight:700;color:#1e88e5">🔗 Link de Vagas — <span id="vagasLinkNome"></span></div>
-      <div style="font-size:11px;color:#999;margin-top:2px">Compartilhe estes links. Todo candidato que se cadastrar por eles fica vinculado a você.</div>
+      <div style="font-size:14px;font-weight:700;color:#1e88e5">🔗 紹介リンク — <span id="vagasLinkNome"></span></div>
+      <div style="font-size:11px;color:#999;margin-top:2px">このリンクを共有してください。ここから登録された候補者は自動的にあなたの紹介として記録されます。</div>
     </div>
     <div id="vagasLinkGrid" class="vagas-link-grid"></div>
   </div>
