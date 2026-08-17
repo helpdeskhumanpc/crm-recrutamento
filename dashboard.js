@@ -1760,8 +1760,9 @@ async function enviarRecuperacao() {
   btn.textContent = '送信'
 
   msg.style.color = error ? '#c62828' : '#2e7d32'
+  if (error) console.error('resetPasswordForEmail:', error)
   msg.textContent = error
-    ? 'エラーが発生しました。もう一度お試しください。'
+    ? `エラー: ${error.message || 'もう一度お試しください。'}`
     : 'メールを送信しました。届いたリンクからパスワードを再設定してください。'
 }
 
