@@ -1454,6 +1454,11 @@ function getLeadsStage(c) {
   return 'renrakumae'
 }
 
+// admin ve todos os leads do site; os demais (com shokai_nome no perfil) so veem os proprios
+function podeAgirLeads() {
+  return currentProfile?.role === 'admin' || currentProfile?.role === 'tantousha'
+}
+
 function getLeadsFiltrados() {
   const fabFilter = document.getElementById('leadsFilter')?.value || ''
   const search = document.getElementById('searchInput')?.value.toLowerCase() || ''
@@ -1463,6 +1468,7 @@ function getLeadsFiltrados() {
   const f = activeFilters
   return todosOsCandidatos.filter(c => {
     if (c.origem !== 'web' && c.origem !== 'web_indicado' && c.origem !== 'web_stock') return false
+    if (currentProfile?.role !== 'admin' && c.shokai !== currentProfile?.shokai_nome) return false
     if (!dentroDoPeriodo(c)) return false
     if (fabFilter && c.fabrica !== fabFilter) return false
     if (sexo   && c.sexo !== sexo)                                            return false
@@ -1489,7 +1495,10 @@ function renderLeads() {
   const sel = document.getElementById('leadsFilter')
 
   // Popula dropdown de fábricas
-  const allLeads = todosOsCandidatos.filter(c => c.origem === 'web' || c.origem === 'web_indicado' || c.origem === 'web_stock')
+  const allLeads = todosOsCandidatos.filter(c =>
+    (c.origem === 'web' || c.origem === 'web_indicado' || c.origem === 'web_stock') &&
+    (currentProfile?.role === 'admin' || c.shokai === currentProfile?.shokai_nome)
+  )
   const fabs = [...new Set(allLeads.map(c => c.fabrica).filter(Boolean))].sort()
   const cur  = sel?.value || ''
   if (sel) sel.innerHTML = '<option value="">Todas as fábricas</option>' + fabs.map(f => `<option value="${f}" ${f===cur?'selected':''}>${f}</option>`).join('')
@@ -1510,13 +1519,14 @@ function renderLeads() {
     const show = expanded ? list : list.slice(0, 5)
     const hasMore = list.length > 5 && !expanded
 
+    const agir = podeAgirLeads()
     let rows = ''
     if (list.length === 0) {
       rows = '<div style="padding:10px 16px;color:#aaa;font-size:12px;font-style:italic">候補者なし</div>'
     } else {
       rows = colHeader + show.map(c => {
         let actions = ''
-        if (stage.key === 'renrakumae') {
+        if (stage.key === 'renrakumae' && agir) {
           actions = `<div class="lead-actions">
             <button class="btn-lead amber"  onclick="moverParaTaiochu('${c.id}')">対応中</button>
             <button class="btn-lead green"  onclick="enviarParaFabrica('${c.id}')">担当者紹介</button>
@@ -1524,14 +1534,14 @@ function renderLeads() {
             <button class="btn-lead orange" onclick="moverNG('${c.id}')">NG</button>
             <button class="btn-lead red"    onclick="bloquearLead('${c.id}')">Bloquear</button>
           </div>`
-        } else if (stage.key === 'taiochu') {
+        } else if (stage.key === 'taiochu' && agir) {
           actions = `<div class="lead-actions">
             <button class="btn-lead green"  onclick="enviarParaFabrica('${c.id}')">担当者紹介</button>
             <button class="btn-lead blue"   onclick="moverParaStock('${c.id}')">ストック</button>
             <button class="btn-lead orange" onclick="moverNG('${c.id}')">NG</button>
             <button class="btn-lead red"    onclick="bloquearLead('${c.id}')">Bloquear</button>
           </div>`
-        } else if (stage.key === 'stock') {
+        } else if (stage.key === 'stock' && agir) {
           actions = `<div class="lead-actions">
             <button class="btn-lead green"  onclick="enviarParaFabrica('${c.id}')">担当者紹介</button>
             <button class="btn-lead orange" onclick="moverNG('${c.id}')">NG</button>
@@ -1809,9 +1819,9 @@ async function iniciarDashboard() {
   document.getElementById('userNome').textContent = profile?.nome || user.email
 
   if (profile?.role === 'admin') {
-    document.getElementById('btnLeadsTab').style.display = ''
     document.getElementById('btnShokaiTab').style.display = ''
   }
+  if (profile?.role === 'admin' || profile?.shokai_nome) document.getElementById('btnLeadsTab').style.display = ''
   document.getElementById('btnPoolTab').style.display = ''
   if (profile?.shokai_nome) document.getElementById('btnVagasLinkTab').style.display = ''
 
