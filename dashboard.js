@@ -132,17 +132,25 @@ function carregarCalFabricaFilter() {
   todasFabricas.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o) })
 }
 
-function filtrarFabrica(fabrica, el) {
-  fabricaAtiva = fabrica
-  shokaiAtivo = null
-  // se estava em Leads do Site / 全体ストック, volta para o painel 状況
-  if (document.getElementById('leadsView').style.display === 'flex' || document.getElementById('stockPoolView').style.display === 'flex') {
-    document.getElementById('leadsView').style.display     = 'none'
-    document.getElementById('stockPoolView').style.display = 'none'
-    document.getElementById('pipeline').style.display      = 'block'
+// se estava em Leads do Site / 全体ストック / 紹介リンク, volta para o painel 状況
+function voltarParaPipelineSeNecessario() {
+  const leads = document.getElementById('leadsView')
+  const pool  = document.getElementById('stockPoolView')
+  const vlink = document.getElementById('vagasLinkView')
+  if (leads.style.display === 'flex' || pool.style.display === 'flex' || vlink.style.display === 'flex') {
+    leads.style.display     = 'none'
+    pool.style.display      = 'none'
+    vlink.style.display     = 'none'
+    document.getElementById('pipeline').style.display = 'block'
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
     document.querySelector('.tab-btn').classList.add('active')
   }
+}
+
+function filtrarFabrica(fabrica, el) {
+  fabricaAtiva = fabrica
+  shokaiAtivo = null
+  voltarParaPipelineSeNecessario()
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
   if (el) el.classList.add('active')
   // sincroniza filtros do calendário e gráficos
@@ -162,14 +170,7 @@ function filtrarMeuShokai(el) {
   }
   fabricaAtiva = null
   shokaiAtivo = currentProfile.shokai_nome
-  // se estava em Leads do Site / 全体ストック, volta para o painel 状況
-  if (document.getElementById('leadsView').style.display === 'flex' || document.getElementById('stockPoolView').style.display === 'flex') {
-    document.getElementById('leadsView').style.display     = 'none'
-    document.getElementById('stockPoolView').style.display = 'none'
-    document.getElementById('pipeline').style.display      = 'block'
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-    document.querySelector('.tab-btn').classList.add('active')
-  }
+  voltarParaPipelineSeNecessario()
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
   if (el) el.classList.add('active')
   // limpa filtros de fábrica do calendário e gráficos
