@@ -1,7 +1,7 @@
 # Cérebro — CRM Recrutamento Japão
 
 > Documento de referência do projeto. Reflete o estado atual construído.
-> Última atualização: 2026-08-08
+> Última atualização: 2026-08-19
 
 ---
 
@@ -86,16 +86,32 @@ Campo `fabricas` é um array — formato JSON:
 - Role `jimusho` filtra candidatos automaticamente por todas as fábricas do seu escritório
 - Preencher em **Table Editor → locations → coluna jimusho**
 
+### Recuperação de senha (adicionado 2026-08-19)
+
+- Tela de login tem link "パスワードをお忘れですか？" → campo de e-mail → chama `sb.auth.resetPasswordForEmail(email, { redirectTo })`
+- Ao clicar no link recebido por e-mail, o Supabase dispara o evento `PASSWORD_RECOVERY` (`onAuthStateChange`) — o dashboard detecta isso e mostra uma tela separada (`resetScreen`) pra definir a nova senha, **sem** abrir o dashboard direto (havia risco de corrida com o `getSession()` inicial; corrigido checando `location.hash.includes('type=recovery')`)
+- **Depende de configuração manual no Supabase** (Authentication → URL Configuration): `Site URL` = `https://crm-recrutamento-production.up.railway.app` (estava com resquício de `localhost:3000` do setup local, já corrigido) e `Redirect URLs` incluindo essa mesma URL com `/*`
+- Envio de e-mail usa o serviço padrão do Supabase (free tier) — **limite baixo de e-mails/hora**, já esbarrado em teste (`email rate limit exceeded`). Se isso virar recorrente (84 shokaisha ganhando login aos poucos), considerar SMTP próprio (Resend, Gmail SMTP) em Authentication → Settings → SMTP Settings
+
 ### Políticas RLS ativas
 - `insert publico` — anon pode inserir (formulário público)
 - `select por cargo` — filtro por role (admin/jimusho/tantousha/shokaisha) — quem cada cargo **vê**
-- `update por cargo` — a partir de 2026-08-08, **diferente** do select: `shokaisha` não tem UPDATE nenhum; `tantousha` só edita candidatos cuja `fabrica`/`fabrica2` esteja no seu array `fabricas` (perdeu o bypass de editar por indicação/`shokai`)
+- `update por cargo` — desde 2026-08-08: `shokaisha` não tem UPDATE por essa policy; `tantousha` só edita candidatos cuja `fabrica`/`fabrica2` esteja no seu array `fabricas` (perdeu o bypass de editar por indicação/`shokai`)
+- `admin update all` — admin sempre edita tudo
+- **`tantousha update proprios indicados`** (nova, 2026-08-19) — policy adicional (permissiva, soma com as acima via OR): tantousha pode dar UPDATE em qualquer candidato onde `shokai = profiles.shokai_nome`, **independente da fábrica** — cobre o caso de ela processar (担当者紹介 etc.) um lead que ela mesma trouxe via link de afiliado, mesmo que a fábrica não seja uma das dela
+- **`shokaisha update proprios leads`** (nova, 2026-08-19) — mesma lógica, mas pra `role = 'shokaisha'`, e só enquanto `origem in ('web','web_indicado','web_stock')` (ou seja, enquanto o candidato ainda está no universo de "Leads do Site")
 - `anon select temp` — anon pode ler tudo (temporário, remover quando todos migrarem para login)
 
 ### Ver vs Editar (importante, não confundir)
 - **Ver (select):** `shokaisha` vê o que indicou; `tantousha` vê suas fábricas + o que indicou — não mudou
-- **Editar (update):** `shokaisha` nunca edita; `tantousha` só edita se a fábrica do candidato for uma das suas — indicação não basta
-- Reforçado também no frontend (`dashboard.js`, função `podeEditar(c)`): quando o usuário não pode editar, o modal do candidato mostra os campos desabilitados, some com os botões 保存/削除 e aparece o aviso "🔒 閲覧のみ（編集不可）"
+- **Editar (update) — regra desde 2026-08-19:**
+  - `admin`/`jimusho`: tudo, sempre
+  - `tantousha`: candidatos das próprias fábricas (edição completa) **OU** candidatos que ele mesmo indicou, independente da fábrica (edição completa, via a nova policy)
+  - `shokaisha`: **edição parcial** dos próprios indicados enquanto estiverem em Leads do Site (`origem` web/web_indicado/web_stock) — só dados pessoais (基本情報/仕事情報 exceto 紹介者/工場/工場２/スキル); `紹介者`, `工場`, `工場２`, todas as datas de パイプライン日付, ブラックリスト e notas internas (アラート, 担当者コメント) ficam travados
+- Reforçado no frontend (`dashboard.js`):
+  - `podeEditar(c)` → edição completa (admin/jimusho/tantousha por fábrica)
+  - `podeEditarInfo(c)` → edição parcial (quem tem `shokai_nome` batendo com o candidato, respeitando `CAMPOS_BLOQUEADOS_INFO`)
+  - Sem nenhuma das duas: modal todo desabilitado, botões 保存/削除 somem, aparece "🔒 閲覧のみ（編集不可）"
 
 ---
 
@@ -105,8 +121,8 @@ Campo `fabricas` é um array — formato JSON:
 |--------|-----|-------|
 | `admin` | Todos os candidatos, todas as fábricas | Tudo |
 | `jimusho` | Todas as fábricas do seu escritório | Tudo do seu escritório |
-| `tantousha` | Suas fábricas + indicados | Só as suas fábricas (indicação não dá direito de editar) |
-| `shokaisha` | Só quem indicou | Nada — somente leitura |
+| `tantousha` | Suas fábricas + indicados | Suas fábricas (completo) + os que ele mesmo indicou, qualquer fábrica (completo) |
+| `shokaisha` | Só quem indicou | Dados pessoais dos próprios indicados, enquanto em Leads do Site (não edita 紹介者/工場/datas de pipeline) |
 
 ---
 
@@ -130,9 +146,11 @@ Campo `fabricas` é um array — formato JSON:
 
 | Arquivo | Função |
 |---------|--------|
-| `dashboard.html` | CRM completo — pipeline, leads, stock pool, calendário, gráficos |
+| `dashboard.html` | CRM completo — pipeline, leads, stock pool, calendário, gráficos, link de indicação |
 | `form-candidato.html` | Formulário interno de cadastro (japonês) — origem `indicado` |
-| `form-vaga.html` | Formulário público (português) no WordPress — origem `web` |
+| `form-vaga.html` | Formulário público (português) no WordPress — origem `web` — **colado manualmente via Elementor HTML widget, não é servido dinamicamente do Railway** |
+| `form-vaga-ig.html` | Variante do form-vaga.html (labels em inglês) — status de onde está embutido no site ainda não confirmado com o Eder |
+| `link-afiliado.html` | Página standalone com senha compartilhada (`0246`) pra gerar link de indicação — **criada em 2026-08-19 e hoje sem uso**: decisão foi usar só a aba 紹介リンク do dashboard (exige login individual), esse arquivo ficou como transição pra quem ainda não tinha conta |
 | `server.js` | Express: serve estáticos + POST `/api/google-contact` (Google + Telegram) |
 | `package.json` | Dependências: express, cookie-parser |
 | `.gitignore` | Ignora node_modules |
@@ -196,6 +214,9 @@ dt_nyusha             date          -- 入社
 dt_stock              date          -- 工場ストック
 dt_stock_geral        date          -- 全体ストック (libera candidato p/ pool 全体ストック, qualquer fábrica pode assumir)
 dt_ng                 date          -- NG
+dt_shokai              date         -- 紹介日 (adicionado 2026-08-19). NÃO entra no cálculo de etapa (igual dt_oubo).
+                                     -- Preenchido: no cadastro interno (form-candidato.html) = data do cadastro;
+                                     -- via link de afiliado = data em que 担当者紹介 foi clicado (não a do form original)
 created_at            timestamp with time zone default now()
 ```
 
@@ -209,10 +230,12 @@ cidade      text
 estado      text          -- adicionado depois
 jimusho     text          -- escritório responsável
 ativo       boolean default true  -- false = não aparece nos dropdowns
+link_divulgacao text     -- link da página de vaga no site (adicionado 2026-08-19). Alimenta a aba 紹介リンク
+                          -- no dashboard; fábrica só aparece lá se esse campo estiver preenchido.
 created_at  timestamp with time zone default now()
 ```
 
-**Fábricas cadastradas:** アラコ, FTS, FTS田原, イビデン, コベルク富士松, コベルクいなべ, マルヤス, 三菱, 三菱重工, TBKいなべ, TBSK高浜, タチエス安城, 豊臣本社, 豊臣いなべ, ビューテック
+**Fábricas cadastradas (exemplos):** アラコ, FTS, FTS田原, イビデン, コベルク富士松, コベルクいなべ, マルヤス, 三菱, 三菱重工, TBKいなべ, TBSK高浜, タチエス安城, 豊臣本社, 豊臣いなべ, ビューテック, アルバイト名古屋 (lista cresce conforme novas vagas são publicadas)
 
 > Os dropdowns de 工場 no dashboard e no form-candidato.html mostram apenas `ativo = true`.
 
@@ -355,11 +378,47 @@ create policy "update por cargo" on candidates for update using (
   ))
 ); -- shokaisha SEM update; tantousha sem bypass por indicacao (mudou em 2026-08-08)
 create policy "admin update all" on candidates for update using (...); -- admin
+
+-- 2026-08-19: duas policies novas, ADITIVAS (Postgres combina policies permissivas com OR,
+-- entao essas so ampliam o que ja existia, sem tocar nas de cima):
+create policy "tantousha update proprios indicados" on candidates for update
+  using (
+    is_deleted = false
+    and exists (select 1 from profiles where profiles.id = auth.uid()
+      and profiles.role = 'tantousha' and profiles.shokai_nome = candidates.shokai)
+  )
+  with check ( -- mesma condicao
+    is_deleted = false
+    and exists (select 1 from profiles where profiles.id = auth.uid()
+      and profiles.role = 'tantousha' and profiles.shokai_nome = candidates.shokai)
+  );
+
+create policy "shokaisha update proprios leads" on candidates for update
+  using (
+    is_deleted = false
+    and origem in ('web','web_indicado','web_stock')
+    and exists (select 1 from profiles where profiles.id = auth.uid()
+      and profiles.role = 'shokaisha' and profiles.shokai_nome = candidates.shokai)
+  )
+  with check ( -- mesma condicao
+    is_deleted = false
+    and origem in ('web','web_indicado','web_stock')
+    and exists (select 1 from profiles where profiles.id = auth.uid()
+      and profiles.role = 'shokaisha' and profiles.shokai_nome = candidates.shokai)
+  );
+
 -- 2026-07-02: acesso anônimo (auth.uid() is null) REMOVIDO do select — só logados leem candidates
 -- 2026-07-02: bug do filtro jimusho corrigido (era p.jimusho = p.jimusho, sempre true;
 --             agora locations.jimusho = p.jimusho) no select e no update
 -- 2026-08-08: "update por cargo" alterada — shokaisha perdeu UPDATE; tantousha perdeu o
 --             bypass "OR shokai = p.shokai_nome" (só edita pela fabrica agora)
+-- 2026-08-19: bypass por shokai VOLTA a existir, mas como policies aditivas separadas
+--             (nao mexendo em "update por cargo") — ver acima. RLS nao restringe por
+--             coluna, so por linha: a restricao de "shokaisha nao edita shokai/fabrica/
+--             datas de pipeline" e garantida so no frontend (campos desabilitados no
+--             modal), nao no banco. Alguem manipulando a API direto poderia mudar
+--             qualquer coluna do proprio lead — risco aceito dado o contexto de baixo
+--             volume e parceiros de confianca.
 
 -- app_settings (persistência do server.js)
 -- RLS ativado SEM políticas — só o service role (SUPABASE_SERVICE_KEY) acessa
@@ -442,7 +501,7 @@ Renomeada para **見学・ヒアリング済み** em toda a interface (pipeline,
 
 ## Formulário Público (`form-vaga.html`)
 
-Formulário em **português** embutido no WordPress via Elementor HTML widget.
+Formulário em **português** embutido no WordPress via Elementor HTML widget — o **código é colado manualmente** no widget, não é carregado dinamicamente do Railway. Toda vez que o arquivo muda no repositório, alguém precisa copiar o conteúdo atualizado e colar de novo no Elementor (viu-se na prática em 2026-08-19 que só editar um "template dinâmico" no Elementor não bastou — cada post de vaga acabou precisando da colagem individual).
 Ao submeter, grava no Supabase com `origem = 'web'` e **em seguida** chama `POST https://crm-recrutamento-production.up.railway.app/api/google-contact`.
 
 ### Detecção automática de fábrica
@@ -450,6 +509,14 @@ Ao submeter, grava no Supabase com `origem = 'web'` e **em seguida** chama `POST
 1. Campo oculto WPForms `form_fields[pagina]` (preenche automaticamente no post dinâmico da vaga)
 2. Body class WordPress `fabrica-xxx` (taxonomy)
 3. URL param `?fabrica=`
+
+### Link de afiliado por shokaisha (`?ref=`) — adicionado 2026-08-19
+
+- Se a URL da página tiver `?ref=<nome-do-shokaisha>` (nome precisa bater **exatamente** com `shokaisha.nome`/`profiles.shokai_nome`), o formulário usa esse valor como `shokai` no cadastro, em vez do padrão fixo `ヒューマンシステム（西留）`.
+- O valor também é salvo num **cookie** (`shokai_ref`, 90 dias, `path=/`) assim que a página carrega — cobre o caso de alguém compartilhar um link geral (ex: a home) e a pessoa navegar até uma vaga específica sem `?ref=` na URL daquela página.
+- Atribuição é **last-touch**: se a pessoa clicar em outro link de afiliado depois, o `ref` mais recente sobrescreve o cookie (decisão consciente do Eder, não first-touch).
+- Mesma lógica implementada em `form-vaga-ig.html`.
+- **Página com senha (`link-afiliado.html`)**: gera esse link pra quem ainda não tem login no CRM — mas a decisão atual é só usar isso como transição; o caminho oficial é a aba 紹介リンク do dashboard (ver abaixo), pra forçar a criação de login individual de todos.
 
 ### Endpoint `/api/google-contact` (server.js)
 
@@ -543,7 +610,8 @@ Recebe o payload do candidato e executa **em paralelo**:
 | 状況 | Todos | Pipeline principal de candidatos (origem `indicado` + `web_indicado`) |
 | カレンダー | Todos | Grid mensal (desktop) / Agenda lista (mobile) |
 | グラフ | Todos | Gráficos Tier 1 |
-| Leads do Site | Somente `admin` | Mini-pipeline de leads do formulário WordPress |
+| Leads do Site | `admin` (só `shokai='ヒューマンシステム（西留）'`) + qualquer perfil com `shokai_nome` (só os próprios) | Mini-pipeline de leads do formulário WordPress — ver seção própria abaixo |
+| 🔗 紹介リンク | Qualquer perfil com `shokai_nome` preenchido | Gera o link de afiliado de cada vaga (`locations.link_divulgacao + ?ref=<nome>`), com botões Copiar/Compartilhar (adicionado 2026-08-19) |
 | ストック Pool | Todos | Candidatos em ストック disponíveis para tantoushas reivindicarem |
 
 ### Sidebar
@@ -589,13 +657,14 @@ Ordenação especial: 見学・ヒアリング済み por `dt_kengaku` decrescent
 
 - Abre ao clicar em qualquer candidato
 - Título: `氏名 (電話番号)`
-- Seções: 基本情報, 仕事情報, スキル, パイプライン日付 (com botão 今日), アラート・メモ, ブラックリスト
+- Seções: 基本情報, 仕事情報, スキル, パイプライン日付 (com botão 今日, inclui 紹介日 desde 2026-08-19), アラート・メモ, ブラックリスト
 - Botão 保存 → salva no Supabase
-- Botão 削除 → soft delete (oculta, não apaga)
+- Botão 削除 → soft delete (oculta, não apaga) — só aparece em modo de edição completa (`podeEditar`), não no modo parcial
+- **Edição parcial (2026-08-19)**: quem tem `shokai_nome` batendo com o candidato (e ele ainda em Leads do Site) vê o modal parcialmente editável — 保存 aparece, mas 削除 não, e os campos travados (mesmo com o modal "editável") são: `紹介者`, `工場`, `工場２`, todas as datas de `パイプライン日付`, ブラックリスト, `アラート`, `担当者コメント`
 
-### Leads do Site (aba admin)
+### Leads do Site
 
-Pipeline separado para candidatos com `origem = 'web'`. Etapas:
+Pipeline separado para candidatos com `origem` em `web`/`web_indicado`/`web_stock`. Etapas:
 
 | Etapa | Chave | Descrição |
 |-------|-------|-----------|
@@ -605,9 +674,22 @@ Pipeline separado para candidatos com `origem = 'web'`. Etapas:
 | NG | ng | `dt_ng` preenchido |
 | ブラック | black | `is_blacklisted = true` |
 
-Ações disponíveis por card: **Enviar para fábrica** → move para pipeline principal | **ストック** → move para pool | **NG** | **ブラック**
+**Visibilidade (mudou em 2026-08-19)**:
+- `admin`: vê só os leads onde `shokai = 'ヒューマンシステム（西留）'` (o valor genérico, sem shokaisha específico atribuído) — cada shokaisha/tantousha já acompanha os próprios leads na própria tela, então o admin fica só com o "pool geral"
+- Qualquer perfil com `shokai_nome`: vê só os leads onde `shokai` bate com o próprio nome
+- Função `shokaiFiltroLeads()` centraliza essa regra (admin → valor fixo; outros → `currentProfile.shokai_nome`)
+
+**Ações (`podeAgirLeads()`, só admin e tantousha)**: **担当者紹介** (`enviarParaFabrica`) → move pro pipeline principal, mantendo a fábrica já detectada do site (sem popup de escolha — tentativa anterior de deixar escolher a fábrica foi revertida no mesmo dia por ser redundante) e grava `dt_shokai = hoje` | **ストック** → move pro pool | **NG** | **ブラック**. `shokaisha` não vê esses botões — só o status.
 
 Colunas da tabela: 氏名 | 電話番号 | 工場 | 都道府県 (Estado) | 市区町村 (Cidade) | 性別 | 年齢 | 日本語 | Ações — **Visto removido**, substituído por Estado e Cidade.
+
+### 🔗 紹介リンク (Link de Vagas) — adicionado 2026-08-19
+
+- Aparece na sidebar pra qualquer perfil com `shokai_nome` preenchido (`btnVagasLinkTab`)
+- Lista as fábricas de `locations` com `link_divulgacao` preenchido e `ativo = true`; as sem link não aparecem
+- Cada card tem botões **Copiar** e **Compartilhar** (Web Share API quando disponível) gerando `link_divulgacao + ?ref=<shokai_nome do usuário logado>` — sem select, sem digitar nada, o nome já vem do login
+- Não mostra imagem no card: decisão foi confiar no `og:image` que as páginas de vaga já têm — WhatsApp/LINE geram o preview com foto sozinhos ao compartilhar o link puro, sem precisar guardar imagem no Supabase (nota: a página encontrada em 2026-08-19 tinha **duas tags og:image conflitantes** — vale confirmar se o site foi corrigido)
+- Clicar numa fábrica ou em マイ紹介 enquanto nessa aba volta sozinho pro painel 状況 (helper `voltarParaPipelineSeNecessario()`, usado também pelas abas Leads do Site e 全体ストック)
 
 ### ストック Pool (aba todos)
 
@@ -791,6 +873,17 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-08 | Seleção de candidatos para impressão: checkbox por candidato + checkbox de "selecionar tudo" no cabeçalho de cada etapa (substituiu os antigos botões globais 全選択/選択解除) |
 | 2026-08-08 | Botão 項目選択印刷 criado — modal para escolher quais campos aparecem no PDF e em que ordem (ordem = ordem de clique), campos agrupados por categoria (基本情報, 仕事情報, スキル, パイプライン日付, アラート・メモ, ブラックリスト) |
 | 2026-08-08 | Sistema de versão implantado: badge `vX.XX` no canto superior do dashboard + tag do git correspondente a cada versão publicada (permite reverter pro estado exato de qualquer versão) |
+| 2026-08-19 | Link de afiliado por shokaisha: `?ref=` capturado em form-vaga.html/form-vaga-ig.html (cookie 90 dias, last-touch), grava em `candidates.shokai` no lugar do valor fixo `ヒューマンシステム（西留）` |
+| 2026-08-19 | `link-afiliado.html` criado (página com senha `0246` pra gerar link sem precisar de login) — depois descontinuado a favor da aba 紹介リンク no dashboard, que exige login individual |
+| 2026-08-19 | `locations.link_divulgacao` adicionado — alimenta a aba 🔗 紹介リンク do dashboard, que gera `link + ?ref=<nome do usuário logado>` |
+| 2026-08-19 | Aba 🔗 紹介リンク criada no dashboard, visível pra qualquer perfil com `shokai_nome` |
+| 2026-08-19 | Recuperação de senha self-service: link na tela de login + fluxo `resetPasswordForEmail`/`PASSWORD_RECOVERY` |
+| 2026-08-19 | Leads do Site deixa de ser exclusivo do admin: qualquer perfil com `shokai_nome` vê os próprios; admin passa a ver só `shokai = 'ヒューマンシステム（西留）'` (função `shokaiFiltroLeads()`) |
+| 2026-08-19 | Ações de Leads do Site (担当者紹介/ストック/NG/ブラック) restritas a admin e tantousha (`podeAgirLeads()`); shokaisha só visualiza |
+| 2026-08-19 | `candidates.dt_shokai` (紹介日) adicionado — não entra no cálculo de etapa; gravado no cadastro interno ou no clique de 担当者紹介 |
+| 2026-08-19 | Duas policies de UPDATE aditivas criadas: tantousha e shokaisha podem editar candidatos onde `shokai` bate com o próprio nome, sem depender da fábrica |
+| 2026-08-19 | Edição parcial pro dono do lead: `podeEditarInfo(c)` libera dados pessoais no modal (trava 紹介者/工場/工場２/パイプライン日付/ブラックリスト/notas internas) |
+| 2026-08-19 | Helper `voltarParaPipelineSeNecessario()` — clicar em fábrica ou マイ紹介 enquanto em Leads do Site/全体ストック/紹介リンク volta sozinho pro 状況 |
 
 ## Sistema de Versão
 
@@ -798,9 +891,13 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.02**
-- Tags criadas até agora: `v1.00`, `v1.01`, `v1.02`
+- Versão atual: **v1.12**
+- Tags criadas até agora: `v1.00` a `v1.12`
 
 ## Pendências
 
 - **curriculo-edit.html e hiaringu.html sem controle de acesso**: as páginas não checam login (sem `auth.getUser()`) — qualquer pessoa com o link pode abrir e editar. A tabela `curriculos` não tem política de UPDATE no RLS nem coluna de fábrica/candidate_id (é buscada só por telefone), então não dá pra restringir por cargo/fábrica sem antes: (1) ligar RLS na tabela, (2) adicionar login nas duas páginas, (3) decidir como vincular `curriculos` a uma fábrica (hoje não tem esse dado). Adiado a pedido do Eder em 2026-08-06 — resolver depois.
+- **form-vaga-ig.html**: recebeu a mesma correção de `?ref=` que form-vaga.html, mas nunca foi confirmado com o Eder se esse arquivo está de fato colado em alguma página do site. Se não estiver em uso, pode ser removido; se estiver, precisa do mesmo cuidado de recolar manualmente no Elementor a cada atualização.
+- **Migração de shokaisha pra login individual**: dos 84 nomes na tabela `shokaisha`, só uma parte tem login/perfil no CRM hoje. Decisão do Eder (2026-08-19) foi só liberar a aba 🔗 紹介リンク pra quem já tem login — sem fallback — como forma de forçar a criação de conta de todos com o tempo. `link-afiliado.html` (com senha `0246`) ficou pronto como transição, mas não é o caminho oficial.
+- **Trava de coluna só no frontend**: as policies de UPDATE aditivas (tantousha/shokaisha por shokai) liberam a linha inteira no banco — a restrição de "shokaisha não edita shokai/工場/datas de pipeline" existe só no modal do dashboard, não no Postgres. Risco aceito pelo contexto (baixo volume, parceiros de confiança), mas vale lembrar se o uso crescer.
+- **Página de vaga com duas tags `og:image` conflitantes**: encontrado em 2026-08-19 na página de Kumamoto — uma aponta pro logo genérico da Human, outra pra foto real da vaga. Pode causar preview errado ao compartilhar no WhatsApp/LINE dependendo de qual tag o app prioriza. Não é algo que se corrige neste repositório (é configuração do WordPress/plugin de SEO).
