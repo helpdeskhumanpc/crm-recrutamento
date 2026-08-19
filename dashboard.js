@@ -1454,7 +1454,12 @@ function getLeadsStage(c) {
   return 'renrakumae'
 }
 
-// admin ve todos os leads do site; os demais (com shokai_nome no perfil) so veem os proprios
+// admin ve apenas os leads sem shokaisha atribuido (o valor generico da empresa);
+// os demais (com shokai_nome no perfil) so veem os proprios
+function shokaiFiltroLeads() {
+  return currentProfile?.role === 'admin' ? 'ヒューマンシステム（西留）' : currentProfile?.shokai_nome
+}
+
 function podeAgirLeads() {
   return currentProfile?.role === 'admin' || currentProfile?.role === 'tantousha'
 }
@@ -1468,7 +1473,7 @@ function getLeadsFiltrados() {
   const f = activeFilters
   return todosOsCandidatos.filter(c => {
     if (c.origem !== 'web' && c.origem !== 'web_indicado' && c.origem !== 'web_stock') return false
-    if (currentProfile?.role !== 'admin' && c.shokai !== currentProfile?.shokai_nome) return false
+    if (c.shokai !== shokaiFiltroLeads()) return false
     if (!dentroDoPeriodo(c)) return false
     if (fabFilter && c.fabrica !== fabFilter) return false
     if (sexo   && c.sexo !== sexo)                                            return false
@@ -1497,7 +1502,7 @@ function renderLeads() {
   // Popula dropdown de fábricas
   const allLeads = todosOsCandidatos.filter(c =>
     (c.origem === 'web' || c.origem === 'web_indicado' || c.origem === 'web_stock') &&
-    (currentProfile?.role === 'admin' || c.shokai === currentProfile?.shokai_nome)
+    c.shokai === shokaiFiltroLeads()
   )
   const fabs = [...new Set(allLeads.map(c => c.fabrica).filter(Boolean))].sort()
   const cur  = sel?.value || ''
