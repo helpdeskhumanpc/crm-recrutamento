@@ -951,6 +951,19 @@ function podeEditar(c) {
   return false
 }
 
+// edicao parcial: quem indicou (shokai bate) pode corrigir dados pessoais
+// do proprio candidato enquanto ele estiver em Leads do Site (web/web_indicado/web_stock),
+// mas nao mexe em shokai, fabrica ou no andamento do processo seletivo
+const CAMPOS_BLOQUEADOS_INFO = new Set([
+  'f_shokai', 'f_fab', 'f_fab2',
+  'f_oubo', 'f_taio', 'f_mens', 'f_menshora', 'f_keng', 'f_nait', 'f_nyu', 'f_stock', 'f_stockgeral', 'f_ng',
+  'f_black', 'f_blackmotivo', 'f_alert', 'f_alertnota', 'f_tancom',
+])
+function podeEditarInfo(c) {
+  return !!currentProfile?.shokai_nome && c.shokai === currentProfile.shokai_nome &&
+    (c.origem === 'web' || c.origem === 'web_indicado' || c.origem === 'web_stock')
+}
+
 function abrirModal(id) {
   const c = todosOsCandidatos.find(x => x.id == id)
   if (!c) return
@@ -1072,13 +1085,17 @@ function abrirModal(id) {
     </div>
   `
 
-  const editavel = podeEditar(c)
+  const editavelTudo = podeEditar(c)
+  const editavelInfo = !editavelTudo && podeEditarInfo(c)
+  const editavel = editavelTudo || editavelInfo
   document.getElementById('modalReadOnlyNote').style.display = editavel ? 'none' : ''
-  document.querySelector('#modal .btn-delete').style.display = editavel ? '' : 'none'
+  document.querySelector('#modal .btn-delete').style.display = editavelTudo ? '' : 'none'
   document.querySelector('#modal .btn-save').style.display   = editavel ? '' : 'none'
-  if (!editavel) {
+  if (!editavelTudo) {
     document.querySelectorAll('#modalBody input, #modalBody select, #modalBody textarea').forEach(el => {
-      if (el.id !== 'f_copytext') el.disabled = true
+      if (el.id === 'f_copytext') return
+      if (editavelInfo && !CAMPOS_BLOQUEADOS_INFO.has(el.id)) return
+      el.disabled = true
     })
   }
 
@@ -1087,7 +1104,7 @@ function abrirModal(id) {
 
 async function salvarCandidato() {
   if (!candidatoAtivo) return
-  if (!podeEditar(candidatoAtivo)) { alert('編集権限がありません。'); return }
+  if (!podeEditar(candidatoAtivo) && !podeEditarInfo(candidatoAtivo)) { alert('編集権限がありません。'); return }
   const g = id => document.getElementById(id)
   const chks = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value)
 
@@ -1583,17 +1600,10 @@ function renderLeads() {
 async function enviarParaFabrica(id) {
   const c = todosOsCandidatos.find(x => x.id === id)
   if (!c) return
-  const fabricasSel = todasFabricas.length ? todasFabricas : [...new Set(todosOsCandidatos.filter(x => x.fabrica).map(x => x.fabrica))].sort()
-  const lista   = fabricasSel.map((f, i) => `${i+1}. ${f}`).join('\n')
-  const padrao  = fabricasSel.indexOf(c.fabrica) + 1
-  const resp    = prompt('Selecione a fábrica:\n' + lista + '\n\nDigite o número:', padrao > 0 ? String(padrao) : '')
-  if (!resp) return
-  const fabrica = fabricasSel[parseInt(resp) - 1]
-  if (!fabrica) { alert('Número inválido'); return }
+  if (!c.fabrica && !confirm('Este lead não tem fábrica atribuída. Enviar assim mesmo?')) return
   const hoje = new Date().toISOString().split('T')[0]
   const updates = {
     origem:        'web_indicado',
-    fabrica,
     dt_shokai:     hoje,
     dt_taiochu:    null,
     dt_mensetsu:   null,
