@@ -1032,6 +1032,9 @@ function abrirModal(id) {
         <div class="modal-field"><label>応募日</label>${currentProfile?.role === 'admin'
           ? `<input type="date" id="f_oubo" value="${c.created_at ? c.created_at.slice(0,10) : ''}">`
           : `<input type="text" value="${c.created_at ? fmtDataPT(c.created_at.slice(0,10)) : '—'}" disabled style="background:#f5f5f5;color:#666">`}</div>
+        <div class="modal-field"><label>紹介日</label>${currentProfile?.role === 'admin'
+          ? `<input type="date" id="f_dtshokai" value="${c.dt_shokai||''}">`
+          : `<input type="text" value="${c.dt_shokai ? fmtDataPT(c.dt_shokai) : '—'}" disabled style="background:#f5f5f5;color:#666">`}</div>
         <div class="modal-field"><label>対応中</label><div class="date-with-btn"><input type="date" id="f_taio" value="${c.dt_taiochu||''}"><button class="btn-hoje" onclick="hoje('f_taio')">今日</button></div></div>
         <div class="modal-field"><label>面接日</label><div class="date-with-btn"><input type="date" id="f_mens" value="${c.dt_mensetsu||''}"><button class="btn-hoje" onclick="hoje('f_mens')">今日</button></div></div>
         <div class="modal-field"><label>面接時間</label><input type="time" id="f_menshora" value="${c.mensetsu_hora||''}"></div>
@@ -1126,6 +1129,7 @@ async function salvarCandidato() {
     dt_stock:             fab2Mudou ? null : (g('f_stock').value   || null),
     dt_stock_geral:       fab2Mudou ? null : (g('f_stockgeral').value || g('f_ng').value || null),
     dt_ng:                fab2Mudou ? null : (g('f_ng').value      || null),
+    dt_shokai:            document.getElementById('f_dtshokai') ? (g('f_dtshokai').value || null) : candidatoAtivo.dt_shokai,
     alerta_data:          g('f_alert').value   || null,
     alerta_nota:          g('f_alertnota').value || null,
     comentario:           g('f_com').value     || null,
@@ -1579,9 +1583,18 @@ function renderLeads() {
 async function enviarParaFabrica(id) {
   const c = todosOsCandidatos.find(x => x.id === id)
   if (!c) return
-  if (!c.fabrica && !confirm('Este lead não tem fábrica atribuída. Enviar assim mesmo?')) return
+  const fabricasSel = todasFabricas.length ? todasFabricas : [...new Set(todosOsCandidatos.filter(x => x.fabrica).map(x => x.fabrica))].sort()
+  const lista   = fabricasSel.map((f, i) => `${i+1}. ${f}`).join('\n')
+  const padrao  = fabricasSel.indexOf(c.fabrica) + 1
+  const resp    = prompt('Selecione a fábrica:\n' + lista + '\n\nDigite o número:', padrao > 0 ? String(padrao) : '')
+  if (!resp) return
+  const fabrica = fabricasSel[parseInt(resp) - 1]
+  if (!fabrica) { alert('Número inválido'); return }
+  const hoje = new Date().toISOString().split('T')[0]
   const updates = {
     origem:        'web_indicado',
+    fabrica,
+    dt_shokai:     hoje,
     dt_taiochu:    null,
     dt_mensetsu:   null,
     mensetsu_hora: null,
