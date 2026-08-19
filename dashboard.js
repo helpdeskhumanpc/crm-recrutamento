@@ -951,11 +951,11 @@ function podeEditar(c) {
   return false
 }
 
-// edicao parcial: quem indicou (shokai bate) pode corrigir dados pessoais
+// edicao parcial: quem indicou (shokai bate) pode corrigir dados pessoais e a fabrica
 // do proprio candidato enquanto ele estiver em Leads do Site (web/web_indicado/web_stock),
-// mas nao mexe em shokai, fabrica ou no andamento do processo seletivo
+// mas nao mexe em shokai nem no andamento do processo seletivo
 const CAMPOS_BLOQUEADOS_INFO = new Set([
-  'f_shokai', 'f_fab', 'f_fab2',
+  'f_shokai',
   'f_oubo', 'f_taio', 'f_mens', 'f_menshora', 'f_keng', 'f_nait', 'f_nyu', 'f_stock', 'f_stockgeral', 'f_ng',
   'f_black', 'f_blackmotivo', 'f_alert', 'f_alertnota', 'f_tancom',
 ])
