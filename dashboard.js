@@ -130,6 +130,7 @@ async function carregarDados() {
   carregarSidebar()
   carregarCalFabricaFilter()
   carregarChartFabricaFilter()
+  if (jimushoAtivo) atualizarLabelFiltroFabrica(currentProfile?.jimusho)
   renderAlerts()
   renderPipeline()
   renderCalendar()
@@ -164,6 +165,14 @@ function carregarCalFabricaFilter() {
   todasFabricas.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o) })
 }
 
+// rótulo do dropdown "全工場"/"全体" — mostra o nome do escritório quando em 事務所まとめ
+function atualizarLabelFiltroFabrica(jimusho) {
+  const calOpt = document.querySelector('#calFabricaFilter option[value=""]')
+  const chOpt  = document.querySelector('#chartFabrica option[value=""]')
+  if (calOpt) calOpt.textContent = jimusho ? `${jimusho}（全工場）` : '全工場'
+  if (chOpt)  chOpt.textContent  = jimusho ? `${jimusho}（全工場）` : '全体'
+}
+
 // se estava em Leads do Site / 全体ストック / 紹介リンク, volta para o painel 状況
 function voltarParaPipelineSeNecessario() {
   const leads = document.getElementById('leadsView')
@@ -191,6 +200,7 @@ function filtrarFabrica(fabrica, el) {
   const chSel  = document.getElementById('chartFabrica')
   if (calSel) calSel.value = fabrica || ''
   if (chSel)  chSel.value  = fabrica || ''
+  atualizarLabelFiltroFabrica(null)
   renderPipeline()
   renderCalendar()
   renderCharts()
@@ -212,6 +222,7 @@ function filtrarMeuShokai(el) {
   const chSel  = document.getElementById('chartFabrica')
   if (calSel) calSel.value = ''
   if (chSel)  chSel.value  = ''
+  atualizarLabelFiltroFabrica(null)
   renderPipeline()
   renderCalendar()
   renderCharts()
@@ -228,6 +239,7 @@ function filtrarJimushoMatome(el) {
   const chSel  = document.getElementById('chartFabrica')
   if (calSel) calSel.value = ''
   if (chSel)  chSel.value  = ''
+  atualizarLabelFiltroFabrica(currentProfile?.jimusho)
   renderPipeline()
   renderCalendar()
   renderCharts()
@@ -850,13 +862,13 @@ function renderCalendar() {
   document.getElementById('calTitle').textContent = calYear + '年 ' + months[calMonth]
 
   const events = {}
-  const add = (dateStr, tipo, nome, fabrica, candidatoId) => {
+  const add = (dateStr, tipo, nome, fabrica, candidatoId, hora) => {
     if (!dateStr || !calTypesAtivos.has(tipo)) return
     const d = dateStr.split('T')[0]
     const [y, m] = d.split('-').map(Number)
     if (y !== calYear || m - 1 !== calMonth) return
     if (!events[d]) events[d] = []
-    events[d].push({ tipo, nome, fabrica, candidatoId })
+    events[d].push({ tipo, nome, fabrica, candidatoId, hora })
   }
 
   const jimushoFabsCal = jimushoAtivo ? fabricasDoMeuJimusho() : null
@@ -865,7 +877,7 @@ function renderCalendar() {
     .filter(c => !jimushoFabsCal || jimushoFabsCal.includes(fabricaEfetiva(c)))
     .filter(c => dentroDoPeriodo(c))
     .forEach(c => {
-      add(c.dt_mensetsu, 'mensetsu', c.shimei, c.fabrica, c.id)
+      add(c.dt_mensetsu, 'mensetsu', c.shimei, c.fabrica, c.id, c.mensetsu_hora)
       add(c.dt_kengaku,  'kengaku',  c.shimei, c.fabrica, c.id)
       add(c.dt_nyusha,   'nyusha',   c.shimei, c.fabrica, c.id)
       if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, c.fabrica, c.id)
@@ -912,7 +924,7 @@ function renderCalendar() {
     const dowColor = date.getDay()===0 ? 'color:#c62828' : date.getDay()===6 ? 'color:#1565c0' : ''
     const evRows   = events[dateStr].map(e => `
       <div class="agenda-event" onclick="abrirModal('${e.candidatoId}')">
-        <span class="agenda-chip ${e.tipo}">${tipoLabel[e.tipo]}</span>
+        <span class="agenda-chip ${e.tipo}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}</span>
         <span class="agenda-nome">${e.nome||'—'}</span>
         <span class="agenda-fab">${e.fabrica||''}</span>
       </div>`).join('')
