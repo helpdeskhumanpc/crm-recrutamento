@@ -3,8 +3,10 @@ const sb = createClient('https://xzxfwrbebkwagnropgfb.supabase.co','sb_publishab
 
 let todosOsCandidatos = []
 let todasFabricas = []
+let todasLocations = []
 let fabricaAtiva = null
 let shokaiAtivo = null
+let jimushoAtivo = false
 let telefonesDuplicados = new Set()
 
 function recalcularDuplicados() {
@@ -86,14 +88,15 @@ function shokaiBloqueado(c) {
 
 async function carregarDados() {
   document.getElementById('pipeline').innerHTML = '<div class="loading">読み込み中...</div>'
-  let locQuery = sb.from('locations').select('nome').eq('tipo', '工場').order('nome')
+  let locQuery = sb.from('locations').select('nome,jimusho').eq('tipo', '工場').order('nome')
   if (currentProfile?.role !== 'admin') locQuery = locQuery.eq('ativo', true)
   const [res1, res2] = await Promise.all([
     sb.from('candidates').select('*').eq('is_deleted', false).order('created_at', { ascending: false }),
     locQuery
   ])
   todosOsCandidatos = res1.data || []
-  todasFabricas     = (res2.data || []).map(f => f.nome)
+  todasLocations    = res2.data || []
+  todasFabricas     = todasLocations.map(f => f.nome)
   recalcularDuplicados()
   carregarSidebar()
   carregarCalFabricaFilter()
@@ -150,6 +153,7 @@ function voltarParaPipelineSeNecessario() {
 function filtrarFabrica(fabrica, el) {
   fabricaAtiva = fabrica
   shokaiAtivo = null
+  jimushoAtivo = false
   voltarParaPipelineSeNecessario()
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
   if (el) el.classList.add('active')
@@ -170,10 +174,27 @@ function filtrarMeuShokai(el) {
   }
   fabricaAtiva = null
   shokaiAtivo = currentProfile.shokai_nome
+  jimushoAtivo = false
   voltarParaPipelineSeNecessario()
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
   if (el) el.classList.add('active')
   // limpa filtros de fábrica do calendário e gráficos
+  const calSel = document.getElementById('calFabricaFilter')
+  const chSel  = document.getElementById('chartFabrica')
+  if (calSel) calSel.value = ''
+  if (chSel)  chSel.value  = ''
+  renderPipeline()
+  renderCalendar()
+  renderCharts()
+}
+
+function filtrarJimushoMatome(el) {
+  fabricaAtiva = null
+  shokaiAtivo = null
+  jimushoAtivo = true
+  voltarParaPipelineSeNecessario()
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
+  if (el) el.classList.add('active')
   const calSel = document.getElementById('calFabricaFilter')
   const chSel  = document.getElementById('chartFabrica')
   if (calSel) calSel.value = ''
@@ -276,7 +297,7 @@ function getStagesVisiveis() {
 
 function imprimirPDF() {
   if (document.getElementById('leadsView').style.display === 'flex') { imprimirPDFLeads(); return }
-  const fab = fabricaAtiva ? `【${fabricaAtiva}】` : '【全体】'
+  const fab = `【${labelFiltroAtivo()}】`
   let candidatos = getFiltrados()
   if (_selecionadosImpressao.size > 0) candidatos = candidatos.filter(c => _selecionadosImpressao.has(c.id))
   const stagesVisiveis = getStagesVisiveis()
@@ -449,7 +470,7 @@ function imprimirPDFCustom() {
   const campos = _colunasSelecionadasPDF.map(key => CAMPOS_PDF.find(f => f.key === key))
   fecharPdfColModal()
 
-  const fab = fabricaAtiva ? `【${fabricaAtiva}】` : '【全体】'
+  const fab = `【${labelFiltroAtivo()}】`
   let candidatos = getFiltrados()
   if (_selecionadosImpressao.size > 0) candidatos = candidatos.filter(c => _selecionadosImpressao.has(c.id))
   const stagesVisiveis = getStagesVisiveis()
@@ -511,7 +532,7 @@ function exportarExcelCustom() {
   const ws = XLSX.utils.json_to_sheet(linhas)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '候補者リスト')
-  const fab = fabricaAtiva || '全体'
+  const fab = labelFiltroAtivo()
   const hoje = new Date().toISOString().slice(0, 10)
   XLSX.writeFile(wb, `候補者リスト_${fab}_${hoje}.xlsx`)
 }
@@ -596,17 +617,32 @@ function onPeriodoChange() {
   if (document.getElementById('leadsView').style.display    !== 'none') renderLeads()
 }
 
+// fabricas cadastradas em locations que pertencem ao mesmo jimusho do usuario logado
+function fabricasDoMeuJimusho() {
+  if (!currentProfile?.jimusho) return []
+  return todasLocations.filter(l => l.jimusho === currentProfile.jimusho).map(l => l.nome)
+}
+
+// texto do filtro de fabrica/escritorio ativo no momento, pra usar em titulos de PDF/Excel
+function labelFiltroAtivo() {
+  if (fabricaAtiva) return fabricaAtiva
+  if (jimushoAtivo) return (currentProfile?.jimusho || '事務所') + 'まとめ'
+  return '全体'
+}
+
 function getFiltrados(comExcecaoPeriodo = true) {
   const search = document.getElementById('searchInput').value.toLowerCase()
   const sexo   = document.getElementById('filterSexo').value
   const jp     = document.getElementById('filterJP').value
   const idade  = parseInt(document.getElementById('filterIdade').value) || null
   const f = activeFilters
+  const jimushoFabs = jimushoAtivo ? fabricasDoMeuJimusho() : null
 
   return todosOsCandidatos.filter(c => {
     if (c.origem === 'web' || c.origem === 'web_stock') return false
     if (c.dt_stock_geral && !c.dt_ng) return false
     if (!dentroDoPeriodo(c, comExcecaoPeriodo)) return false
+    if (jimushoFabs && !jimushoFabs.includes(fabricaEfetiva(c))) return false
     if (fabricaAtiva && fabricaEfetiva(c) !== fabricaAtiva) return false
     if (shokaiAtivo && c.shokai !== shokaiAtivo) return false
     if (sexo   && c.sexo !== sexo)                                            return false
@@ -794,8 +830,10 @@ function renderCalendar() {
     events[d].push({ tipo, nome, fabrica, candidatoId })
   }
 
+  const jimushoFabsCal = jimushoAtivo ? fabricasDoMeuJimusho() : null
   todosOsCandidatos
     .filter(c => !fabFilter || fabricaEfetiva(c) === fabFilter)
+    .filter(c => !jimushoFabsCal || jimushoFabsCal.includes(fabricaEfetiva(c)))
     .filter(c => dentroDoPeriodo(c))
     .forEach(c => {
       add(c.dt_mensetsu, 'mensetsu', c.shimei, c.fabrica, c.id)
@@ -1402,20 +1440,37 @@ function renderCharts() {
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
   })
 
-  // Ranking 紹介者
-  const shMap = {}
-  dados.forEach(c => { if (c.shokai) shMap[c.shokai] = (shMap[c.shokai] || 0) + 1 })
+  // Ranking 紹介者 (barra empilhada por etapa)
+  const shMap = {}      // total por shokai, so pra ordenar o ranking
+  const shStageMap = {} // shokai -> { stageKey: count }
+  dados.forEach(c => {
+    if (!c.shokai) return
+    shMap[c.shokai] = (shMap[c.shokai] || 0) + 1
+    if (!shStageMap[c.shokai]) shStageMap[c.shokai] = {}
+    const stg = getStage(c)
+    shStageMap[c.shokai][stg] = (shStageMap[c.shokai][stg] || 0) + 1
+  })
   const shLabels = Object.keys(shMap).sort((a,b) => shMap[b] - shMap[a])
-  // altura dinâmica: cresce com a quantidade de 紹介者 para mostrar todos os nomes
-  document.getElementById('chartShokaiWrap').style.height = Math.max(200, shLabels.length * 28 + 40) + 'px'
+  // altura dinâmica: cresce com a quantidade de 紹介者 para mostrar todos os nomes (+ espaço pra legenda das 10 etapas)
+  document.getElementById('chartShokaiWrap').style.height = Math.max(240, shLabels.length * 28 + 80) + 'px'
   destroyChart('chartShokai')
   chartInstances['chartShokai'] = new Chart(document.getElementById('chartShokai'), {
     type: 'bar',
-    data: { labels: shLabels, datasets: [{ data: shLabels.map(s => shMap[s]), backgroundColor: '#e8621a', borderRadius: 4 }] },
+    data: {
+      labels: shLabels,
+      datasets: stageKeys.map((key, i) => ({
+        label: stageLabels[i],
+        data: shLabels.map(s => shStageMap[s]?.[key] || 0),
+        backgroundColor: stageColors[i],
+      })),
+    },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { autoSkip: false } } }
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+      scales: {
+        x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+        y: { stacked: true, ticks: { autoSkip: false } },
+      }
     }
   })
 }
@@ -1852,6 +1907,10 @@ async function iniciarDashboard() {
   if (profile?.role === 'admin' || profile?.shokai_nome) document.getElementById('btnLeadsTab').style.display = ''
   document.getElementById('btnPoolTab').style.display = ''
   if (profile?.shokai_nome) document.getElementById('btnVagasLinkTab').style.display = ''
+  if (profile?.role === 'jimusho' && profile?.jimusho) {
+    document.getElementById('btnJimushoMatome').style.display = ''
+    document.getElementById('jimushoMatomeLabel').textContent = profile.jimusho + 'まとめ'
+  }
 
   // Período padrão: 3 meses atrás → hoje (登録日)
   const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
