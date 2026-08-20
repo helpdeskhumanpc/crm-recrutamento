@@ -1,6 +1,32 @@
 const { createClient } = supabase
 const sb = createClient('https://xzxfwrbebkwagnropgfb.supabase.co','sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE')
 
+// ─── Tema claro/escuro ──────────────────────────────────────
+function alternarTema() {
+  document.body.classList.toggle('dark-mode')
+  localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light')
+  document.getElementById('btnTemaToggle')?.classList.toggle('active', document.body.classList.contains('dark-mode'))
+  if (document.getElementById('chartsView')?.style.display !== 'none') renderCharts()
+}
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark-mode')
+  document.getElementById('btnTemaToggle')?.classList.add('active')
+}
+
+// ─── Visualização forçada mobile/desktop (só disponível em tela de PC) ───
+function alternarLayout() {
+  document.body.classList.toggle('force-mobile')
+  localStorage.setItem('layout', document.body.classList.contains('force-mobile') ? 'mobile' : 'desktop')
+  document.getElementById('btnLayoutToggle')?.classList.toggle('active', document.body.classList.contains('force-mobile'))
+}
+if (window.innerWidth > 768) {
+  document.getElementById('btnLayoutToggle').style.display = ''
+  if (localStorage.getItem('layout') === 'mobile') {
+    document.body.classList.add('force-mobile')
+    document.getElementById('btnLayoutToggle').classList.add('active')
+  }
+}
+
 let todosOsCandidatos = []
 let todasFabricas = []
 let todasLocations = []
@@ -1381,6 +1407,9 @@ let chartInstances = {}
 function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id] } }
 
 function renderCharts() {
+  const dark = document.body.classList.contains('dark-mode')
+  Chart.defaults.color = dark ? '#c7c7d6' : '#666'
+  Chart.defaults.borderColor = dark ? '#3a3a4d' : '#e0e0e0'
   const fab = document.getElementById('chartFabrica').value
   const candidatosValidos = getFiltrados(false)
   const dados = fab ? candidatosValidos.filter(c => fabricaEfetiva(c) === fab) : candidatosValidos
@@ -1458,11 +1487,14 @@ function renderCharts() {
     type: 'bar',
     data: {
       labels: shLabels,
-      datasets: stageKeys.map((key, i) => ({
-        label: stageLabels[i],
-        data: shLabels.map(s => shStageMap[s]?.[key] || 0),
-        backgroundColor: stageColors[i],
-      })),
+      // 在籍 fica fora dessa visão específica (mostra as outras 9 etapas)
+      datasets: stageKeys.map((key, i) => ({ key, label: stageLabels[i], color: stageColors[i] }))
+        .filter(d => d.key !== 'zaiseki')
+        .map(d => ({
+          label: d.label,
+          data: shLabels.map(s => shStageMap[s]?.[d.key] || 0),
+          backgroundColor: d.color,
+        })),
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,

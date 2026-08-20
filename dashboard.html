@@ -78,12 +78,19 @@
     <div class="factory-count" id="totalCount">...</div>
   </div>
   <div id="sidebarFabricas"></div>
+  <h2>表示設定</h2>
+  <div class="sidebar-item sidebar-special" id="btnLayoutToggle" style="display:none" onclick="alternarLayout()">
+    <div class="factory-name">モバイル表示</div>
+  </div>
+  <div class="sidebar-item sidebar-special" id="btnTemaToggle" onclick="alternarTema()">
+    <div class="factory-name">ダークモード</div>
+  </div>
 </div>
 
 <div id="main">
   <div id="topbar">
     <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
-    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.15</span></h1>
+    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.17</span></h1>
     <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
     <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
