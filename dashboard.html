@@ -91,7 +91,7 @@
   <div id="topbar">
     <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
     <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.18</span></h1>
+    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.19</span></h1>
     <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
     <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
@@ -137,9 +137,9 @@
       </div>
     </div>
     <button class="btn-refresh" style="background:#4527a0" onclick="abrirFilterPanel()">詳細フィルター<span class="filter-badge" id="filterBadge">0</span></button>
-    <button class="btn-refresh" style="background:#2e7d32" onclick="imprimirPDF()">PDF印刷</button>
-    <button class="btn-refresh" style="background:#8e24aa" onclick="abrirPdfColModal()">項目選択印刷</button>
-    <button class="btn-refresh" style="background:#1b5e20" onclick="abrirPdfColModal()">Excel出力</button>
+    <button class="btn-refresh btn-print-export" style="background:#2e7d32" onclick="imprimirPDF()">PDF印刷</button>
+    <button class="btn-refresh btn-print-export" style="background:#8e24aa" onclick="abrirPdfColModal()">項目選択印刷</button>
+    <button class="btn-refresh btn-print-export" style="background:#1b5e20" onclick="abrirPdfColModal()">Excel出力</button>
     <button class="btn-refresh" onclick="carregarDados()">更新</button>
     <div class="user-info">
       <span id="userNome"></span>

@@ -259,6 +259,7 @@
       #filterSexo, #filterIdade, #filterJP, #periodoWrap { display:none !important; }
       #searchInput { flex:1; min-width:0; }
       .btn-refresh[onclick="carregarDados()"] { display:none; }
+      .btn-print-export { display:none; }
       div[style*="position:relative"] { display:none; } /* ステージ dropdown */
 
       /* Stats bar compacto */
@@ -366,6 +367,7 @@
     body.force-mobile #filterSexo, body.force-mobile #filterIdade, body.force-mobile #filterJP, body.force-mobile #periodoWrap { display:none !important; }
     body.force-mobile #searchInput { flex:1; min-width:0; }
     body.force-mobile .btn-refresh[onclick="carregarDados()"] { display:none; }
+    body.force-mobile .btn-print-export { display:none; }
     body.force-mobile div[style*="position:relative"] { display:none; }
     body.force-mobile #statsBar { gap:5px; padding:6px 10px; overflow-x:auto; flex-wrap:nowrap; }
     body.force-mobile .stat-card { min-width:56px; padding:4px 8px; flex-shrink:0; }
