@@ -292,6 +292,20 @@
       .col-header > span:nth-child(14),
       .col-header > span:nth-child(15) { display:none; }
 
+      /* Leads do Site — linha empilhada, com botões de ação visíveis e clicáveis */
+      .lead-col-header { display:none; }
+      .lead-row { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:10px 14px; }
+      .lead-row > span:nth-child(4),
+      .lead-row > span:nth-child(5),
+      .lead-row > span:nth-child(6),
+      .lead-row > span:nth-child(7),
+      .lead-row > span:nth-child(8),
+      .lead-row > span:nth-child(9) { display:none; }
+      .lead-row > span:nth-child(1) { flex-basis:100%; font-size:14px; }
+      .lead-row > span:nth-child(10) { flex-basis:100%; margin-top:4px; }
+      .lead-actions { width:100%; }
+      .btn-lead { padding:6px 10px; font-size:12px; }
+
       /* Espaço para bottom nav */
       #pipeline, #calendarView, #chartsView, #leadsView, #stockPoolView, #shokaiView, #vagasLinkView { padding-bottom: 65px; }
 
@@ -395,6 +409,20 @@
     body.force-mobile .col-header > span:nth-child(13),
     body.force-mobile .col-header > span:nth-child(14),
     body.force-mobile .col-header > span:nth-child(15) { display:none; }
+
+    body.force-mobile .lead-col-header { display:none; }
+    body.force-mobile .lead-row { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:10px 14px; }
+    body.force-mobile .lead-row > span:nth-child(4),
+    body.force-mobile .lead-row > span:nth-child(5),
+    body.force-mobile .lead-row > span:nth-child(6),
+    body.force-mobile .lead-row > span:nth-child(7),
+    body.force-mobile .lead-row > span:nth-child(8),
+    body.force-mobile .lead-row > span:nth-child(9) { display:none; }
+    body.force-mobile .lead-row > span:nth-child(1) { flex-basis:100%; font-size:14px; }
+    body.force-mobile .lead-row > span:nth-child(10) { flex-basis:100%; margin-top:4px; }
+    body.force-mobile .lead-actions { width:100%; }
+    body.force-mobile .btn-lead { padding:6px 10px; font-size:12px; }
+
     body.force-mobile #pipeline, body.force-mobile #calendarView, body.force-mobile #chartsView, body.force-mobile #leadsView, body.force-mobile #stockPoolView, body.force-mobile #shokaiView, body.force-mobile #vagasLinkView { padding-bottom: 65px; }
     body.force-mobile #modal { align-items:flex-end; }
     body.force-mobile #modalBox { width:100vw; max-width:100vw; max-height:92vh; border-radius:12px 12px 0 0; }
