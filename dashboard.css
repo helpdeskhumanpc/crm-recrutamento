@@ -347,10 +347,18 @@
     body.force-mobile .cal-grid    { display:none; }
     body.force-mobile #agendaList  { display:flex; }
 
-    body.force-mobile { overflow: hidden; }
-    body.force-mobile #sidebar { position:fixed; left:0; top:0; height:100vh; z-index:300; transform:translateX(-100%); transition:transform 0.25s ease; }
+    /* Tela estreita e centralizada, como um celular de verdade, com fundo neutro dos lados */
+    body.force-mobile { overflow: hidden; justify-content:center; background:#2b2b38; }
+    body.force-mobile #main {
+      width:420px; max-width:420px; flex:none;
+      box-shadow:0 0 0 1px rgba(0,0,0,0.15), 0 10px 40px rgba(0,0,0,0.5);
+    }
+    /* drawer da sidebar alinhado com a borda esquerda dessa "tela", não com a borda real do navegador */
+    body.force-mobile #sidebar { position:fixed; left:calc(50% - 210px); top:0; height:100vh; z-index:300; transform:translateX(-100%); transition:transform 0.25s ease; }
     body.force-mobile #sidebar.mobile-open { transform:translateX(0); }
-    body.force-mobile #main { width:100%; }
+
+    /* botão "PC表示に戻る" no topbar, só aparece nesse modo */
+    #btnVoltarDesktop { padding:5px 10px; border:1px solid #ddd; border-radius:4px; background:white; cursor:pointer; font-size:12px; white-space:nowrap; }
     body.force-mobile #topbar { flex-wrap:nowrap; gap:6px; padding:8px 10px; }
     body.force-mobile #topbar h1 { display:none; }
     body.force-mobile .tab-btn { display:none; }
@@ -410,7 +418,8 @@
     body.dark-mode #topbar h1 { color:#e8e8f0; }
     body.dark-mode .user-info { color:#c7c7d6; }
     body.dark-mode .btn-logout { background:#22222f; border-color:#3a3a4d; color:#c7c7d6; }
-    body.dark-mode .tab-btn { background:#1c1c2b; border-color:#3a3a4d; color:#c7c7d6; }
+    body.dark-mode .tab-btn,
+    body.dark-mode #btnVoltarDesktop { background:#1c1c2b; border-color:#3a3a4d; color:#c7c7d6; }
     body.dark-mode .tab-btn.active { background:#e8621a; color:white; border-color:#e8621a; }
     body.dark-mode #searchInput,
     body.dark-mode .filter-select,

@@ -16,14 +16,17 @@ if (localStorage.getItem('theme') === 'dark') {
 // ─── Visualização forçada mobile/desktop (só disponível em tela de PC) ───
 function alternarLayout() {
   document.body.classList.toggle('force-mobile')
-  localStorage.setItem('layout', document.body.classList.contains('force-mobile') ? 'mobile' : 'desktop')
-  document.getElementById('btnLayoutToggle')?.classList.toggle('active', document.body.classList.contains('force-mobile'))
+  const ativo = document.body.classList.contains('force-mobile')
+  localStorage.setItem('layout', ativo ? 'mobile' : 'desktop')
+  document.getElementById('btnLayoutToggle')?.classList.toggle('active', ativo)
+  document.getElementById('btnVoltarDesktop').style.display = ativo ? '' : 'none'
 }
 if (window.innerWidth > 768) {
   document.getElementById('btnLayoutToggle').style.display = ''
   if (localStorage.getItem('layout') === 'mobile') {
     document.body.classList.add('force-mobile')
     document.getElementById('btnLayoutToggle').classList.add('active')
+    document.getElementById('btnVoltarDesktop').style.display = ''
   }
 }
 
@@ -1536,7 +1539,7 @@ function setBottomNav(btn) {
 const origFiltrar = filtrarFabrica
 filtrarFabrica = function(fabrica, el) {
   origFiltrar(fabrica, el)
-  if (window.innerWidth <= 768) {
+  if (window.innerWidth <= 768 || document.body.classList.contains('force-mobile')) {
     document.getElementById('sidebar').classList.remove('mobile-open')
     document.getElementById('sidebarOverlay').style.display = 'none'
   }
