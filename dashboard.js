@@ -894,8 +894,11 @@ function renderCalendar() {
   if (rem < 7) for (let d = 1; d <= rem; d++) html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`
   grid.innerHTML = html
 
-  // ── AGENDA (mobile) ──────────────────────────────────────
-  const sortedDates = Object.keys(events).sort()
+  // ── AGENDA (mobile) — só a partir de ontem em diante ──────
+  const ontem = new Date(today)
+  ontem.setDate(today.getDate() - 1)
+  const ontemStr = `${ontem.getFullYear()}-${String(ontem.getMonth()+1).padStart(2,'0')}-${String(ontem.getDate()).padStart(2,'0')}`
+  const sortedDates = Object.keys(events).filter(d => d >= ontemStr).sort()
   if (!sortedDates.length) {
     document.getElementById('agendaList').innerHTML =
       `<div class="agenda-empty">📅 ${calYear}年${months[calMonth]}のイベントはありません</div>`
@@ -1472,32 +1475,36 @@ function renderCharts() {
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
   })
 
-  // Ranking 紹介者 (barra empilhada por etapa)
+  // Ranking 紹介者 (barra empilhada por grupo de etapa, em vez das 10 etapas soltas)
+  const GRUPOS_SHOKAI = [
+    { label: '進行中',      color: '#1e88e5', stages: ['renrakumae','taiochu','mensetsu','kengaku'] },
+    { label: '成約',        color: '#2e7d32', stages: ['naitei','nyusha','zaiseki'] },
+    { label: 'ストック',     color: '#f9a825', stages: ['stock'] },
+    { label: 'NG・ブラック', color: '#c62828', stages: ['ng','black'] },
+  ]
   const shMap = {}      // total por shokai, so pra ordenar o ranking
-  const shStageMap = {} // shokai -> { stageKey: count }
+  const shGrupoMap = {} // shokai -> { grupoLabel: count }
   dados.forEach(c => {
     if (!c.shokai) return
     shMap[c.shokai] = (shMap[c.shokai] || 0) + 1
-    if (!shStageMap[c.shokai]) shStageMap[c.shokai] = {}
+    if (!shGrupoMap[c.shokai]) shGrupoMap[c.shokai] = {}
     const stg = getStage(c)
-    shStageMap[c.shokai][stg] = (shStageMap[c.shokai][stg] || 0) + 1
+    const grupo = GRUPOS_SHOKAI.find(g => g.stages.includes(stg)) || GRUPOS_SHOKAI[0]
+    shGrupoMap[c.shokai][grupo.label] = (shGrupoMap[c.shokai][grupo.label] || 0) + 1
   })
   const shLabels = Object.keys(shMap).sort((a,b) => shMap[b] - shMap[a])
-  // altura dinâmica: cresce com a quantidade de 紹介者 para mostrar todos os nomes (+ espaço pra legenda das 10 etapas)
-  document.getElementById('chartShokaiWrap').style.height = Math.max(240, shLabels.length * 28 + 80) + 'px'
+  // altura dinâmica: cresce com a quantidade de 紹介者 para mostrar todos os nomes
+  document.getElementById('chartShokaiWrap').style.height = Math.max(220, shLabels.length * 28 + 60) + 'px'
   destroyChart('chartShokai')
   chartInstances['chartShokai'] = new Chart(document.getElementById('chartShokai'), {
     type: 'bar',
     data: {
       labels: shLabels,
-      // 在籍 fica fora dessa visão específica (mostra as outras 9 etapas)
-      datasets: stageKeys.map((key, i) => ({ key, label: stageLabels[i], color: stageColors[i] }))
-        .filter(d => d.key !== 'zaiseki')
-        .map(d => ({
-          label: d.label,
-          data: shLabels.map(s => shStageMap[s]?.[d.key] || 0),
-          backgroundColor: d.color,
-        })),
+      datasets: GRUPOS_SHOKAI.map(g => ({
+        label: g.label,
+        data: shLabels.map(s => shGrupoMap[s]?.[g.label] || 0),
+        backgroundColor: g.color,
+      })),
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
