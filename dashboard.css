@@ -292,6 +292,12 @@
       .col-header > span:nth-child(14),
       .col-header > span:nth-child(15) { display:none; }
 
+      /* Botões de ação embutidos no pipeline (対応中/面接/NG/ストック/内定/退社 etc.) —
+         ocupam a linha toda embaixo, em vez de ficarem espremidos numa coluna estreita */
+      .candidate-row > span:has(.btn-lead) {
+        grid-column: 1 / -1; display:flex !important; flex-wrap:wrap; gap:4px; margin-top:4px;
+      }
+
       /* Leads do Site — linha empilhada, com botões de ação visíveis e clicáveis */
       .lead-col-header { display:none; }
       .lead-row { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:10px 14px; }
@@ -409,6 +415,10 @@
     body.force-mobile .col-header > span:nth-child(13),
     body.force-mobile .col-header > span:nth-child(14),
     body.force-mobile .col-header > span:nth-child(15) { display:none; }
+
+    body.force-mobile .candidate-row > span:has(.btn-lead) {
+      grid-column: 1 / -1; display:flex !important; flex-wrap:wrap; gap:4px; margin-top:4px;
+    }
 
     body.force-mobile .lead-col-header { display:none; }
     body.force-mobile .lead-row { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:10px 14px; }
