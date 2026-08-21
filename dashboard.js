@@ -1485,6 +1485,14 @@ function renderOrderStatusEscritorio(jimusho) {
         <div class="ordst-stat"><div class="ordst-stat-num">${pct(comNyu, comNait)}</div><div class="ordst-stat-label">内定→入社</div></div>
       </div>
 
+      ${cardsOrder
+        ? `<div class="ordst-grid">${cardsOrder}</div>`
+        : '<div class="ordst-empty">オーダーが登録されているファブリカがありません。工場別のフィルターで各ファブリカを選び、上のバーから登録してください。</div>'}
+
+      <h3 class="ordst-subtitulo">今後の予定（14日間）</h3>
+      ${agendaHtml}
+
+      <h3 class="ordst-subtitulo">状況</h3>
       <div class="ordst-funil">
         ${funil.map(f => `
           <div class="ordst-funil-row">
@@ -1493,13 +1501,6 @@ function renderOrderStatusEscritorio(jimusho) {
             <span class="ordst-funil-count">${f.count}</span>
           </div>`).join('')}
       </div>
-
-      ${cardsOrder
-        ? `<div class="ordst-grid">${cardsOrder}</div>`
-        : '<div class="ordst-empty">オーダーが登録されているファブリカがありません。工場別のフィルターで各ファブリカを選び、上のバーから登録してください。</div>'}
-
-      <h3 class="ordst-subtitulo">今後の予定（14日間）</h3>
-      ${agendaHtml}
     </div>`
 }
 
