@@ -957,6 +957,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-21 | Sidebar retrátil no desktop — puxador `#btnSidebarCollapse` fixo na borda, clica pra encolher/expandir, estado lembrado via `localStorage`. Escondido nos dois modos mobile (breakpoint real e forçado), que já têm o próprio mecanismo de sidebar via ☰ |
 | 2026-08-21 | Atualização automática dos dados a cada 5 minutos (`iniciarAutoAtualizacao()`, chama `carregarDados()` via `setInterval`) — pulado se o modal do candidato estiver aberto, pra não perder edição em andamento. 5 min escolhido por ser leve (`candidates` tem algumas centenas de linhas, select simples) sem re-renderizar com frequência demais |
 | 2026-08-21 | Bug corrigido: Excel出力 (e outras funções que juntam `habilitacao`/`experiencia`/`turnos_possiveis` com `.join`/`.map`/`.includes`) quebrava com `TypeError` quando algum candidato tinha um desses campos gravado como algo diferente de array (ex: string solta) — trocado `(campo||[]).join(...)` por `asArr(campo).join(...)` (helper que já existia, usado só nos filtros até então) em `CAMPOS_PDF`, `trArrPT` e `chk()` do modal. Reproduzido e confirmado corrigido rodando o dashboard local com Playwright (login real, fábrica NTKセラテック, 全て選択 + Excelで出力) — erro exato era `(c.turnos_possiveis \|\| []).join is not a function`. Também adicionado try/catch em `exportarExcelCustom()` com alerta visível de erro, e o nome do arquivo agora remove caracteres inválidos em nome de arquivo do Windows |
+| 2026-08-21 | Bug corrigido: aba オーダー状況, quando admin tinha um escritório específico selecionado (via `<escritório>`まとめ na sidebar), mesmo assim mostrava todos os escritórios concatenados em vez de só o selecionado — `renderOrderStatus()` nunca olhava pra `jimushoAtivoNome`, diferente de `renderPipeline`/`renderCalendar` que já respeitavam esse filtro. Corrigido pra escopar pro escritório ativo quando selecionado, mantendo "mostrar todos, separados" quando nenhum escritório específico está selecionado (comportamento confirmado com Eder). Também corrigido: `filtrarFabrica`/`filtrarMeuShokai`/`filtrarJimushoMatome` agora atualizam a aba オーダー状況 na hora se ela já estiver aberta (antes só atualizava ao trocar de aba) |
 
 ## Sistema de Versão
 
@@ -964,8 +965,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.34**
-- Tags criadas até agora: `v1.00` a `v1.33` (v1.34 ainda não commitada/taggeada — aguardando confirmação pra subir)
+- Versão atual: **v1.35**
+- Tags criadas até agora: `v1.00` a `v1.34`
 
 ## Pendências
 

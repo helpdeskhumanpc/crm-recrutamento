@@ -245,6 +245,7 @@ function filtrarFabrica(fabrica, el) {
   renderPipeline()
   renderCalendar()
   renderCharts()
+  if (document.getElementById('orderStatusView').style.display !== 'none') renderOrderStatus()
 }
 
 function filtrarMeuShokai(el) {
@@ -269,6 +270,7 @@ function filtrarMeuShokai(el) {
   renderPipeline()
   renderCalendar()
   renderCharts()
+  if (document.getElementById('orderStatusView').style.display !== 'none') renderOrderStatus()
 }
 
 function filtrarJimushoMatome(jimusho, el) {
@@ -290,6 +292,7 @@ function filtrarJimushoMatome(jimusho, el) {
   renderPipeline()
   renderCalendar()
   renderCharts()
+  if (document.getElementById('orderStatusView').style.display !== 'none') renderOrderStatus()
 }
 
 // ─── FILTER PANEL ────────────────────────────────────────────
@@ -1436,7 +1439,7 @@ async function renderOrderStatus() {
   const container = document.getElementById('orderStatusView')
   const isAdmin = currentProfile?.role === 'admin'
   const jimushos = isAdmin
-    ? [...new Set(todasLocations.map(l => l.jimusho).filter(Boolean))].sort()
+    ? (jimushoAtivo && jimushoAtivoNome ? [jimushoAtivoNome] : [...new Set(todasLocations.map(l => l.jimusho).filter(Boolean))].sort())
     : [currentProfile?.jimusho].filter(Boolean)
 
   if (!jimushos.length) {
