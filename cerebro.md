@@ -632,7 +632,7 @@ Recebe o payload do candidato e executa **em paralelo**:
 | Leads do Site | `admin` (só `shokai='ヒューマンシステム（西留）'`) + qualquer perfil com `shokai_nome` (só os próprios) | Mini-pipeline de leads do formulário WordPress — ver seção própria abaixo |
 | 🔗 紹介リンク | Qualquer perfil com `shokai_nome` preenchido | Gera o link de afiliado de cada vaga (`locations.link_divulgacao + ?ref=<nome>`), com botões Copiar/Compartilhar (adicionado 2026-08-19) |
 | ストック Pool | Todos | Candidatos em ストック disponíveis para tantoushas reivindicarem |
-| `<escritório>`まとめ | Só `role = jimusho` | Área agregada de todas as fábricas do escritório — ver seção própria abaixo |
+| `<escritório>`まとめ | `role = jimusho` (o próprio) e `role = admin` (escolhe qualquer um, um de cada vez) | Área agregada de todas as fábricas do escritório — ver seção própria abaixo |
 | オーダー状況 | `role = jimusho` (próprio escritório) e `role = admin` (todos, separados) | **Aba no topbar** (junto de 状況/カレンダー/グラフ, não na sidebar) — visão só-leitura de オーダー/内定 por fábrica + stats + funil + agenda — ver seção própria abaixo |
 
 Também na sidebar: link direto **候補者登録** (sem ícone) apontando pra `https://jobs-human.com/cadastro/` (abre em nova aba, visível pra todos) — adicionado 2026-08-19.
@@ -649,8 +649,9 @@ Também na sidebar: link direto **候補者登録** (sem ícone) apontando pra `
 
 ### `<escritório>`まとめ — adicionado 2026-08-19
 
-- Botão na sidebar visível só pra `role = jimusho`, rotulado dinamicamente com `profiles.jimusho` (ex: "小牧事務所まとめ")
-- Diferente do "全体": o "全体" de uma conta jimusho não é limpo só pro escritório dela — também traz candidatos que ela indicou pessoalmente (`shokai` batendo) mesmo que a fábrica seja de outro escritório. O まとめ filtra estritamente por fábrica pertencente ao escritório (`locations.jimusho === profiles.jimusho`), via `jimushoAtivo` (variável global) + `fabricasDoMeuJimusho()`
+- Botão na sidebar pra `role = jimusho`, rotulado dinamicamente com `profiles.jimusho` (ex: "小牧事務所まとめ") — chama `filtrarJimushoMatome(null, this)`, que usa o próprio escritório do perfil
+- **Admin (2026-08-21)**: lista `#sidebarJimushos` com um item por escritório distinto (derivado de `todasLocations`), cada um chamando `filtrarJimushoMatome('<nome>', this)` — vê um de cada vez, igual clicar numa fábrica específica
+- Diferente do "全体": o "全体" de uma conta jimusho não é limpo só pro escritório dela — também traz candidatos que ela indicou pessoalmente (`shokai` batendo) mesmo que a fábrica seja de outro escritório. O まとめ filtra estritamente por fábrica pertencente ao escritório escolhido, via `jimushoAtivo` + `jimushoAtivoNome` (variáveis globais — `jimushoAtivoNome` guarda QUAL escritório, necessário desde que admin passou a poder escolher entre vários) + `fabricasDoMeuJimusho()`
 - Funciona como os outros filtros de sidebar (fábrica, マイ紹介): define o escopo e as abas 状況/カレンダー/グラフ existentes passam a refletir — não é uma tela nova
 - `getFiltrados()` (pipeline/stats/gráficos) e `renderCalendar()` (que tinha sua própria filtragem separada, não usava `getFiltrados()`) foram ajustados pra respeitar esse escopo
 - Rótulos de PDF/Excel exportado e o dropdown de fábrica do calendário/gráfico mostram o nome do escritório (ex: "小牧事務所（全工場）") em vez do genérico "全工場"/"全体" nesse modo (`labelFiltroAtivo()`, `atualizarLabelFiltroFabrica()`)
@@ -952,8 +953,10 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-21 | オーダー状況 movida do sidebar pro topbar (junto de 状況/カレンダー/グラフ); edição de オーダー/内定 sai da aba (fica só leitura) e vira a barra `#fabricaOrderBar`, que aparece ao filtrar uma fábrica específica — admin edita qualquer uma, jimusho as do próprio escritório, tantousha as próprias. Segunda policy de UPDATE em `locations` criada pra tantousha |
 | 2026-08-21 | オーダー状況 passa a respeitar o filtro de datas (登録日) do topbar (`candidatosDoEscritorio()` usa `dentroDoPeriodo()`), e a aba se atualiza sozinha ao trocar o período |
 | 2026-08-21 | No funil de オーダー状況, a barra 入社 conta por `dt_nyusha` dentro do período filtrado (não pela exceção "quem já entrou aparece sempre" que o resto do app usa); barra 在籍 removida desse funil (Eder não precisa monitorar isso ali) |
+| 2026-08-21 | Admin passa a poder ver o `<escritório>`まとめ de qualquer escritório (lista `#sidebarJimushos`, um por vez), não só jimusho vendo o próprio — nova variável global `jimushoAtivoNome` guarda qual escritório está ativo |
 | 2026-08-21 | Sidebar retrátil no desktop — puxador `#btnSidebarCollapse` fixo na borda, clica pra encolher/expandir, estado lembrado via `localStorage`. Escondido nos dois modos mobile (breakpoint real e forçado), que já têm o próprio mecanismo de sidebar via ☰ |
 | 2026-08-21 | Atualização automática dos dados a cada 5 minutos (`iniciarAutoAtualizacao()`, chama `carregarDados()` via `setInterval`) — pulado se o modal do candidato estiver aberto, pra não perder edição em andamento. 5 min escolhido por ser leve (`candidates` tem algumas centenas de linhas, select simples) sem re-renderizar com frequência demais |
+| 2026-08-21 | Bug corrigido: Excel出力 (e outras funções que juntam `habilitacao`/`experiencia`/`turnos_possiveis` com `.join`/`.map`/`.includes`) quebrava com `TypeError` quando algum candidato tinha um desses campos gravado como algo diferente de array (ex: string solta) — trocado `(campo||[]).join(...)` por `asArr(campo).join(...)` (helper que já existia, usado só nos filtros até então) em `CAMPOS_PDF`, `trArrPT` e `chk()` do modal. Reproduzido e confirmado corrigido rodando o dashboard local com Playwright (login real, fábrica NTKセラテック, 全て選択 + Excelで出力) — erro exato era `(c.turnos_possiveis \|\| []).join is not a function`. Também adicionado try/catch em `exportarExcelCustom()` com alerta visível de erro, e o nome do arquivo agora remove caracteres inválidos em nome de arquivo do Windows |
 
 ## Sistema de Versão
 
@@ -961,8 +964,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.31**
-- Tags criadas até agora: `v1.00` a `v1.31`
+- Versão atual: **v1.34**
+- Tags criadas até agora: `v1.00` a `v1.33` (v1.34 ainda não commitada/taggeada — aguardando confirmação pra subir)
 
 ## Pendências
 

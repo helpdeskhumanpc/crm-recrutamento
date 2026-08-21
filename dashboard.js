@@ -48,6 +48,7 @@ let todasLocations = []
 let fabricaAtiva = null
 let shokaiAtivo = null
 let jimushoAtivo = false
+let jimushoAtivoNome = null
 let telefonesDuplicados = new Set()
 
 function recalcularDuplicados() {
@@ -142,7 +143,7 @@ async function carregarDados() {
   carregarSidebar()
   carregarCalFabricaFilter()
   carregarChartFabricaFilter()
-  if (jimushoAtivo) atualizarLabelFiltroFabrica(currentProfile?.jimusho)
+  if (jimushoAtivo) atualizarLabelFiltroFabrica(jimushoAtivoNome)
   renderAlerts()
   renderPipeline()
   renderCalendar()
@@ -180,6 +181,21 @@ function carregarSidebar() {
     div.onclick = () => filtrarFabrica(f, div)
     container.appendChild(div)
   })
+
+  // admin: lista cada escritório, pra ver o まとめ de qualquer um deles
+  if (currentProfile?.role === 'admin') {
+    const jimushos = [...new Set(todasLocations.map(l => l.jimusho).filter(Boolean))].sort()
+    document.getElementById('tituloJimushos').style.display = jimushos.length ? '' : 'none'
+    const jimushoContainer = document.getElementById('sidebarJimushos')
+    jimushoContainer.innerHTML = ''
+    jimushos.forEach(jm => {
+      const div = document.createElement('div')
+      div.className = 'sidebar-item sidebar-special'
+      div.innerHTML = `<div class="factory-name">${jm}まとめ</div>`
+      div.onclick = () => filtrarJimushoMatome(jm, div)
+      jimushoContainer.appendChild(div)
+    })
+  }
 }
 
 function carregarCalFabricaFilter() {
@@ -215,6 +231,7 @@ function filtrarFabrica(fabrica, el) {
   fabricaAtiva = fabrica
   shokaiAtivo = null
   jimushoAtivo = false
+  jimushoAtivoNome = null
   voltarParaPipelineSeNecessario()
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
   if (el) el.classList.add('active')
@@ -238,6 +255,7 @@ function filtrarMeuShokai(el) {
   fabricaAtiva = null
   shokaiAtivo = currentProfile.shokai_nome
   jimushoAtivo = false
+  jimushoAtivoNome = null
   voltarParaPipelineSeNecessario()
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
   if (el) el.classList.add('active')
@@ -253,10 +271,13 @@ function filtrarMeuShokai(el) {
   renderCharts()
 }
 
-function filtrarJimushoMatome(el) {
+function filtrarJimushoMatome(jimusho, el) {
+  const jm = jimusho || currentProfile?.jimusho
+  if (!jm) return
   fabricaAtiva = null
   shokaiAtivo = null
   jimushoAtivo = true
+  jimushoAtivoNome = jm
   voltarParaPipelineSeNecessario()
   document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
   if (el) el.classList.add('active')
@@ -264,7 +285,7 @@ function filtrarJimushoMatome(el) {
   const chSel  = document.getElementById('chartFabrica')
   if (calSel) calSel.value = ''
   if (chSel)  chSel.value  = ''
-  atualizarLabelFiltroFabrica(currentProfile?.jimusho)
+  atualizarLabelFiltroFabrica(jm)
   atualizarFabricaOrderBar()
   renderPipeline()
   renderCalendar()
@@ -439,9 +460,9 @@ const CAMPOS_PDF = [
   { key: 'hiragana',              label: 'ひらがな',     group: 'スキル', get: c => c.hiragana || '—' },
   { key: 'katakana',              label: 'カタカナ',     group: 'スキル', get: c => c.katakana || '—' },
   { key: 'fala_ingles',           label: '英語会話',     group: 'スキル', get: c => c.fala_ingles ? 'はい' : 'いいえ' },
-  { key: 'habilitacao',           label: '免許・資格',   group: 'スキル', get: c => (c.habilitacao||[]).join('・') || '—' },
-  { key: 'experiencia',           label: '工場経験',     group: 'スキル', get: c => (c.experiencia||[]).join('・') || '—' },
-  { key: 'turnos_possiveis',      label: '可能な直',     group: 'スキル', get: c => (c.turnos_possiveis||[]).join('・') || '—' },
+  { key: 'habilitacao',           label: '免許・資格',   group: 'スキル', get: c => asArr(c.habilitacao).join('・') || '—' },
+  { key: 'experiencia',           label: '工場経験',     group: 'スキル', get: c => asArr(c.experiencia).join('・') || '—' },
+  { key: 'turnos_possiveis',      label: '可能な直',     group: 'スキル', get: c => asArr(c.turnos_possiveis).join('・') || '—' },
   { key: 'created_at',            label: '登録日',       group: 'パイプライン日付', get: c => c.created_at ? fmtDataPT(c.created_at.slice(0,10)) : '—' },
   { key: 'dt_taiochu',            label: '対応中',       group: 'パイプライン日付', get: c => c.dt_taiochu ? fmtDataPT(c.dt_taiochu) : '—' },
   { key: 'dt_mensetsu',           label: '面接日',       group: 'パイプライン日付', get: c => c.dt_mensetsu ? fmtDataPT(c.dt_mensetsu) : '—' },
@@ -585,23 +606,29 @@ function exportarExcelCustom() {
   if (_selecionadosImpressao.size > 0) candidatos = candidatos.filter(c => _selecionadosImpressao.has(c.id))
   const stagesVisiveis = getStagesVisiveis()
 
-  const linhas = []
-  STAGES.filter(s => stagesVisiveis.includes(s.key)).forEach(stage => {
-    candidatos.filter(c => getStage(c) === stage.key).forEach(c => {
-      const row = { '状況': stage.label }
-      campos.forEach(f => { row[f.label] = f.get(c) })
-      linhas.push(row)
+  try {
+    const linhas = []
+    STAGES.filter(s => stagesVisiveis.includes(s.key)).forEach(stage => {
+      candidatos.filter(c => getStage(c) === stage.key).forEach(c => {
+        const row = { '状況': stage.label }
+        campos.forEach(f => { row[f.label] = f.get(c) })
+        linhas.push(row)
+      })
     })
-  })
 
-  if (linhas.length === 0) { alert('出力する候補者がいません。'); return }
+    if (linhas.length === 0) { alert('出力する候補者がいません。'); return }
 
-  const ws = XLSX.utils.json_to_sheet(linhas)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, '候補者リスト')
-  const fab = labelFiltroAtivo()
-  const hoje = new Date().toISOString().slice(0, 10)
-  XLSX.writeFile(wb, `候補者リスト_${fab}_${hoje}.xlsx`)
+    const ws = XLSX.utils.json_to_sheet(linhas)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '候補者リスト')
+    // nome de arquivo sem caracteres que quebram no Windows/Mac
+    const fab = labelFiltroAtivo().replace(/[\\/:*?"<>|]/g, '_')
+    const hoje = new Date().toISOString().slice(0, 10)
+    XLSX.writeFile(wb, `候補者リスト_${fab}_${hoje}.xlsx`)
+  } catch (err) {
+    console.error('Excel出力エラー:', err)
+    alert('Excel出力でエラーが発生しました：' + (err.message || err))
+  }
 }
 
 function imprimirPDFLeads() {
@@ -685,16 +712,16 @@ function onPeriodoChange() {
   if (document.getElementById('orderStatusView').style.display !== 'none') renderOrderStatus()
 }
 
-// fabricas cadastradas em locations que pertencem ao mesmo jimusho do usuario logado
+// fabricas do escritorio ativo no momento (jimusho logado, ou o escritorio que o admin escolheu ver)
 function fabricasDoMeuJimusho() {
-  if (!currentProfile?.jimusho) return []
-  return todasLocations.filter(l => l.jimusho === currentProfile.jimusho).map(l => l.nome)
+  if (!jimushoAtivoNome) return []
+  return todasLocations.filter(l => l.jimusho === jimushoAtivoNome).map(l => l.nome)
 }
 
 // texto do filtro de fabrica/escritorio ativo no momento, pra usar em titulos de PDF/Excel
 function labelFiltroAtivo() {
   if (fabricaAtiva) return fabricaAtiva
-  if (jimushoAtivo) return (currentProfile?.jimusho || '事務所') + 'まとめ'
+  if (jimushoAtivo) return (jimushoAtivoNome || '事務所') + 'まとめ'
   return '全体'
 }
 
@@ -1010,7 +1037,7 @@ function fmtDataPT(iso) {
   return `${y}年${parseInt(m)}月${parseInt(d)}日`
 }
 function trPT(map, val)    { return (val && map[val]) || val || '—' }
-function trArrPT(map, arr) { return arr?.length ? arr.map(v => map[v] || v).join(', ') : '—' }
+function trArrPT(map, arr) { const a = asArr(arr); return a.length ? a.map(v => map[v] || v).join(', ') : '—' }
 
 function buildCopyText(c) {
   const rows = [
@@ -1085,7 +1112,7 @@ function abrirModal(id) {
   document.getElementById('btnRireki').href    = tel ? `curriculo-edit.html?tel=${tel.replace(/\D/g,'')}` : '#'
   document.getElementById('btnHiaringu').href  = c.id ? `hiaringu.html?id=${c.id}` : '#'
 
-  const chk = (arr, val) => (arr || []).includes(val) ? 'checked' : ''
+  const chk = (arr, val) => asArr(arr).includes(val) ? 'checked' : ''
   const sel = (opts, val) => opts.map(o => `<option ${o===val?'selected':''}>${o}</option>`).join('')
 
   document.getElementById('modalBody').innerHTML = `
