@@ -117,7 +117,7 @@ function shokaiBloqueado(c) {
 
 async function carregarDados() {
   document.getElementById('pipeline').innerHTML = '<div class="loading">読み込み中...</div>'
-  let locQuery = sb.from('locations').select('nome,jimusho').eq('tipo', '工場').order('nome')
+  let locQuery = sb.from('locations').select('id,nome,jimusho,order_atual,naitei_atual').eq('tipo', '工場').order('nome')
   if (currentProfile?.role !== 'admin') locQuery = locQuery.eq('ativo', true)
   const [res1, res2] = await Promise.all([
     sb.from('candidates').select('*').eq('is_deleted', false).order('created_at', { ascending: false }),
@@ -212,6 +212,7 @@ function filtrarFabrica(fabrica, el) {
   if (calSel) calSel.value = fabrica || ''
   if (chSel)  chSel.value  = fabrica || ''
   atualizarLabelFiltroFabrica(null)
+  atualizarFabricaOrderBar()
   renderPipeline()
   renderCalendar()
   renderCharts()
@@ -234,6 +235,7 @@ function filtrarMeuShokai(el) {
   if (calSel) calSel.value = ''
   if (chSel)  chSel.value  = ''
   atualizarLabelFiltroFabrica(null)
+  atualizarFabricaOrderBar()
   renderPipeline()
   renderCalendar()
   renderCharts()
@@ -251,6 +253,7 @@ function filtrarJimushoMatome(el) {
   if (calSel) calSel.value = ''
   if (chSel)  chSel.value  = ''
   atualizarLabelFiltroFabrica(currentProfile?.jimusho)
+  atualizarFabricaOrderBar()
   renderPipeline()
   renderCalendar()
   renderCharts()
@@ -667,6 +670,7 @@ function onPeriodoChange() {
   if (document.getElementById('chartsView').style.display   !== 'none') renderCharts()
   if (document.getElementById('shokaiView').style.display   !== 'none') renderShokaiAnalise()
   if (document.getElementById('leadsView').style.display    !== 'none') renderLeads()
+  if (document.getElementById('orderStatusView').style.display !== 'none') renderOrderStatus()
 }
 
 // fabricas cadastradas em locations que pertencem ao mesmo jimusho do usuario logado
@@ -1307,6 +1311,7 @@ function showTab(tab, btn) {
   document.getElementById('stockPoolView').style.display = tab === 'stockpool' ? 'flex'  : 'none'
   document.getElementById('shokaiView').style.display    = tab === 'shokai'    ? 'flex'  : 'none'
   document.getElementById('vagasLinkView').style.display = tab === 'vagaslink' ? 'flex'  : 'none'
+  document.getElementById('orderStatusView').style.display = tab === 'orderstatus' ? 'block' : 'none'
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
   if (tab === 'leads' || tab === 'stockpool' || tab === 'shokai' || tab === 'vagaslink') {
     document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
@@ -1325,6 +1330,7 @@ function showTab(tab, btn) {
   if (tab === 'stockpool') renderStockPool()
   if (tab === 'shokai')    renderShokaiAnalise()
   if (tab === 'vagaslink') renderVagasLink()
+  if (tab === 'orderstatus') renderOrderStatus()
 }
 
 // ─── 紹介リンク (プロフィールに shokai_nome があるユーザーのみ) ─────
@@ -1368,6 +1374,213 @@ function compartilharVagaLink(i) {
   const url = window._vagasLinkAtuais[i]
   if (navigator.share) navigator.share({ url }).catch(() => {})
   else navigator.clipboard.writeText(url).then(() => alert('リンクをコピーしました！'))
+}
+
+// ─── オーダー状況 (jimusho: proprio escritorio; admin: todos, separados) ───
+const ORDST_STAGE_COLORS = {
+  renrakumae:'#1e88e5', taiochu:'#f57c00', mensetsu:'#00897b', kengaku:'#5e35b1',
+  naitei:'#2e7d32', nyusha:'#7b1fa2', zaiseki:'#00695c', stock:'#e91e8c', ng:'#c62828', black:'#212121',
+}
+
+function fabricasDoJimushoNome(jimusho) {
+  return todasLocations.filter(l => l.jimusho === jimusho).map(l => l.nome)
+}
+
+function candidatosDoEscritorio(jimusho) {
+  const fabs = fabricasDoJimushoNome(jimusho)
+  return todosOsCandidatos.filter(c =>
+    c.origem !== 'web' && c.origem !== 'web_stock' && fabs.includes(fabricaEfetiva(c)) && dentroDoPeriodo(c)
+  )
+}
+
+async function renderOrderStatus() {
+  const container = document.getElementById('orderStatusView')
+  const isAdmin = currentProfile?.role === 'admin'
+  const jimushos = isAdmin
+    ? [...new Set(todasLocations.map(l => l.jimusho).filter(Boolean))].sort()
+    : [currentProfile?.jimusho].filter(Boolean)
+
+  if (!jimushos.length) {
+    container.innerHTML = '<div class="ordst-empty">事務所情報が設定されていません。</div>'
+    return
+  }
+  container.innerHTML = jimushos.map(jm => renderOrderStatusEscritorio(jm)).join('<div class="ordst-divider"></div>')
+}
+
+function renderOrderStatusEscritorio(jimusho) {
+  const cands = candidatosDoEscritorio(jimusho)
+  const naoEncerrado = c => !['ng','black'].includes(getStage(c))
+
+  // stats
+  const totalAtivo   = cands.filter(naoEncerrado).length
+  const alertas      = cands.filter(c => c.alerta_data).length
+  const parados      = cands.filter(c => naoEncerrado(c) && !['nyusha','zaiseki'].includes(getStage(c)) && diasNaEtapa(c).alert).length
+  const comMens      = cands.filter(c => c.dt_mensetsu).length
+  const comNait      = cands.filter(c => c.dt_naitei).length
+  const comNyu       = cands.filter(c => c.dt_nyusha).length
+  const pct = (a, b) => b === 0 ? '—' : Math.round(a / b * 100) + '%'
+
+  // funil consolidado — 入社 conta pelo dt_nyusha dentro do período filtrado, não pela
+  // exceção de "sempre mostrar quem já entrou" que o resto do app usa (dentroDoPeriodo)
+  const filtroIni = document.getElementById('filterDtIni')?.value
+  const filtroFim = document.getElementById('filterDtFim')?.value
+  const funil = STAGES.filter(s => s.key !== 'zaiseki').map(s => {
+    let count
+    if (s.key === 'nyusha') {
+      count = cands.filter(c => getStage(c) === 'nyusha' && c.dt_nyusha
+        && (!filtroIni || c.dt_nyusha >= filtroIni) && (!filtroFim || c.dt_nyusha <= filtroFim)).length
+    } else {
+      count = cands.filter(c => getStage(c) === s.key).length
+    }
+    return { label: s.label, color: ORDST_STAGE_COLORS[s.key], count }
+  })
+  const funilMax = Math.max(1, ...funil.map(f => f.count))
+
+  // cards de オーダー (só leitura aqui — edição agora é na barra da fábrica ativa) — só quem tem order_atual > 0
+  const fabricasComOrder = todasLocations
+    .filter(l => l.jimusho === jimusho && (l.order_atual || 0) > 0)
+    .slice()
+    .sort((a, b) => ((b.order_atual||0) - (b.naitei_atual||0)) - ((a.order_atual||0) - (a.naitei_atual||0)))
+
+  const cardsOrder = fabricasComOrder.map(l => {
+    const order  = l.order_atual || 0
+    const naitei = l.naitei_atual || 0
+    const pctOrd = order > 0 ? Math.min(100, Math.round(naitei / order * 100)) : 0
+    const cor = pctOrd >= 100 ? '#2e7d32' : pctOrd >= 50 ? '#f9a825' : '#c62828'
+    return `
+      <div class="ordst-card">
+        <div class="ordst-ring" style="background:conic-gradient(${cor} ${pctOrd*3.6}deg, var(--ordst-ring-bg) 0deg)">
+          <div class="ordst-ring-inner">${pctOrd}%</div>
+        </div>
+        <div class="ordst-card-nome">${l.nome}</div>
+        <div class="ordst-card-numeros">オーダー ${order} ／ 内定 ${naitei}</div>
+      </div>`
+  }).join('')
+
+  // agenda dos proximos 14 dias, escopo do escritorio inteiro (nao so quem tem order)
+  const agendaHtml = renderOrdstAgenda(cands)
+
+  return `
+    <div class="ordst-escritorio">
+      <h2 class="ordst-titulo">${jimusho}</h2>
+
+      <div class="ordst-stats-row">
+        <div class="ordst-stat"><div class="ordst-stat-num">${totalAtivo}</div><div class="ordst-stat-label">稼働中</div></div>
+        <div class="ordst-stat"><div class="ordst-stat-num" style="color:#e8621a">${alertas}</div><div class="ordst-stat-label">アラート</div></div>
+        <div class="ordst-stat"><div class="ordst-stat-num" style="color:#c62828">${parados}</div><div class="ordst-stat-label">7日+滞留</div></div>
+        <div class="ordst-stat"><div class="ordst-stat-num">${pct(comMens, cands.length)}</div><div class="ordst-stat-label">応募→面接</div></div>
+        <div class="ordst-stat"><div class="ordst-stat-num">${pct(comNait, comMens)}</div><div class="ordst-stat-label">面接→内定</div></div>
+        <div class="ordst-stat"><div class="ordst-stat-num">${pct(comNyu, comNait)}</div><div class="ordst-stat-label">内定→入社</div></div>
+      </div>
+
+      <div class="ordst-funil">
+        ${funil.map(f => `
+          <div class="ordst-funil-row">
+            <span class="ordst-funil-label">${f.label}</span>
+            <div class="ordst-funil-bar-wrap"><div class="ordst-funil-bar" style="width:${f.count/funilMax*100}%;background:${f.color}"></div></div>
+            <span class="ordst-funil-count">${f.count}</span>
+          </div>`).join('')}
+      </div>
+
+      ${cardsOrder
+        ? `<div class="ordst-grid">${cardsOrder}</div>`
+        : '<div class="ordst-empty">オーダーが登録されているファブリカがありません。工場別のフィルターで各ファブリカを選び、上のバーから登録してください。</div>'}
+
+      <h3 class="ordst-subtitulo">今後の予定（14日間）</h3>
+      ${agendaHtml}
+    </div>`
+}
+
+function renderOrdstAgenda(cands) {
+  const hoje = new Date(); hoje.setHours(0,0,0,0)
+  const fim  = new Date(hoje); fim.setDate(fim.getDate() + 14)
+  const iso  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  const tipoLabel = { mensetsu:'面接', kengaku:'見学・ヒアリング', nyusha:'入社', alerta:'アラート' }
+  const events = {}
+  const add = (dateStr, tipo, nome, fabrica, candidatoId, hora) => {
+    if (!dateStr) return
+    const d = dateStr.split('T')[0]
+    if (d < iso(hoje) || d > iso(fim)) return
+    if (!events[d]) events[d] = []
+    events[d].push({ tipo, nome, fabrica, candidatoId, hora })
+  }
+  cands.forEach(c => {
+    add(c.dt_mensetsu, 'mensetsu', c.shimei, fabricaEfetiva(c), c.id, c.mensetsu_hora)
+    add(c.dt_kengaku,  'kengaku',  c.shimei, fabricaEfetiva(c), c.id)
+    add(c.dt_nyusha,   'nyusha',   c.shimei, fabricaEfetiva(c), c.id)
+    if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, fabricaEfetiva(c), c.id)
+  })
+  const dates = Object.keys(events).sort()
+  if (!dates.length) return '<div class="ordst-empty">今後14日間の予定はありません。</div>'
+  const dows = ['日','月','火','水','木','金','土']
+  const dias = dates.map(dateStr => {
+    const date = new Date(dateStr + 'T00:00:00')
+    const isToday = dateStr === iso(hoje)
+    const rows = events[dateStr].map(e => `
+      <div class="agenda-event" onclick="abrirModal('${e.candidatoId}')">
+        <span class="agenda-chip ${e.tipo}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}</span>
+        <span class="agenda-nome">${e.nome||'—'}</span>
+        ${e.fabrica ? `<span class="agenda-chip" style="background:${corDaFabrica(e.fabrica)}">${e.fabrica}</span>` : ''}
+      </div>`).join('')
+    return `
+      <div class="agenda-day">
+        <div class="agenda-day-header">
+          <span class="agenda-dow">${dows[date.getDay()]}</span>
+          <span class="agenda-date">${date.getMonth()+1}月${date.getDate()}日</span>
+          ${isToday ? '<span class="agenda-today-badge">今日</span>' : ''}
+        </div>
+        <div class="agenda-events">${rows}</div>
+      </div>`
+  }).join('')
+  return `<div class="ordst-agenda-grid">${dias}</div>`
+}
+
+async function alterarOrderNaitei(locationId, campo, delta, valorDireto) {
+  const loc = todasLocations.find(l => l.id === locationId)
+  if (!loc) return
+  let novo
+  if (valorDireto !== undefined) novo = Math.max(0, parseInt(valorDireto) || 0)
+  else novo = Math.max(0, (loc[campo] || 0) + delta)
+  const { error } = await sb.from('locations').update({ [campo]: novo }).eq('id', locationId)
+  if (error) { alert('Erro: ' + error.message); return }
+  loc[campo] = novo
+  if (document.getElementById('orderStatusView').style.display !== 'none') renderOrderStatus()
+  if (fabricaAtivaLocId === locationId) atualizarFabricaOrderBar()
+}
+
+// ─── barra de オーダー/内定 da fábrica ativa (工場別 → fábrica específica) ───
+let fabricaAtivaLocId = null
+
+function podeEditarOrderFabrica(fabricaNome) {
+  const role = currentProfile?.role
+  if (!fabricaNome) return false
+  if (role === 'admin') return true
+  if (role === 'jimusho') {
+    const loc = todasLocations.find(l => l.nome === fabricaNome)
+    return loc?.jimusho === currentProfile?.jimusho
+  }
+  if (role === 'tantousha') return (currentProfile?.fabricas || []).includes(fabricaNome)
+  return false
+}
+
+function atualizarFabricaOrderBar() {
+  const bar = document.getElementById('fabricaOrderBar')
+  const loc = fabricaAtiva ? todasLocations.find(l => l.nome === fabricaAtiva) : null
+  if (!loc || !podeEditarOrderFabrica(fabricaAtiva)) {
+    bar.style.display = 'none'
+    fabricaAtivaLocId = null
+    return
+  }
+  fabricaAtivaLocId = loc.id
+  document.getElementById('fabricaOrderNome').textContent = loc.nome
+  document.getElementById('fabricaOrderNum').value = loc.order_atual || 0
+  document.getElementById('fabricaNaiteiNum').value = loc.naitei_atual || 0
+  bar.style.display = 'flex'
+}
+
+function alterarOrderFabricaAtiva(campo, delta, valorDireto) {
+  if (!fabricaAtivaLocId) return
+  alterarOrderNaitei(fabricaAtivaLocId, campo, delta, valorDireto)
 }
 
 // ─── SHOKAI ANALYSIS (admin) ─────────────────────────────────
@@ -1975,6 +2188,9 @@ async function iniciarDashboard() {
   if (profile?.role === 'jimusho' && profile?.jimusho) {
     document.getElementById('btnJimushoMatome').style.display = ''
     document.getElementById('jimushoMatomeLabel').textContent = profile.jimusho + 'まとめ'
+  }
+  if (profile?.role === 'jimusho' || profile?.role === 'admin') {
+    document.getElementById('btnOrderStatusTab').style.display = ''
   }
 
   // Período padrão: 3 meses atrás → hoje (登録日)

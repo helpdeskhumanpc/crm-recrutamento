@@ -91,10 +91,11 @@
   <div id="topbar">
     <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
     <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.26</span></h1>
+    <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.29</span></h1>
     <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
     <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
     <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
+    <button class="tab-btn" id="btnOrderStatusTab" style="display:none" onclick="showTab('orderstatus', this)">オーダー状況</button>
     <span id="periodoWrap" style="display:flex;align-items:center;gap:6px">
       <span style="font-size:12px;color:#555;font-weight:600;white-space:nowrap">登録日</span>
       <input type="date" id="filterDtIni" class="filter-select" style="width:130px" onchange="onPeriodoChange()">
@@ -148,6 +149,23 @@
   </div>
 
   <div id="alertBar"></div>
+
+  <!-- barra de オーダー/内定 da fábrica ativa (só quem gerencia essa fábrica) -->
+  <div id="fabricaOrderBar" style="display:none">
+    <strong id="fabricaOrderNome"></strong>
+    <span class="ordst-stepper-label">オーダー</span>
+    <div class="ordst-stepper">
+      <button onclick="alterarOrderFabricaAtiva('order_atual',-1)">−</button>
+      <input type="number" id="fabricaOrderNum" min="0" onchange="alterarOrderFabricaAtiva('order_atual',null,this.value)">
+      <button onclick="alterarOrderFabricaAtiva('order_atual',1)">＋</button>
+    </div>
+    <span class="ordst-stepper-label">内定</span>
+    <div class="ordst-stepper">
+      <button onclick="alterarOrderFabricaAtiva('naitei_atual',-1)">−</button>
+      <input type="number" id="fabricaNaiteiNum" min="0" onchange="alterarOrderFabricaAtiva('naitei_atual',null,this.value)">
+      <button onclick="alterarOrderFabricaAtiva('naitei_atual',1)">＋</button>
+    </div>
+  </div>
 
   <div id="statsBar">
     <div class="stat-card"><div class="stat-num" id="s-total">-</div><div class="stat-label">総候補者</div></div>
@@ -293,6 +311,9 @@
     </div>
     <div id="vagasLinkGrid" class="vagas-link-grid"></div>
   </div>
+
+  <!-- オーダー状況 (jimusho: proprio escritorio; admin: todos, separados) -->
+  <div id="orderStatusView"></div>
 
 </div>
 

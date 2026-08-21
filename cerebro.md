@@ -234,6 +234,10 @@ jimusho     text          -- escritório responsável
 ativo       boolean default true  -- false = não aparece nos dropdowns
 link_divulgacao text     -- link da página de vaga no site (adicionado 2026-08-19). Alimenta a aba 紹介リンク
                           -- no dashboard; fábrica só aparece lá se esse campo estiver preenchido.
+order_atual     integer default 0  -- オーダー atual (adicionado 2026-08-21). MANUAL, não calculado.
+naitei_atual    integer default 0  -- 内定 conseguidos pra essa オーダー (adicionado 2026-08-21). MANUAL —
+                                     -- de propósito: um 内定 recente pode ser de uma オーダー anterior,
+                                     -- contar automático dos candidatos distorceria o número.
 created_at  timestamp with time zone default now()
 ```
 
@@ -433,6 +437,19 @@ create policy "leitura publica" on shokaisha for select using (true);
 
 -- locations
 create policy "leitura publica" on locations for select using (true);
+-- 2026-08-21: duas policies de UPDATE adicionadas (antes so tinha select).
+-- Necessarias pra barra #fabricaOrderBar (steppers de order_atual/naitei_atual por fabrica).
+create policy "jimusho admin update locations" on locations for update
+  using (exists (select 1 from profiles where profiles.id = auth.uid()
+    and (profiles.role = 'admin' or (profiles.role = 'jimusho' and profiles.jimusho = locations.jimusho))))
+  with check (exists (select 1 from profiles where profiles.id = auth.uid()
+    and (profiles.role = 'admin' or (profiles.role = 'jimusho' and profiles.jimusho = locations.jimusho))));
+
+create policy "tantousha update propria fabrica locations" on locations for update
+  using (exists (select 1 from profiles where profiles.id = auth.uid()
+    and profiles.role = 'tantousha' and locations.nome = any(profiles.fabricas)))
+  with check (exists (select 1 from profiles where profiles.id = auth.uid()
+    and profiles.role = 'tantousha' and locations.nome = any(profiles.fabricas)));
 
 -- hiaringu
 create policy "authenticated insert" on hiaringu for insert to authenticated with check (true);
@@ -616,6 +633,7 @@ Recebe o payload do candidato e executa **em paralelo**:
 | 🔗 紹介リンク | Qualquer perfil com `shokai_nome` preenchido | Gera o link de afiliado de cada vaga (`locations.link_divulgacao + ?ref=<nome>`), com botões Copiar/Compartilhar (adicionado 2026-08-19) |
 | ストック Pool | Todos | Candidatos em ストック disponíveis para tantoushas reivindicarem |
 | `<escritório>`まとめ | Só `role = jimusho` | Área agregada de todas as fábricas do escritório — ver seção própria abaixo |
+| オーダー状況 | `role = jimusho` (próprio escritório) e `role = admin` (todos, separados) | **Aba no topbar** (junto de 状況/カレンダー/グラフ, não na sidebar) — visão só-leitura de オーダー/内定 por fábrica + stats + funil + agenda — ver seção própria abaixo |
 
 Também na sidebar: link direto **候補者登録** (sem ícone) apontando pra `https://jobs-human.com/cadastro/` (abre em nova aba, visível pra todos) — adicionado 2026-08-19.
 
@@ -718,6 +736,11 @@ Lista de candidatos com `origem = 'web_stock'`. Tantoushas podem clicar em **Atr
 - Toggle de tipos: ● 面接 ● 見学・ヒアリング済み ● 入社 ● アラート
 - Clicar em evento abre modal do candidato
 - Card de 面接 na agenda mobile mostra o **horário** junto do chip (ex: "面接 14:00") — adicionado 2026-08-21
+- Nova aba **オーダー状況** (2026-08-21), no **topbar** (junto de 状況/カレンダー/グラフ — não é item de sidebar), pra `role = jimusho` (só o próprio escritório) e `role = admin` (todos os escritórios, separados por seção): mostra `locations.order_atual`/`naitei_atual` (colunas novas, **ambas manuais** — decisão consciente do Eder, um 内定 recente pode ser de uma オーダー anterior, então contagem automática ia distorcer o número) por fábrica, com anel de progresso (conic-gradient). **Só leitura aqui** — só mostra fábrica com `order_atual > 0`, ordenado por quem está mais longe de bater a meta
+  - Também traz: stats do escritório (稼働中, アラート pendente, candidatos parados há 7+ dias, taxas de conversão), funil consolidado (barras por etapa) e agenda dos próximos 14 dias (2 colunas no desktop, 1 no mobile) — tudo calculado a partir de `candidates`, escopado às fábricas do escritório (`candidatosDoEscritorio()`)
+  - Suporta claro e escuro (`--ordst-*` custom properties no `body`, trocam de valor em `body.dark-mode`) — inspirado numa referência visual que o Eder trouxe (dashboard tipo "sala de controle", anéis e barras de progresso)
+  - **Edição fica em outro lugar**: barra `#fabricaOrderBar` (abaixo do topbar, estilo parecido com `#alertBar`) aparece quando o **工場別** da sidebar filtra pra **uma fábrica específica**, com steppers +/− pra オーダー e 内定 daquela fábrica. Só aparece pra quem gerencia aquela fábrica (`podeEditarOrderFabrica()`): admin sempre, jimusho se a fábrica é do próprio escritório, tantousha se a fábrica está no próprio `profiles.fabricas`
+  - Depende de duas policies de UPDATE em `locations` (antes só tinha select): `jimusho admin update locations` e `tantousha update propria fabrica locations` (2026-08-21, tantousha só a(s) própria(s) fábrica(s))
 - Fábrica na agenda mobile também vira chip colorido (mesmo estilo dos chips de tipo de evento) — cor varia entre fábricas do **mesmo escritório**, pode repetir entre escritórios diferentes. Cores atribuídas automaticamente (`corDaFabrica()`, paleta fixa de 10 cores, sem precisar cadastrar nada) — adicionado 2026-08-21
 - Botão 更新 (`carregarDados()`) volta a aparecer no mobile — estava escondido de propósito antes (regra pré-existente ao trabalho recente), removido a pedido do Eder em 2026-08-21
 
@@ -923,6 +946,12 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-21 | Visualização mobile forçada refinada: vira tela centralizada de 420px (como celular de verdade) em vez de layout mobile esticado; sidebar/bottomNav/filterPanel realinhados; botão "PC表示に戻る" no topbar |
 | 2026-08-21 | Botões de impressão/exportação (PDF印刷/項目選択印刷/Excel出力) escondidos no layout mobile; linhas de Leads do Site e botões de ação do pipeline redesenhados pra empilhar no mobile em vez de espremer/sumir |
 | 2026-08-21 | Calendário mobile (agenda) só mostra a partir de ontem em diante; card de 面接 mostra horário; dropdown de fábrica mostra nome do escritório em vez de "全工場"/"全体" genérico durante 事務所まとめ |
+| 2026-08-21 | Botão 更新 volta a aparecer no mobile; fábrica na agenda vira chip colorido (cor automática por fábrica, repete entre escritórios diferentes) |
+| 2026-08-21 | Regra nova de colaboração: sempre atualizar `cerebro.md` no mesmo fluxo de qualquer alteração no projeto |
+| 2026-08-21 | Aba **オーダー状況** criada — `locations.order_atual`/`naitei_atual` (ambos manuais), cards com anel de progresso, stats do escritório, funil consolidado e agenda de 14 dias, em claro e escuro |
+| 2026-08-21 | オーダー状況 movida do sidebar pro topbar (junto de 状況/カレンダー/グラフ); edição de オーダー/内定 sai da aba (fica só leitura) e vira a barra `#fabricaOrderBar`, que aparece ao filtrar uma fábrica específica — admin edita qualquer uma, jimusho as do próprio escritório, tantousha as próprias. Segunda policy de UPDATE em `locations` criada pra tantousha |
+| 2026-08-21 | オーダー状況 passa a respeitar o filtro de datas (登録日) do topbar (`candidatosDoEscritorio()` usa `dentroDoPeriodo()`), e a aba se atualiza sozinha ao trocar o período |
+| 2026-08-21 | No funil de オーダー状況, a barra 入社 conta por `dt_nyusha` dentro do período filtrado (não pela exceção "quem já entrou aparece sempre" que o resto do app usa); barra 在籍 removida desse funil (Eder não precisa monitorar isso ali) |
 
 ## Sistema de Versão
 
@@ -930,11 +959,12 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.26**
-- Tags criadas até agora: `v1.00` a `v1.26`
+- Versão atual: **v1.29**
+- Tags criadas até agora: `v1.00` a `v1.29`
 
 ## Pendências
 
+- **Card アラート em オーダー状況 — critério ainda não decidido**: hoje conta todo candidato do escritório com `alerta_data` preenchido, sem checar se a data é passada/hoje/futura — diferente da barra laranja `#alertBar` do topo do app, que só considera alertas de **hoje**. Perguntado ao Eder em 2026-08-21 se deveria igualar (só hoje) ou manter mais amplo com outro rótulo (tipo "未対応アラート") — ainda sem resposta.
 - **curriculo-edit.html e hiaringu.html sem controle de acesso**: as páginas não checam login (sem `auth.getUser()`) — qualquer pessoa com o link pode abrir e editar. A tabela `curriculos` não tem política de UPDATE no RLS nem coluna de fábrica/candidate_id (é buscada só por telefone), então não dá pra restringir por cargo/fábrica sem antes: (1) ligar RLS na tabela, (2) adicionar login nas duas páginas, (3) decidir como vincular `curriculos` a uma fábrica (hoje não tem esse dado). Adiado a pedido do Eder em 2026-08-06 — resolver depois.
 - **form-vaga-ig.html**: recebeu a mesma correção de `?ref=` que form-vaga.html, mas nunca foi confirmado com o Eder se esse arquivo está de fato colado em alguma página do site. Se não estiver em uso, pode ser removido; se estiver, precisa do mesmo cuidado de recolar manualmente no Elementor a cada atualização.
 - **Migração de shokaisha pra login individual**: dos 84 nomes na tabela `shokaisha`, só uma parte tem login/perfil no CRM hoje. Decisão do Eder (2026-08-19) foi só liberar a aba 🔗 紹介リンク pra quem já tem login — sem fallback — como forma de forçar a criação de conta de todos com o tempo. `link-afiliado.html` (com senha `0246`) ficou pronto como transição, mas não é o caminho oficial.
