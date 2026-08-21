@@ -1,13 +1,15 @@
 # Cérebro — CRM Recrutamento Japão
 
 > Documento de referência do projeto. Reflete o estado atual construído.
-> Última atualização: 2026-08-19
+> Última atualização: 2026-08-21
 
 ---
 
 ## Regra de Colaboração com o Assistente
 
 **Sempre que o Eder pedir qualquer alteração ou tarefa:** o assistente deve primeiro explicar o que entendeu do pedido e aguardar confirmação antes de executar. Nunca executar direto sem confirmar o entendimento.
+
+**Sempre que fizer alguma alteração no projeto:** atualizar este arquivo (`cerebro.md`) refletindo a mudança, no mesmo fluxo — não deixar acumular pra depois.
 
 ---
 
@@ -120,7 +122,7 @@ Campo `fabricas` é um array — formato JSON:
 | Perfil | Vê | Edita |
 |--------|-----|-------|
 | `admin` | Todos os candidatos, todas as fábricas | Tudo |
-| `jimusho` | Todas as fábricas do seu escritório | Tudo do seu escritório |
+| `jimusho` | Todas as fábricas do seu escritório + área agregada 事務所まとめ (ver abaixo) | Tudo do seu escritório |
 | `tantousha` | Suas fábricas + indicados | Suas fábricas (completo) + os que ele mesmo indicou, qualquer fábrica (completo) |
 | `shokaisha` | Só quem indicou | Dados pessoais dos próprios indicados, enquanto em Leads do Site (não edita 紹介者/工場/datas de pipeline) |
 
@@ -613,6 +615,9 @@ Recebe o payload do candidato e executa **em paralelo**:
 | Leads do Site | `admin` (só `shokai='ヒューマンシステム（西留）'`) + qualquer perfil com `shokai_nome` (só os próprios) | Mini-pipeline de leads do formulário WordPress — ver seção própria abaixo |
 | 🔗 紹介リンク | Qualquer perfil com `shokai_nome` preenchido | Gera o link de afiliado de cada vaga (`locations.link_divulgacao + ?ref=<nome>`), com botões Copiar/Compartilhar (adicionado 2026-08-19) |
 | ストック Pool | Todos | Candidatos em ストック disponíveis para tantoushas reivindicarem |
+| `<escritório>`まとめ | Só `role = jimusho` | Área agregada de todas as fábricas do escritório — ver seção própria abaixo |
+
+Também na sidebar: link direto **候補者登録** (sem ícone) apontando pra `https://jobs-human.com/cadastro/` (abre em nova aba, visível pra todos) — adicionado 2026-08-19.
 
 ### Sidebar
 
@@ -622,6 +627,16 @@ Recebe o payload do candidato e executa **em paralelo**:
 - **Admin:** vê TODAS as fábricas cadastradas em `locations` (inclusive `ativo = false` e com 0 candidatos) — usa `todasFabricas` direto, sem derivar dos candidatos
 - **Demais perfis (jimusho/tantousha/shokaisha):** veem só as fábricas que têm pelo menos 1 candidato (lista derivada de `todosOsCandidatos`)
 - Mesma regra de admin vale para os dropdowns de seleção de fábrica no modal/filtros — `carregarDados()` só aplica `.eq('ativo', true)` na query de `locations` quando o perfil NÃO é admin
+- `carregarDados()` desde 2026-08-19 também traz `jimusho` junto do nome de cada `locations` (`todasLocations`, não só `todasFabricas`), necessário pro escopo do 事務所まとめ
+
+### `<escritório>`まとめ — adicionado 2026-08-19
+
+- Botão na sidebar visível só pra `role = jimusho`, rotulado dinamicamente com `profiles.jimusho` (ex: "小牧事務所まとめ")
+- Diferente do "全体": o "全体" de uma conta jimusho não é limpo só pro escritório dela — também traz candidatos que ela indicou pessoalmente (`shokai` batendo) mesmo que a fábrica seja de outro escritório. O まとめ filtra estritamente por fábrica pertencente ao escritório (`locations.jimusho === profiles.jimusho`), via `jimushoAtivo` (variável global) + `fabricasDoMeuJimusho()`
+- Funciona como os outros filtros de sidebar (fábrica, マイ紹介): define o escopo e as abas 状況/カレンダー/グラフ existentes passam a refletir — não é uma tela nova
+- `getFiltrados()` (pipeline/stats/gráficos) e `renderCalendar()` (que tinha sua própria filtragem separada, não usava `getFiltrados()`) foram ajustados pra respeitar esse escopo
+- Rótulos de PDF/Excel exportado e o dropdown de fábrica do calendário/gráfico mostram o nome do escritório (ex: "小牧事務所（全工場）") em vez do genérico "全工場"/"全体" nesse modo (`labelFiltroAtivo()`, `atualizarLabelFiltroFabrica()`)
+- Por enquanto sem quebra por fábrica dentro da visão (é um total consolidado do escritório) — quebra fica pra decidir depois
 
 ### Barra de stats
 
@@ -698,19 +713,22 @@ Lista de candidatos com `origem = 'web_stock'`. Tantoushas podem clicar em **Atr
 ### Calendário
 
 - **Desktop:** grade mensal tradicional
-- **Mobile:** vista agenda cronológica (só dias com eventos)
+- **Mobile:** vista agenda cronológica (só dias com eventos), e **desde 2026-08-21 só a partir de ontem em diante** (dias já passados do mês ficam escondidos, pra não precisar rolar por eventos antigos) — grade do desktop continua mostrando o mês inteiro
 - Filtro por fábrica (sincronizado com sidebar)
 - Toggle de tipos: ● 面接 ● 見学・ヒアリング済み ● 入社 ● アラート
 - Clicar em evento abre modal do candidato
+- Card de 面接 na agenda mobile mostra o **horário** junto do chip (ex: "面接 14:00") — adicionado 2026-08-21
+- Fábrica na agenda mobile também vira chip colorido (mesmo estilo dos chips de tipo de evento) — cor varia entre fábricas do **mesmo escritório**, pode repetir entre escritórios diferentes. Cores atribuídas automaticamente (`corDaFabrica()`, paleta fixa de 10 cores, sem precisar cadastrar nada) — adicionado 2026-08-21
+- Botão 更新 (`carregarDados()`) volta a aparecer no mobile — estava escondido de propósito antes (regra pré-existente ao trabalho recente), removido a pedido do Eder em 2026-08-21
 
 ### Gráficos (aba グラフ)
 
 - Filtro por fábrica no topo
 - 4 cards de taxa de conversão: total, 応募→面接, 面接→内定, 内定→入社
-- Funil de recrutamento (barras horizontais por etapa)
+- Funil de recrutamento (barras horizontais por etapa, 10 etapas incluindo 在籍)
 - Candidatos por fábrica (barras verticais — some ao filtrar por fábrica)
 - Entradas por mês (linha)
-- Ranking 紹介者 top 10 (barras horizontais)
+- Ranking 紹介者 (barras horizontais **empilhadas**, redesenhado em 2026-08-21): em vez das 10 etapas soltas do funil, agrupa em **4 categorias** — 🔵進行中 (連絡前+対応中+面接+見学ヒアリング), 🟢成約 (内定+入社+在籍), 🟡ストック, 🔴NG・ブラック (NG+ブラック). Objetivo: menos poluído visualmente, mais direto pra avaliar qualidade de indicação de cada shokaisha
 
 ### PDF印刷
 
@@ -725,6 +743,19 @@ Agrupado por etapa. Respeita filtros ativos.
 - Navegação: bottom nav (状況 | カレンダー | グラフ | フィルター)
 - Modal: sobe da parte inferior, ocupa 92vh
 - Calendário: vista agenda (lista cronológica)
+- **PDF印刷 / 項目選択印刷 / Excel出力 ficam escondidos** (classe `.btn-print-export`) — não fazem sentido no layout compacto (2026-08-21)
+- **Botões de ação embutidos no pipeline** (対応中/面接/NG/ストック etc., variantes `showActions4`/`showActions3`) e **os de "Leads do Site"** (対応中/担当者紹介/ストック/NG/Bloquear): linha empilha (nome em cima, telefone/fábrica do lado, ações ocupando a largura toda embaixo) em vez de espremer tudo na grade fixa de colunas do desktop — sem isso os botões ficavam fora da tela ou empilhados verticalmente numa coluna estreita (2026-08-21)
+
+### Modo escuro e visualização mobile forçada — adicionados 2026-08-21
+
+Dois toggles novos na sidebar, seção "表示設定":
+
+- **ダークモード**: alterna `body.dark-mode`, salvo em `localStorage` (`theme`). Cobre fundo, textos, tabelas, cards, modal, filtros, calendário e as cores do Chart.js (`Chart.defaults.color`/`borderColor` setados no início de `renderCharts()`). **Impressão em PDF continua sempre clara**, de propósito. Sidebar já era escura e não muda com o toggle.
+- **モバイル表示**: só aparece em tela de PC (`window.innerWidth > 768`). Alterna `body.force-mobile`, salvo em `localStorage` (`layout`) — aplica as mesmas regras do breakpoint automático `@media(max-width:768px)`, mas via classe, então funciona em qualquer largura de tela.
+  - `#main` fica com **420px centralizado** (fundo neutro `#2b2b38` nas laterais), simulando uma tela de celular de verdade em vez de esticar o layout mobile na largura toda do navegador
+  - Drawer da sidebar, painel de 詳細フィルター e o bottom nav são `position:fixed` relativos à **borda real do navegador**, não à tela centralizada — todos precisaram de `left`/`right: calc(50% - 210px)` pra se alinharem com a "tela de celular" em vez de ficarem esticados/desalinhados
+  - Botão **"PC表示に戻る"** aparece no topbar (do lado do ☰) só nesse modo, pra não precisar abrir o drawer só pra voltar
+  - `filtrarFabrica` (fechamento automático do drawer ao escolher fábrica) precisou considerar `force-mobile` além da largura real da tela (`window.innerWidth <= 768`)
 
 ---
 
@@ -884,6 +915,14 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-19 | Duas policies de UPDATE aditivas criadas: tantousha e shokaisha podem editar candidatos onde `shokai` bate com o próprio nome, sem depender da fábrica |
 | 2026-08-19 | Edição parcial pro dono do lead: `podeEditarInfo(c)` libera dados pessoais no modal (trava 紹介者/工場/工場２/パイプライン日付/ブラックリスト/notas internas) |
 | 2026-08-19 | Helper `voltarParaPipelineSeNecessario()` — clicar em fábrica ou マイ紹介 enquanto em Leads do Site/全体ストック/紹介リンク volta sozinho pro 状況 |
+| 2026-08-19 | Botão lateral **候補者登録** (sem ícone) linkando pra `jobs-human.com/cadastro/`; ícone 🔗 removido do rótulo de 紹介リンク |
+| 2026-08-19 | Área **`<escritório>`まとめ** criada pra role=jimusho — agrega pipeline/calendário/gráficos de todas as fábricas do escritório, diferente do "全体" (que mistura indicações de outros escritórios via match por shokai) |
+| 2026-08-19 | `enviarParaFabrica` (担当者紹介) volta a ser 1 clique sem popup — tentativa de deixar escolher a fábrica no clique foi revertida no mesmo dia por ser redundante (fábrica já vem certa do site) |
+| 2026-08-21 | Gráfico 紹介者 vira barra empilhada por etapa (depois reagrupado em 4 categorias: 進行中/成約/ストック/NG・ブラック); 在籍 removido e depois recolocado (dentro de 成約) |
+| 2026-08-21 | Modo escuro (`body.dark-mode`) e visualização mobile forçada (`body.force-mobile`, só em tela de PC) adicionados, com toggles na sidebar; PDF sempre claro de propósito |
+| 2026-08-21 | Visualização mobile forçada refinada: vira tela centralizada de 420px (como celular de verdade) em vez de layout mobile esticado; sidebar/bottomNav/filterPanel realinhados; botão "PC表示に戻る" no topbar |
+| 2026-08-21 | Botões de impressão/exportação (PDF印刷/項目選択印刷/Excel出力) escondidos no layout mobile; linhas de Leads do Site e botões de ação do pipeline redesenhados pra empilhar no mobile em vez de espremer/sumir |
+| 2026-08-21 | Calendário mobile (agenda) só mostra a partir de ontem em diante; card de 面接 mostra horário; dropdown de fábrica mostra nome do escritório em vez de "全工場"/"全体" genérico durante 事務所まとめ |
 
 ## Sistema de Versão
 
@@ -891,8 +930,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.12**
-- Tags criadas até agora: `v1.00` a `v1.12`
+- Versão atual: **v1.26**
+- Tags criadas até agora: `v1.00` a `v1.26`
 
 ## Pendências
 

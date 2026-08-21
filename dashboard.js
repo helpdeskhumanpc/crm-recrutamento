@@ -139,6 +139,17 @@ async function carregarDados() {
 // 工場２が設定されている場合はそちらを優先
 function fabricaEfetiva(c) { return c.fabrica2 || c.fabrica }
 
+// cor por fábrica na agenda — varia entre fábricas do mesmo escritório; pode repetir entre escritórios diferentes
+const PALETA_FABRICA = ['#1e88e5','#43a047','#fb8c00','#8e24aa','#00acc1','#e53935','#3949ab','#00897b','#d81b60','#6d4c41']
+function corDaFabrica(nomeFabrica) {
+  if (!nomeFabrica) return '#888'
+  const loc = todasLocations.find(l => l.nome === nomeFabrica)
+  const jimusho = loc?.jimusho || '_sem_jimusho_'
+  const irmas = todasLocations.filter(l => (l.jimusho || '_sem_jimusho_') === jimusho).map(l => l.nome).sort()
+  const idx = Math.max(0, irmas.indexOf(nomeFabrica))
+  return PALETA_FABRICA[idx % PALETA_FABRICA.length]
+}
+
 function carregarSidebar() {
   const candidatos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock')
   const fabricas = currentProfile?.role === 'admin'
@@ -926,7 +937,7 @@ function renderCalendar() {
       <div class="agenda-event" onclick="abrirModal('${e.candidatoId}')">
         <span class="agenda-chip ${e.tipo}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}</span>
         <span class="agenda-nome">${e.nome||'—'}</span>
-        <span class="agenda-fab">${e.fabrica||''}</span>
+        ${e.fabrica ? `<span class="agenda-chip" style="background:${corDaFabrica(e.fabrica)}">${e.fabrica}</span>` : ''}
       </div>`).join('')
     return `
       <div class="agenda-day">

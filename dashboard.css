@@ -196,7 +196,6 @@
     .agenda-chip.nyusha   { background:#7b1fa2; }
     .agenda-chip.alerta   { background:#e8621a; }
     .agenda-nome { font-size:13px; font-weight:600; color:#333; flex:1; }
-    .agenda-fab  { font-size:11px; color:#888; }
     .agenda-empty { padding:32px; text-align:center; color:#aaa; font-size:13px; background:white; border-radius:8px; }
     @media (max-width:768px) {
       .cal-grid    { display:none; }
@@ -258,7 +257,6 @@
       .btn-hamburger { display:block; }
       #filterSexo, #filterIdade, #filterJP, #periodoWrap { display:none !important; }
       #searchInput { flex:1; min-width:0; }
-      .btn-refresh[onclick="carregarDados()"] { display:none; }
       .btn-print-export { display:none; }
       div[style*="position:relative"] { display:none; } /* ステージ dropdown */
 
@@ -386,7 +384,6 @@
     body.force-mobile .btn-hamburger { display:block; }
     body.force-mobile #filterSexo, body.force-mobile #filterIdade, body.force-mobile #filterJP, body.force-mobile #periodoWrap { display:none !important; }
     body.force-mobile #searchInput { flex:1; min-width:0; }
-    body.force-mobile .btn-refresh[onclick="carregarDados()"] { display:none; }
     body.force-mobile .btn-print-export { display:none; }
     body.force-mobile div[style*="position:relative"] { display:none; }
     body.force-mobile #statsBar { gap:5px; padding:6px 10px; overflow-x:auto; flex-wrap:nowrap; }
@@ -521,7 +518,6 @@
     body.dark-mode .btn-cancel { background:#22222f; border-color:#3a3a4d; color:#e0e0e8; }
     body.dark-mode .cal-day.other-month { background:#171722; }
     body.dark-mode .cal-day.today { background:#2b2410; }
-    body.dark-mode .agenda-fab { color:#9494a6; }
     body.dark-mode .conv-label { color:#9494a6; }
 
     body.dark-mode .fp-chip { background:#22222f; border-color:#3a3a4d; color:#e0e0e8; }
