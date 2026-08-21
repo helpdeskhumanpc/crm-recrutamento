@@ -1858,7 +1858,7 @@ function shokaiFiltroLeads() {
 }
 
 function podeAgirLeads() {
-  return currentProfile?.role === 'admin' || currentProfile?.role === 'tantousha'
+  return currentProfile?.role === 'admin' || currentProfile?.role === 'tantousha' || currentProfile?.role === 'jimusho'
 }
 
 function getLeadsFiltrados() {
