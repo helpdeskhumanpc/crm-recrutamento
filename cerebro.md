@@ -952,6 +952,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-21 | オーダー状況 movida do sidebar pro topbar (junto de 状況/カレンダー/グラフ); edição de オーダー/内定 sai da aba (fica só leitura) e vira a barra `#fabricaOrderBar`, que aparece ao filtrar uma fábrica específica — admin edita qualquer uma, jimusho as do próprio escritório, tantousha as próprias. Segunda policy de UPDATE em `locations` criada pra tantousha |
 | 2026-08-21 | オーダー状況 passa a respeitar o filtro de datas (登録日) do topbar (`candidatosDoEscritorio()` usa `dentroDoPeriodo()`), e a aba se atualiza sozinha ao trocar o período |
 | 2026-08-21 | No funil de オーダー状況, a barra 入社 conta por `dt_nyusha` dentro do período filtrado (não pela exceção "quem já entrou aparece sempre" que o resto do app usa); barra 在籍 removida desse funil (Eder não precisa monitorar isso ali) |
+| 2026-08-21 | Sidebar retrátil no desktop — puxador `#btnSidebarCollapse` fixo na borda, clica pra encolher/expandir, estado lembrado via `localStorage`. Escondido nos dois modos mobile (breakpoint real e forçado), que já têm o próprio mecanismo de sidebar via ☰ |
+| 2026-08-21 | Atualização automática dos dados a cada 5 minutos (`iniciarAutoAtualizacao()`, chama `carregarDados()` via `setInterval`) — pulado se o modal do candidato estiver aberto, pra não perder edição em andamento. 5 min escolhido por ser leve (`candidates` tem algumas centenas de linhas, select simples) sem re-renderizar com frequência demais |
 
 ## Sistema de Versão
 
@@ -959,8 +961,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.29**
-- Tags criadas até agora: `v1.00` a `v1.29`
+- Versão atual: **v1.31**
+- Tags criadas até agora: `v1.00` a `v1.31`
 
 ## Pendências
 

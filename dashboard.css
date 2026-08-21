@@ -15,7 +15,20 @@
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; display: flex; height: 100vh; overflow: hidden; }
 
     /* SIDEBAR */
-    #sidebar { width: 210px; min-width: 210px; background: #1a1a2e; color: #fff; display: flex; flex-direction: column; overflow-y: auto; }
+    #sidebar { width: 210px; min-width: 210px; background: #1a1a2e; color: #fff; display: flex; flex-direction: column; overflow-y: auto; transition: width 0.2s ease, min-width 0.2s ease; }
+    body.sidebar-collapsed #sidebar { width: 0; min-width: 0; overflow: hidden; }
+
+    /* Puxador pra encolher/expandir a sidebar (só desktop) */
+    #btnSidebarCollapse {
+      position: fixed; top: 50%; left: 210px; transform: translate(-50%, -50%);
+      width: 20px; height: 44px; border: 1px solid #ddd; border-left: none; border-radius: 0 8px 8px 0;
+      background: white; color: #888; cursor: pointer; z-index: 250; font-size: 12px;
+      display: flex; align-items: center; justify-content: center; transition: left 0.2s ease;
+    }
+    #btnSidebarCollapse:hover { color: #333; background: #f5f5f5; }
+    body.sidebar-collapsed #btnSidebarCollapse { left: 0; }
+    body.dark-mode #btnSidebarCollapse { background: #1c1c2b; border-color: #3a3a4d; color: #c7c7d6; }
+    body.dark-mode #btnSidebarCollapse:hover { background: #22222f; }
     #sidebar h2 { padding: 14px 16px; font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; }
     .sidebar-item { padding: 9px 16px; cursor: pointer; border-bottom: 1px solid #222; transition: background 0.15s; font-size: 13px; }
     .sidebar-item:hover { background: #2d2d4e; }
@@ -260,6 +273,7 @@
       #topbar h1 { display:none; }
       .tab-btn { display:none; }
       .btn-hamburger { display:block; }
+      #btnSidebarCollapse { display:none; }
       #filterSexo, #filterIdade, #filterJP, #periodoWrap { display:none !important; }
       #searchInput { flex:1; min-width:0; }
       .btn-print-export { display:none; }
@@ -387,6 +401,7 @@
     body.force-mobile #topbar h1 { display:none; }
     body.force-mobile .tab-btn { display:none; }
     body.force-mobile .btn-hamburger { display:block; }
+    body.force-mobile #btnSidebarCollapse { display:none; }
     body.force-mobile #filterSexo, body.force-mobile #filterIdade, body.force-mobile #filterJP, body.force-mobile #periodoWrap { display:none !important; }
     body.force-mobile #searchInput { flex:1; min-width:0; }
     body.force-mobile .btn-print-export { display:none; }

@@ -1,6 +1,18 @@
 const { createClient } = supabase
 const sb = createClient('https://xzxfwrbebkwagnropgfb.supabase.co','sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE')
 
+// ─── Sidebar retrátil (desktop) ──────────────────────────────
+function alternarSidebarColapsada() {
+  document.body.classList.toggle('sidebar-collapsed')
+  const colapsada = document.body.classList.contains('sidebar-collapsed')
+  localStorage.setItem('sidebarCollapsed', colapsada ? '1' : '0')
+  document.getElementById('btnSidebarCollapse').textContent = colapsada ? '›' : '‹'
+}
+if (localStorage.getItem('sidebarCollapsed') === '1') {
+  document.body.classList.add('sidebar-collapsed')
+  document.getElementById('btnSidebarCollapse').textContent = '›'
+}
+
 // ─── Tema claro/escuro ──────────────────────────────────────
 function alternarTema() {
   document.body.classList.toggle('dark-mode')
@@ -2203,6 +2215,17 @@ async function iniciarDashboard() {
 
   showTab('pipeline')
   await carregarDados()
+  iniciarAutoAtualizacao()
+}
+
+// ─── Atualização automática dos dados (a cada 5 min) ─────────
+let autoAtualizacaoId = null
+function iniciarAutoAtualizacao() {
+  if (autoAtualizacaoId) clearInterval(autoAtualizacaoId)
+  autoAtualizacaoId = setInterval(() => {
+    if (document.getElementById('modal').style.display === 'flex') return // não atualiza com o modal aberto, pra não perder edição em andamento
+    carregarDados()
+  }, 5 * 60 * 1000)
 }
 
 // Verifica sessão ao carregar
