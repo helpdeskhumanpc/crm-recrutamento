@@ -1,7 +1,7 @@
 # Cérebro — CRM Recrutamento Japão
 
 > Documento de referência do projeto. Reflete o estado atual construído.
-> Última atualização: 2026-08-21
+> Última atualização: 2026-08-25
 
 ---
 
@@ -102,12 +102,14 @@ Campo `fabricas` é um array — formato JSON:
 - `admin update all` — admin sempre edita tudo
 - **`tantousha update proprios indicados`** (nova, 2026-08-19) — policy adicional (permissiva, soma com as acima via OR): tantousha pode dar UPDATE em qualquer candidato onde `shokai = profiles.shokai_nome`, **independente da fábrica** — cobre o caso de ela processar (担当者紹介 etc.) um lead que ela mesma trouxe via link de afiliado, mesmo que a fábrica não seja uma das dela
 - **`shokaisha update proprios leads`** (nova, 2026-08-19) — mesma lógica, mas pra `role = 'shokaisha'`, e só enquanto `origem in ('web','web_indicado','web_stock')` (ou seja, enquanto o candidato ainda está no universo de "Leads do Site")
+- **`jimusho select proprios indicados`** e **`jimusho update proprios indicados`** (novas, 2026-08-25) — mesma lógica das duas de cima, mas pra `role = 'jimusho'`, sem restrição de `origem`. Corrige um gap: `jimusho` nunca teve cláusula de `shokai` na `select por cargo` original (só `fabrica`), então mesmo com `shokai_nome` idêntico em `profiles`/`shokaisha`/`candidates` (confirmado por hash, não era erro de digitação), o Supabase nunca entregava esses candidatos pro navegador — afetava tanto Leads do Site quanto o "全体" documentado abaixo em `<escritório>`まとめ, que já assumia (incorretamente, até aqui) que esse match funcionava
 - `anon select temp` — anon pode ler tudo (temporário, remover quando todos migrarem para login)
 
 ### Ver vs Editar (importante, não confundir)
-- **Ver (select):** `shokaisha` vê o que indicou; `tantousha` vê suas fábricas + o que indicou — não mudou
-- **Editar (update) — regra desde 2026-08-19:**
-  - `admin`/`jimusho`: tudo, sempre
+- **Ver (select):** `shokaisha` vê o que indicou; `tantousha` vê suas fábricas + o que indicou; `jimusho` vê as fábricas do escritório + o que indicou pessoalmente via `shokai` (esse último só a partir de 2026-08-25 — antes não funcionava, ver policy acima)
+- **Editar (update) — regra desde 2026-08-25:**
+  - `admin`: tudo, sempre
+  - `jimusho`: candidatos das fábricas do escritório (edição completa) **OU** candidatos que ele mesmo indicou, independente da fábrica (edição completa, via a nova policy — igual ao padrão de `tantousha`)
   - `tantousha`: candidatos das próprias fábricas (edição completa) **OU** candidatos que ele mesmo indicou, independente da fábrica (edição completa, via a nova policy)
   - `shokaisha`: **edição parcial** dos próprios indicados enquanto estiverem em Leads do Site (`origem` web/web_indicado/web_stock) — dados pessoais (基本情報/仕事情報/スキル) **e** `工場`/`工場２` (liberado em 2026-08-19); só ficam travados `紹介者`, todas as datas de パイプライン日付, ブラックリスト e notas internas (アラート, 担当者コメント)
 - Reforçado no frontend (`dashboard.js`):
@@ -122,7 +124,7 @@ Campo `fabricas` é um array — formato JSON:
 | Perfil | Vê | Edita |
 |--------|-----|-------|
 | `admin` | Todos os candidatos, todas as fábricas | Tudo |
-| `jimusho` | Todas as fábricas do seu escritório + área agregada 事務所まとめ (ver abaixo) | Tudo do seu escritório |
+| `jimusho` | Todas as fábricas do seu escritório + indicados (via `shokai`, desde 2026-08-25) + área agregada 事務所まとめ (ver abaixo) | Tudo do seu escritório + os que ele mesmo indicou, qualquer fábrica (completo) |
 | `tantousha` | Suas fábricas + indicados | Suas fábricas (completo) + os que ele mesmo indicou, qualquer fábrica (completo) |
 | `shokaisha` | Só quem indicou | Dados pessoais dos próprios indicados, enquanto em Leads do Site (não edita 紹介者/工場/datas de pipeline) |
 
@@ -411,6 +413,31 @@ create policy "shokaisha update proprios leads" on candidates for update
     and origem in ('web','web_indicado','web_stock')
     and exists (select 1 from profiles where profiles.id = auth.uid()
       and profiles.role = 'shokaisha' and profiles.shokai_nome = candidates.shokai)
+  );
+
+-- 2026-08-25: mesmo padrao das duas de cima, mas pra jimusho (SELECT + UPDATE, sem
+-- restricao de origem). "select por cargo" original NUNCA teve clausula de shokai
+-- pro bloco jimusho (so fabrica) — bug estrutural, nao erro de dado (nome bate
+-- hash-a-hash em profiles/shokaisha/candidates). Sem a de SELECT, o navegador nem
+-- recebia essas linhas do Supabase pra comecar, entao o filtro do frontend nunca
+-- tinha o que mostrar.
+create policy "jimusho select proprios indicados" on candidates for select
+  using (
+    is_deleted = false
+    and exists (select 1 from profiles where profiles.id = auth.uid()
+      and profiles.role = 'jimusho' and profiles.shokai_nome = candidates.shokai)
+  );
+
+create policy "jimusho update proprios indicados" on candidates for update
+  using (
+    is_deleted = false
+    and exists (select 1 from profiles where profiles.id = auth.uid()
+      and profiles.role = 'jimusho' and profiles.shokai_nome = candidates.shokai)
+  )
+  with check ( -- mesma condicao
+    is_deleted = false
+    and exists (select 1 from profiles where profiles.id = auth.uid()
+      and profiles.role = 'jimusho' and profiles.shokai_nome = candidates.shokai)
   );
 
 -- 2026-07-02: acesso anônimo (auth.uid() is null) REMOVIDO do select — só logados leem candidates
@@ -712,8 +739,9 @@ Pipeline separado para candidatos com `origem` em `web`/`web_indicado`/`web_stoc
 - `admin`: vê só os leads onde `shokai = 'ヒューマンシステム（西留）'` (o valor genérico, sem shokaisha específico atribuído) — cada shokaisha/tantousha já acompanha os próprios leads na própria tela, então o admin fica só com o "pool geral"
 - Qualquer perfil com `shokai_nome`: vê só os leads onde `shokai` bate com o próprio nome
 - Função `shokaiFiltroLeads()` centraliza essa regra (admin → valor fixo; outros → `currentProfile.shokai_nome`)
+- **`jimusho` só funcionou de verdade a partir de 2026-08-25** — a lógica do frontend já existia desde 2026-08-19, mas faltava a policy de SELECT no banco pro cargo `jimusho` considerar `shokai` (só considerava `fabrica`); o usuário via a aba normalmente, sem erro, só que sempre vazia (ver Políticas RLS acima)
 
-**Ações (`podeAgirLeads()`, só admin e tantousha)**: **担当者紹介** (`enviarParaFabrica`) → move pro pipeline principal, mantendo a fábrica já detectada do site (sem popup de escolha — tentativa anterior de deixar escolher a fábrica foi revertida no mesmo dia por ser redundante) e grava `dt_shokai = hoje` | **ストック** → move pro pool | **NG** | **ブラック**. `shokaisha` não vê esses botões — só o status.
+**Ações (`podeAgirLeads()`, admin/tantousha/jimusho — `jimusho` incluído em 2026-08-21)**: **担当者紹介** (`enviarParaFabrica`) → move pro pipeline principal, mantendo a fábrica já detectada do site (sem popup de escolha — tentativa anterior de deixar escolher a fábrica foi revertida no mesmo dia por ser redundante) e grava `dt_shokai = hoje` | **ストック** → move pro pool | **NG** | **ブラック**. `shokaisha` não vê esses botões — só o status.
 
 Colunas da tabela: 氏名 | 電話番号 | 工場 | 都道府県 (Estado) | 市区町村 (Cidade) | 性別 | 年齢 | 日本語 | Ações — **Visto removido**, substituído por Estado e Cidade.
 
@@ -959,6 +987,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-21 | Bug corrigido: Excel出力 (e outras funções que juntam `habilitacao`/`experiencia`/`turnos_possiveis` com `.join`/`.map`/`.includes`) quebrava com `TypeError` quando algum candidato tinha um desses campos gravado como algo diferente de array (ex: string solta) — trocado `(campo||[]).join(...)` por `asArr(campo).join(...)` (helper que já existia, usado só nos filtros até então) em `CAMPOS_PDF`, `trArrPT` e `chk()` do modal. Reproduzido e confirmado corrigido rodando o dashboard local com Playwright (login real, fábrica NTKセラテック, 全て選択 + Excelで出力) — erro exato era `(c.turnos_possiveis \|\| []).join is not a function`. Também adicionado try/catch em `exportarExcelCustom()` com alerta visível de erro, e o nome do arquivo agora remove caracteres inválidos em nome de arquivo do Windows |
 | 2026-08-21 | Bug corrigido: aba オーダー状況, quando admin tinha um escritório específico selecionado (via `<escritório>`まとめ na sidebar), mesmo assim mostrava todos os escritórios concatenados em vez de só o selecionado — `renderOrderStatus()` nunca olhava pra `jimushoAtivoNome`, diferente de `renderPipeline`/`renderCalendar` que já respeitavam esse filtro. Corrigido pra escopar pro escritório ativo quando selecionado, mantendo "mostrar todos, separados" quando nenhum escritório específico está selecionado (comportamento confirmado com Eder). Também corrigido: `filtrarFabrica`/`filtrarMeuShokai`/`filtrarJimushoMatome` agora atualizam a aba オーダー状況 na hora se ela já estiver aberta (antes só atualizava ao trocar de aba) |
 | 2026-08-21 | Bug corrigido: em Leads do Site, `role: jimusho` via a aba (porque tem `shokai_nome`) mas nunca tinha os botões de ação (対応中, 担当者紹介, ストック, NG, Bloquear) — `podeAgirLeads()` só liberava `admin`/`tantousha`, faltando `jimusho`. Adicionado `jimusho` à lista. Reproduzido o cenário (conta de teste é jimusho + shokai_nome preenchido) e confirmado via leitura de código que `podeEditar(c)` já libera `jimusho` sem restrição de fábrica — ou seja, a policy de RLS do Supabase pra UPDATE em `candidates` já deve cobrir esse caso, não deveria precisar de policy nova |
+| 2026-08-25 | Bug corrigido (esse sim precisava de policy nova): usuário `jimusho` (佐藤　レオナルド) reportou não ver os próprios leads em Leads do Site apesar de `shokai_nome` preenchido. Investigado com queries read-only comparando hash (`encode(...,'hex')`) de `profiles.shokai_nome` × `shokaisha.nome` × `candidates.shokai` — os três batiam exatamente, byte a byte, então não era erro de digitação/espaço. Causa real: a policy `select por cargo` nunca teve cláusula de `shokai` no bloco `jimusho` (só tinha `fabrica`, diferente de `tantousha`/`shokaisha`) — bug estrutural desde que a feature de Leads do Site foi criada em 2026-08-19, não específico desse usuário. Corrigido com duas policies aditivas novas, `jimusho select proprios indicados` e `jimusho update proprios indicados`, no mesmo padrão das de `tantousha`/`shokaisha` (ver Políticas RLS). Efeito colateral positivo: também corrige o "全体" de conta jimusho (documentado desde 2026-08-19 como devendo incluir indicados por `shokai`, mas que na prática nunca funcionou por essa mesma lacuna) |
 | 2026-08-21 | Calendário redesenhado: mês inteiro (5-6 linhas) virou janela de 14 dias fixa (2 linhas de 7), navegação `←/→` anda de 14 em 14 dias a partir do domingo da semana atual (`calRefDate`, antiga `calYear`/`calMonth` removida). Corrige nomes cortados nos dias lotados — cada dia agora tem um wrapper `.cal-day-events` com scroll interno (`max-height:320px`) em vez de a linha inteira estourar/cortar. Número do dia ganhou contador `(N)` de eventos ao lado. Cards de 面接 no calendário (grid principal e agenda de オーダー状況) agora mostram o horário: `面接 09:00：Nome`. Criado campo novo `kengaku_hora` (見学時間, espelhando o `mensetsu_hora` que já existia) — no modal do candidato, na exportação `項目選択印刷` (Excel/PDF), e nos dois calendários, onde o rótulo "見学・ヒアリング" virou "見学時間" **só nessas duas telas** (funil, gráficos, Leads do Site etc. continuam "見学・ヒアリング"). Depende de coluna nova no Supabase — ver Pendências |
 
 ## Sistema de Versão
