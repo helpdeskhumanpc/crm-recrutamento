@@ -849,7 +849,8 @@ function renderPipeline() {
     const showKengakuCol = stage.key === 'kengaku'
     const showZaisekiCol = stage.key === 'zaiseki'
     const showActions4   = stage.key === 'renrakumae'
-    const showActions3   = stage.key === 'taiochu' || stage.key === 'mensetsu'
+    const showMensetsuCol = stage.key === 'mensetsu'
+    const showActions3   = stage.key === 'taiochu'
     if (showNyushaCol || showZaisekiCol) list.sort((a, b) => (a.dt_nyusha || '').localeCompare(b.dt_nyusha || ''))
     if (showKengakuCol) list.sort((a, b) => (b.dt_kengaku || '').localeCompare(a.dt_kengaku || ''))
     if (stage.key === 'mensetsu') list.sort((a, b) => `${a.dt_mensetsu||'9999-99-99'} ${a.mensetsu_hora||'99:99'}`.localeCompare(`${b.dt_mensetsu||'9999-99-99'} ${b.mensetsu_hora||'99:99'}`))
@@ -861,12 +862,14 @@ function renderPipeline() {
     else if (showKengakuCol) colClass = ' col-kengaku'
     else if (showZaisekiCol) colClass = ' col-zaiseki'
     else if (showActions4)   colClass = ' col-actions4'
+    else if (showMensetsuCol) colClass = ' col-mensetsu'
     else if (showActions3)   colClass = ' col-actions3'
 
     let extraHeader = ''
     if (showNyushaCol)       extraHeader = '<span>入社日</span>'
     else if (showKengakuCol) extraHeader = '<span>見学日</span><span>入社日</span><span>アクション</span>'
     else if (showZaisekiCol) extraHeader = '<span>入社日</span><span></span>'
+    else if (showMensetsuCol) extraHeader = '<span>面接日</span><span>面接時間</span><span>アクション</span>'
     else if (showActions4 || showActions3) extraHeader = '<span>アクション</span>'
 
     const rowsHtml = list.length === 0
@@ -883,10 +886,10 @@ function renderPipeline() {
             extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()"><button class="btn-lead blue" onclick="taisha(event,'${c.id}')">退社</button></span>`
           else if (showActions4)
             extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead amber" onclick="avancarEtapa(event,'${c.id}','dt_taiochu')">対応中</button><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
+          else if (showMensetsuCol)
+            extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_mensetsu) || '—'}</span><span style="font-size:11px">${c.mensetsu_hora || '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_kengaku')">見学</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           else if (showActions3) {
-            const proxField = stage.key === 'taiochu' ? 'dt_mensetsu' : 'dt_kengaku'
-            const proxLabel = stage.key === 'taiochu' ? '面接' : '見学'
-            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','${proxField}')">${proxLabel}</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
+            extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           }
           return `<div class="candidate-row${colClass}" onclick="abrirModal('${c.id}')">
             <span onclick="event.stopPropagation()"><input type="checkbox" onchange="toggleSelecaoImpressao('${c.id}', this.checked)" ${_selecionadosImpressao.has(c.id) ? 'checked' : ''}></span>
