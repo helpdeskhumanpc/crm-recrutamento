@@ -148,6 +148,10 @@ async function carregarDados() {
   renderAlerts()
   renderPipeline()
   renderCalendar()
+  if (document.getElementById('chartsView').style.display      !== 'none') renderCharts()
+  if (document.getElementById('shokaiView').style.display      !== 'none') renderShokaiAnalise()
+  if (document.getElementById('leadsView').style.display       !== 'none') renderLeads()
+  if (document.getElementById('orderStatusView').style.display !== 'none') renderOrderStatus()
 }
 
 // 工場２が設定されている場合はそちらを優先
@@ -2268,14 +2272,14 @@ async function iniciarDashboard() {
   iniciarAutoAtualizacao()
 }
 
-// ─── Atualização automática dos dados (a cada 5 min) ─────────
+// ─── Atualização automática dos dados (a cada 10 min) ────────
 let autoAtualizacaoId = null
 function iniciarAutoAtualizacao() {
   if (autoAtualizacaoId) clearInterval(autoAtualizacaoId)
   autoAtualizacaoId = setInterval(() => {
     if (document.getElementById('modal').style.display === 'flex') return // não atualiza com o modal aberto, pra não perder edição em andamento
     carregarDados()
-  }, 5 * 60 * 1000)
+  }, 10 * 60 * 1000)
 }
 
 // Verifica sessão ao carregar
