@@ -993,6 +993,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Bug corrigido: admin via カレンダー/オーダー状況 do `<escritório>`まとめ vazio mesmo com entrevistas/見学 reais marcadas pros próximos dias. Causa: `candidatosDoEscritorio()` e o filtro do `renderCalendar()` usavam `dentroDoPeriodo(c)`, que só olha `created_at` (登録日) — um candidato cadastrado antes do período de 登録日 selecionado no topo desaparecia mesmo tendo 面接/見学/入社/内定 marcado dentro da janela de 14 dias. Reproduzido: conta jimusho do 小牧事務所 via `事務所まとめ`, estreitando 登録日 pra 2 dias — agenda de 14 dias continuava vazia antes da correção. Criado `dentroDoPeriodoOuEvento(c)`, que conta o candidato se **qualquer** uma dessas datas cair no período selecionado (登録日, 面接日, 見学日, 入社日 ou 内定日) — aplicado só em `candidatosDoEscritorio()` e no filtro de `renderCalendar()` (カレンダー e オーダー状況), decisão do Eder pra não alterar o resto do app (状況/グラフ/Leads do Site continuam só por 登録日). Mantida a exceção pré-existente de 入社/在籍 sempre aparecerem, mesmo redundante agora |
 | 2026-08-25 | Bug corrigido: atualização automática (`carregarDados()`, chamada pelo `setInterval` de `iniciarAutoAtualizacao()`) só redesenhava 状況 (pipeline), カレンダー, sidebar e alertas — オーダー状況, グラフ, Leads do Site e 紹介者分析 buscavam dado novo do banco por baixo dos panos mas a tela não era redesenhada, só ficava atualizada de verdade se o usuário saísse da aba e voltasse (o que forçava `showTab()` de novo). Corrigido adicionando as mesmas checagens de visibilidade que `onPeriodoChange()` já usava (`if (aba visível) renderX()`) direto em `carregarDados()`. Intervalo também subiu de 5 para 10 minutos, a pedido do Eder. Testado via Playwright chamando `carregarDados()` manualmente com オーダー状況 e グラフ abertos — ambos redesenham corretamente. Notado (não corrigido, pré-existente): erro de console "Failed to create chart: can't acquire context from the given item" já acontecia antes dessa mudança, não foi introduzido por ela |
 | 2026-08-25 | Tabela do estágio 面接 (aba 状況) ganhou colunas 面接日 e 面接時間 — antes só tinha アクション, igual 対応中. Novo `showMensetsuCol` (separado de `showActions3`, que agora é só `taiochu`) e classe CSS `.col-mensetsu` (14 colunas, mesmo total do `.col-kengaku`). Pedido do Eder confuso a princípio ("na parte do 条件") — era o 状況 mesmo, aparência parecida no teclado/tela |
+| 2026-08-25 | Colunas de data na tabela do 状況 (面接日/見学日/入社日) passam a mostrar só mês e dia (`8月19日`), sem o ano — estava quebrando linha na coluna estreita (`2026年8月19日`). Novo helper `fmtDataCurta()`, usado só nessas colunas da tabela; `fmtDataPT()` (com ano) continua igual em todo o resto (modal, exportação, agenda). 面接時間 também passou a cortar os segundos (`c.mensetsu_hora.slice(0,5)`), mostrando `09:06` em vez de `09:06:00` |
 
 ## Sistema de Versão
 
@@ -1000,8 +1001,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.40**
-- Tags criadas até agora: `v1.00` a `v1.39`
+- Versão atual: **v1.41**
+- Tags criadas até agora: `v1.00` a `v1.40`
 
 ## Pendências
 

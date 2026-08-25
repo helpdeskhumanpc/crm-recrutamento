@@ -879,15 +879,15 @@ function renderPipeline() {
           const d = diasNaEtapa(c)
           let extraCols = ''
           if (showNyushaCol)
-            extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span>`
+            extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_nyusha) || '—'}</span>`
           else if (showKengakuCol)
-            extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_kengaku) || '—'}</span><span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;align-items:center"><button class="btn-lead red" onclick="kengakuNG(event,'${c.id}')">NG</button><button class="btn-lead green" onclick="kengakuNaitei(event,'${c.id}')">内定</button></span>`
+            extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_kengaku) || '—'}</span><span style="font-size:11px">${fmtDataCurta(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;align-items:center"><button class="btn-lead red" onclick="kengakuNG(event,'${c.id}')">NG</button><button class="btn-lead green" onclick="kengakuNaitei(event,'${c.id}')">内定</button></span>`
           else if (showZaisekiCol)
-            extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()"><button class="btn-lead blue" onclick="taisha(event,'${c.id}')">退社</button></span>`
+            extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()"><button class="btn-lead blue" onclick="taisha(event,'${c.id}')">退社</button></span>`
           else if (showActions4)
             extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead amber" onclick="avancarEtapa(event,'${c.id}','dt_taiochu')">対応中</button><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           else if (showMensetsuCol)
-            extraCols = `<span style="font-size:11px">${fmtDataPT(c.dt_mensetsu) || '—'}</span><span style="font-size:11px">${c.mensetsu_hora || '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_kengaku')">見学</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
+            extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_mensetsu) || '—'}</span><span style="font-size:11px">${c.mensetsu_hora ? c.mensetsu_hora.slice(0,5) : '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_kengaku')">見学</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           else if (showActions3) {
             extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           }
@@ -1062,6 +1062,12 @@ function fmtDataPT(iso) {
   if (!iso) return null
   const [y, m, d] = iso.split('-')
   return `${y}年${parseInt(m)}月${parseInt(d)}日`
+}
+// versão curta (sem ano) — só pras colunas de データ日 na tabela do 状況 (面接日/見学日/入社日)
+function fmtDataCurta(iso) {
+  if (!iso) return null
+  const [, m, d] = iso.split('-')
+  return `${parseInt(m)}月${parseInt(d)}日`
 }
 function trPT(map, val)    { return (val && map[val]) || val || '—' }
 function trArrPT(map, arr) { const a = asArr(arr); return a.length ? a.map(v => map[v] || v).join(', ') : '—' }
