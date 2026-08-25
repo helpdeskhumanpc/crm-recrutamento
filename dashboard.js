@@ -708,6 +708,25 @@ function dentroDoPeriodo(c, comExcecao = true) {
   return true
 }
 
+// Usado só pelo カレンダー e オーダー状況: conta o candidato se QUALQUER uma dessas datas
+// cair dentro do período selecionado (登録日, 面接日, 見学日, 入社日, 内定日) — não só 登録日,
+// pra uma entrevista/見学 marcada não sumir só porque o candidato foi cadastrado antes do período
+function dentroDoPeriodoOuEvento(c) {
+  const st = getStage(c)
+  if (st === 'nyusha' || st === 'zaiseki') return true
+  const ini = document.getElementById('filterDtIni')?.value
+  const fim = document.getElementById('filterDtFim')?.value
+  if (!ini && !fim) return true
+  const emRange = dateStr => {
+    if (!dateStr) return false
+    const d = dateStr.split('T')[0]
+    if (ini && d < ini) return false
+    if (fim && d > fim) return false
+    return true
+  }
+  return emRange(c.created_at) || emRange(c.dt_mensetsu) || emRange(c.dt_kengaku) || emRange(c.dt_nyusha) || emRange(c.dt_naitei)
+}
+
 function onPeriodoChange() {
   renderPipeline()
   if (document.getElementById('calendarView').style.display !== 'none') renderCalendar()
@@ -937,7 +956,7 @@ function renderCalendar() {
   todosOsCandidatos
     .filter(c => !fabFilter || fabricaEfetiva(c) === fabFilter)
     .filter(c => !jimushoFabsCal || jimushoFabsCal.includes(fabricaEfetiva(c)))
-    .filter(c => dentroDoPeriodo(c))
+    .filter(c => dentroDoPeriodoOuEvento(c))
     .forEach(c => {
       add(c.dt_mensetsu, 'mensetsu', c.shimei, c.fabrica, c.id, c.mensetsu_hora)
       add(c.dt_kengaku,  'kengaku',  c.shimei, c.fabrica, c.id, c.kengaku_hora)
@@ -945,7 +964,7 @@ function renderCalendar() {
       if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, c.fabrica, c.id)
     })
 
-  const tipoLabel = { mensetsu:'面接', kengaku:'見学時間', nyusha:'入社', alerta:'アラート' }
+  const tipoLabel = { mensetsu:'面接', kengaku:'見学', nyusha:'入社', alerta:'アラート' }
 
   // ── GRID (desktop) — 14 dias, 2 linhas de 7 ──────────────
   const grid = document.getElementById('calGrid')
@@ -1431,7 +1450,7 @@ function fabricasDoJimushoNome(jimusho) {
 function candidatosDoEscritorio(jimusho) {
   const fabs = fabricasDoJimushoNome(jimusho)
   return todosOsCandidatos.filter(c =>
-    c.origem !== 'web' && c.origem !== 'web_stock' && fabs.includes(fabricaEfetiva(c)) && dentroDoPeriodo(c)
+    c.origem !== 'web' && c.origem !== 'web_stock' && fabs.includes(fabricaEfetiva(c)) && dentroDoPeriodoOuEvento(c)
   )
 }
 
@@ -1538,7 +1557,7 @@ function renderOrdstAgenda(cands) {
   const hoje = new Date(); hoje.setHours(0,0,0,0)
   const fim  = new Date(hoje); fim.setDate(fim.getDate() + 14)
   const iso  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-  const tipoLabel = { mensetsu:'面接', kengaku:'見学時間', nyusha:'入社', alerta:'アラート' }
+  const tipoLabel = { mensetsu:'面接', kengaku:'見学', nyusha:'入社', alerta:'アラート' }
   const events = {}
   const add = (dateStr, tipo, nome, fabrica, candidatoId, hora) => {
     if (!dateStr) return
