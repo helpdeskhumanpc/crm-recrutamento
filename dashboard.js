@@ -66,8 +66,9 @@ function isTelDuplicado(c) {
   return tel && telefonesDuplicados.has(tel)
 }
 let candidatoAtivo = null
-let calYear = new Date().getFullYear()
-let calMonth = new Date().getMonth()
+// domingo da semana atual — inicio da janela de 14 dias (2 linhas de 7) exibida no calendario
+function inicioDaSemana(d) { const r = new Date(d); r.setHours(0,0,0,0); r.setDate(r.getDate() - r.getDay()); return r }
+let calRefDate = inicioDaSemana(new Date())
 
 const STAGES = [
   { key:'renrakumae', label:'連絡前',  cls:'stage-renrakumae' },
@@ -471,6 +472,7 @@ const CAMPOS_PDF = [
   { key: 'dt_mensetsu',           label: '面接日',       group: 'パイプライン日付', get: c => c.dt_mensetsu ? fmtDataPT(c.dt_mensetsu) : '—' },
   { key: 'mensetsu_hora',         label: '面接時間',     group: 'パイプライン日付', get: c => c.mensetsu_hora || '—' },
   { key: 'dt_kengaku',            label: '見学・ヒアリング日', group: 'パイプライン日付', get: c => c.dt_kengaku ? fmtDataPT(c.dt_kengaku) : '—' },
+  { key: 'kengaku_hora',          label: '見学時間',     group: 'パイプライン日付', get: c => c.kengaku_hora || '—' },
   { key: 'dt_naitei',             label: '内定日',       group: 'パイプライン日付', get: c => c.dt_naitei ? fmtDataPT(c.dt_naitei) : '—' },
   { key: 'dt_nyusha',             label: '入社日',       group: 'パイプライン日付', get: c => c.dt_nyusha ? fmtDataPT(c.dt_nyusha) : '—' },
   { key: 'dt_stock',              label: '工場ストック日', group: 'パイプライン日付', get: c => c.dt_stock ? fmtDataPT(c.dt_stock) : '—' },
@@ -896,9 +898,9 @@ function toggleStage(key) { const b = document.getElementById('body-'+key); b.st
 function expandStage(key)  { _expandedStages.add(key); renderPipeline() }
 
 // ─── CALENDAR ─────────────────────────────────────────────────
-function calPrev()  { calMonth--; if (calMonth < 0)  { calMonth = 11; calYear-- } renderCalendar() }
-function calNext()  { calMonth++; if (calMonth > 11) { calMonth = 0;  calYear++ } renderCalendar() }
-function calToday() { calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); renderCalendar() }
+function calPrev()  { calRefDate.setDate(calRefDate.getDate() - 14); renderCalendar() }
+function calNext()  { calRefDate.setDate(calRefDate.getDate() + 14); renderCalendar() }
+function calToday() { calRefDate = inicioDaSemana(new Date()); renderCalendar() }
 
 let calTypesAtivos = new Set(['mensetsu','kengaku','nyusha','alerta'])
 
@@ -912,18 +914,21 @@ function renderCalendar() {
   const fabFilter = document.getElementById('calFabricaFilter').value
   const today     = new Date()
   const todayStr  = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
-  const firstDay  = new Date(calYear, calMonth, 1)
-  const lastDay   = new Date(calYear, calMonth + 1, 0)
-  const months    = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
   const dows      = ['日','月','火','水','木','金','土']
-  document.getElementById('calTitle').textContent = calYear + '年 ' + months[calMonth]
+  const fmtISO    = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+
+  // janela de 14 dias (2 linhas de 7), a partir de calRefDate (domingo)
+  const dias14   = Array.from({ length: 14 }, (_, i) => { const d = new Date(calRefDate); d.setDate(d.getDate() + i); return d })
+  const rangeIni = fmtISO(dias14[0])
+  const rangeFim = fmtISO(dias14[13])
+  document.getElementById('calTitle').textContent =
+    `${dias14[0].getMonth()+1}/${dias14[0].getDate()} 〜 ${dias14[13].getMonth()+1}/${dias14[13].getDate()}`
 
   const events = {}
   const add = (dateStr, tipo, nome, fabrica, candidatoId, hora) => {
     if (!dateStr || !calTypesAtivos.has(tipo)) return
     const d = dateStr.split('T')[0]
-    const [y, m] = d.split('-').map(Number)
-    if (y !== calYear || m - 1 !== calMonth) return
+    if (d < rangeIni || d > rangeFim) return
     if (!events[d]) events[d] = []
     events[d].push({ tipo, nome, fabrica, candidatoId, hora })
   }
@@ -935,42 +940,35 @@ function renderCalendar() {
     .filter(c => dentroDoPeriodo(c))
     .forEach(c => {
       add(c.dt_mensetsu, 'mensetsu', c.shimei, c.fabrica, c.id, c.mensetsu_hora)
-      add(c.dt_kengaku,  'kengaku',  c.shimei, c.fabrica, c.id)
+      add(c.dt_kengaku,  'kengaku',  c.shimei, c.fabrica, c.id, c.kengaku_hora)
       add(c.dt_nyusha,   'nyusha',   c.shimei, c.fabrica, c.id)
       if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, c.fabrica, c.id)
     })
 
-  const tipoLabel = { mensetsu:'面接', kengaku:'見学・ヒアリング', nyusha:'入社', alerta:'アラート' }
+  const tipoLabel = { mensetsu:'面接', kengaku:'見学時間', nyusha:'入社', alerta:'アラート' }
 
-  // ── GRID (desktop) ──────────────────────────────────────
+  // ── GRID (desktop) — 14 dias, 2 linhas de 7 ──────────────
   const grid = document.getElementById('calGrid')
   let html = dows.map(d => `<div class="cal-day-header">${d}</div>`).join('')
-  let startDow = firstDay.getDay()
-  for (let i = 0; i < startDow; i++) {
-    const d = new Date(calYear, calMonth, -startDow + i + 1)
-    html += `<div class="cal-day other-month"><div class="cal-day-num">${d.getDate()}</div></div>`
-  }
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    const date    = new Date(calYear, calMonth, d)
-    const dow     = date.getDay()
-    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-    const isToday = dateStr === todayStr
-    const cls = ['cal-day', isToday?'today':'', dow===0?'sunday':'', dow===6?'saturday':''].filter(Boolean).join(' ')
-    const evs = (events[dateStr]||[]).map(e => `<div class="cal-event ${e.tipo}" onclick="abrirModal('${e.candidatoId}')" title="${e.nome}">${tipoLabel[e.tipo]}：${e.nome||''}</div>`).join('')
-    html += `<div class="${cls}"><div class="cal-day-num">${d}</div>${evs}</div>`
-  }
-  const rem = 7 - ((startDow + lastDay.getDate()) % 7)
-  if (rem < 7) for (let d = 1; d <= rem; d++) html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`
+  dias14.forEach(date => {
+    const dateStr   = fmtISO(date)
+    const dow       = date.getDay()
+    const isToday   = dateStr === todayStr
+    const cls       = ['cal-day', isToday?'today':'', dow===0?'sunday':'', dow===6?'saturday':''].filter(Boolean).join(' ')
+    const dayEvents = events[dateStr] || []
+    const evs = dayEvents.map(e => `<div class="cal-event ${e.tipo}" onclick="abrirModal('${e.candidatoId}')" title="${e.nome}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}：${e.nome||''}</div>`).join('')
+    html += `<div class="${cls}"><div class="cal-day-num">${date.getMonth()+1}/${date.getDate()}${dayEvents.length ? ` <span class="cal-day-count">(${dayEvents.length})</span>` : ''}</div><div class="cal-day-events">${evs}</div></div>`
+  })
   grid.innerHTML = html
 
   // ── AGENDA (mobile) — só a partir de ontem em diante ──────
   const ontem = new Date(today)
   ontem.setDate(today.getDate() - 1)
-  const ontemStr = `${ontem.getFullYear()}-${String(ontem.getMonth()+1).padStart(2,'0')}-${String(ontem.getDate()).padStart(2,'0')}`
+  const ontemStr = fmtISO(ontem)
   const sortedDates = Object.keys(events).filter(d => d >= ontemStr).sort()
   if (!sortedDates.length) {
     document.getElementById('agendaList').innerHTML =
-      `<div class="agenda-empty">📅 ${calYear}年${months[calMonth]}のイベントはありません</div>`
+      `<div class="agenda-empty">📅 この期間のイベントはありません</div>`
     return
   }
   document.getElementById('agendaList').innerHTML = sortedDates.map(dateStr => {
@@ -989,7 +987,7 @@ function renderCalendar() {
       <div class="agenda-day">
         <div class="agenda-day-header">
           <span class="agenda-dow" style="${dowColor}">${dow}</span>
-          <span class="agenda-date" style="${dowColor}">${calYear}年${months[calMonth]}${day}日</span>
+          <span class="agenda-date" style="${dowColor}">${date.getMonth()+1}月${day}日</span>
           ${isToday ? '<span class="agenda-today-badge">今日</span>' : ''}
         </div>
         <div class="agenda-events">${evRows}</div>
@@ -1095,7 +1093,7 @@ function podeEditar(c) {
 // mas nao mexe em shokai nem no andamento do processo seletivo
 const CAMPOS_BLOQUEADOS_INFO = new Set([
   'f_shokai',
-  'f_oubo', 'f_taio', 'f_mens', 'f_menshora', 'f_keng', 'f_nait', 'f_nyu', 'f_stock', 'f_stockgeral', 'f_ng',
+  'f_oubo', 'f_taio', 'f_mens', 'f_menshora', 'f_keng', 'f_kenghora', 'f_nait', 'f_nyu', 'f_stock', 'f_stockgeral', 'f_ng',
   'f_black', 'f_blackmotivo', 'f_alert', 'f_alertnota', 'f_tancom',
 ])
 function podeEditarInfo(c) {
@@ -1191,6 +1189,7 @@ function abrirModal(id) {
         <div class="modal-field"><label>面接日</label><div class="date-with-btn"><input type="date" id="f_mens" value="${c.dt_mensetsu||''}"><button class="btn-hoje" onclick="hoje('f_mens')">今日</button></div></div>
         <div class="modal-field"><label>面接時間</label><input type="time" id="f_menshora" value="${c.mensetsu_hora||''}"></div>
         <div class="modal-field"><label>見学・ヒアリング日</label><div class="date-with-btn"><input type="date" id="f_keng" value="${c.dt_kengaku||''}"><button class="btn-hoje" onclick="hoje('f_keng')">今日</button></div></div>
+        <div class="modal-field"><label>見学時間</label><input type="time" id="f_kenghora" value="${c.kengaku_hora||''}"></div>
         <div class="modal-field"><label>内定日</label><div class="date-with-btn"><input type="date" id="f_nait" value="${c.dt_naitei||''}"><button class="btn-hoje" onclick="hoje('f_nait')">今日</button></div></div>
         <div class="modal-field"><label>入社日</label><div class="date-with-btn"><input type="date" id="f_nyu" value="${c.dt_nyusha||''}"><button class="btn-hoje" onclick="hoje('f_nyu')">今日</button></div></div>
         <div class="modal-field"><label>工場ストック日 <span class="info-icon" onclick="this.classList.toggle('active')">i<span class="info-tip">現在の担当工場だけのストックになります。その工場の担当者だけが見られます。</span></span></label><div class="date-with-btn"><input type="date" id="f_stock" value="${c.dt_stock||''}"><button class="btn-hoje" onclick="hoje('f_stock')">今日</button></div></div>
@@ -1280,6 +1279,7 @@ async function salvarCandidato() {
     dt_mensetsu:          fab2Mudou ? null : (g('f_mens').value    || null),
     mensetsu_hora:        fab2Mudou ? null : (g('f_menshora').value || null),
     dt_kengaku:           fab2Mudou ? null : (g('f_keng').value    || null),
+    kengaku_hora:         fab2Mudou ? null : (g('f_kenghora').value || null),
     dt_naitei:            fab2Mudou ? null : (g('f_nait').value    || null),
     dt_nyusha:            fab2Mudou ? null : (g('f_nyu').value     || null),
     dt_stock:             fab2Mudou ? null : (g('f_stock').value   || null),
@@ -1538,7 +1538,7 @@ function renderOrdstAgenda(cands) {
   const hoje = new Date(); hoje.setHours(0,0,0,0)
   const fim  = new Date(hoje); fim.setDate(fim.getDate() + 14)
   const iso  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-  const tipoLabel = { mensetsu:'面接', kengaku:'見学・ヒアリング', nyusha:'入社', alerta:'アラート' }
+  const tipoLabel = { mensetsu:'面接', kengaku:'見学時間', nyusha:'入社', alerta:'アラート' }
   const events = {}
   const add = (dateStr, tipo, nome, fabrica, candidatoId, hora) => {
     if (!dateStr) return
@@ -1549,7 +1549,7 @@ function renderOrdstAgenda(cands) {
   }
   cands.forEach(c => {
     add(c.dt_mensetsu, 'mensetsu', c.shimei, fabricaEfetiva(c), c.id, c.mensetsu_hora)
-    add(c.dt_kengaku,  'kengaku',  c.shimei, fabricaEfetiva(c), c.id)
+    add(c.dt_kengaku,  'kengaku',  c.shimei, fabricaEfetiva(c), c.id, c.kengaku_hora)
     add(c.dt_nyusha,   'nyusha',   c.shimei, fabricaEfetiva(c), c.id)
     if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, fabricaEfetiva(c), c.id)
   })
