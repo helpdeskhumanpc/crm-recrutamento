@@ -994,6 +994,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Bug corrigido: atualização automática (`carregarDados()`, chamada pelo `setInterval` de `iniciarAutoAtualizacao()`) só redesenhava 状況 (pipeline), カレンダー, sidebar e alertas — オーダー状況, グラフ, Leads do Site e 紹介者分析 buscavam dado novo do banco por baixo dos panos mas a tela não era redesenhada, só ficava atualizada de verdade se o usuário saísse da aba e voltasse (o que forçava `showTab()` de novo). Corrigido adicionando as mesmas checagens de visibilidade que `onPeriodoChange()` já usava (`if (aba visível) renderX()`) direto em `carregarDados()`. Intervalo também subiu de 5 para 10 minutos, a pedido do Eder. Testado via Playwright chamando `carregarDados()` manualmente com オーダー状況 e グラフ abertos — ambos redesenham corretamente. Notado (não corrigido, pré-existente): erro de console "Failed to create chart: can't acquire context from the given item" já acontecia antes dessa mudança, não foi introduzido por ela |
 | 2026-08-25 | Tabela do estágio 面接 (aba 状況) ganhou colunas 面接日 e 面接時間 — antes só tinha アクション, igual 対応中. Novo `showMensetsuCol` (separado de `showActions3`, que agora é só `taiochu`) e classe CSS `.col-mensetsu` (14 colunas, mesmo total do `.col-kengaku`). Pedido do Eder confuso a princípio ("na parte do 条件") — era o 状況 mesmo, aparência parecida no teclado/tela |
 | 2026-08-25 | Colunas de data na tabela do 状況 (面接日/見学日/入社日) passam a mostrar só mês e dia (`8月19日`), sem o ano — estava quebrando linha na coluna estreita (`2026年8月19日`). Novo helper `fmtDataCurta()`, usado só nessas colunas da tabela; `fmtDataPT()` (com ano) continua igual em todo o resto (modal, exportação, agenda). 面接時間 também passou a cortar os segundos (`c.mensetsu_hora.slice(0,5)`), mostrando `09:06` em vez de `09:06:00` |
+| 2026-08-25 | Bug corrigido: menu ☰ (celular) não abria a sidebar pra quem tinha o estado "sidebar recolhida" salvo no navegador (`localStorage.sidebarCollapsed`, feature de desktop de 2026-08-21). Causa: `body.sidebar-collapsed #sidebar { width:0 }` (CSS.dashboard, linha ~19) nunca foi limitado ao desktop — se esse estado estivesse salvo, o menu no celular até "abria" (`.mobile-open` troca o `transform` certinho) mas ficava com `width:0; overflow:hidden`, invisível. Reproduzido e confirmado com Playwright (viewport de celular + `localStorage.sidebarCollapsed=1`: sidebar media `0px` antes da correção, `210px` depois). Corrigido com um reset de `width`/`overflow` dentro do breakpoint `@media (max-width:768px)` e do modo `force-mobile` — o recolhimento em si (desktop) continua funcionando igual, só não vaza mais pro celular |
 
 ## Sistema de Versão
 
@@ -1001,8 +1002,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.41**
-- Tags criadas até agora: `v1.00` a `v1.40`
+- Versão atual: **v1.42**
+- Tags criadas até agora: `v1.00` a `v1.41`
 
 ## Pendências
 

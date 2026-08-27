@@ -269,6 +269,9 @@
       /* Sidebar vira drawer */
       #sidebar { position:fixed; left:0; top:0; height:100vh; z-index:300; transform:translateX(-100%); transition:transform 0.25s ease; }
       #sidebar.mobile-open { transform:translateX(0); }
+      /* o recolhimento (width:0) é só de desktop — no celular a sidebar nunca fica colapsada,
+         mesmo que o navegador tenha essa preferência salva de uma sessão de desktop */
+      body.sidebar-collapsed #sidebar { width:210px; min-width:210px; overflow-y:auto; overflow-x:visible; }
 
       /* Main ocupa tela toda */
       #main { width:100%; }
@@ -399,6 +402,8 @@
     /* drawer da sidebar alinhado com a borda esquerda dessa "tela", não com a borda real do navegador */
     body.force-mobile #sidebar { position:fixed; left:calc(50% - 210px); top:0; height:100vh; z-index:300; transform:translateX(-100%); transition:transform 0.25s ease; }
     body.force-mobile #sidebar.mobile-open { transform:translateX(0); }
+    /* mesmo motivo do breakpoint real: recolhimento é só de desktop, nunca no modo mobile forçado */
+    body.force-mobile.sidebar-collapsed #sidebar { width:210px; min-width:210px; overflow-y:auto; overflow-x:visible; }
 
     /* botão "PC表示に戻る" no topbar, só aparece nesse modo */
     #btnVoltarDesktop { padding:5px 10px; border:1px solid #ddd; border-radius:4px; background:white; cursor:pointer; font-size:12px; white-space:nowrap; }
