@@ -74,6 +74,7 @@ const STAGES = [
   { key:'renrakumae', label:'連絡前',  cls:'stage-renrakumae' },
   { key:'taiochu',   label:'対応中',  cls:'stage-taiochu'    },
   { key:'mensetsu',  label:'面接',    cls:'stage-mensetsu'   },
+  { key:'kentouchu', label:'検討中',  cls:'stage-kentouchu'  },
   { key:'kengaku',   label:'見学・ヒアリング',    cls:'stage-kengaku'    },
   { key:'naitei',    label:'内定',    cls:'stage-naitei'     },
   { key:'nyusha',    label:'入社',    cls:'stage-nyusha'     },
@@ -103,6 +104,7 @@ function getStage(c) {
   }
   if (c.dt_naitei)      return 'naitei'
   if (c.dt_kengaku)     return 'kengaku'
+  if (c.dt_kentouchu)   return 'kentouchu'
   if (c.dt_mensetsu)    return 'mensetsu'
   if (c.dt_taiochu)     return 'taiochu'
   return 'renrakumae'
@@ -110,7 +112,7 @@ function getStage(c) {
 
 function diasNaEtapa(c) {
   const stage = getStage(c)
-  const dateMap = { renrakumae: c.created_at, taiochu: c.dt_taiochu, mensetsu: c.dt_mensetsu, kengaku: c.dt_kengaku, naitei: c.dt_naitei, nyusha: c.dt_nyusha, zaiseki: c.dt_nyusha, stock: c.dt_stock, ng: c.dt_ng, black: c.created_at }
+  const dateMap = { renrakumae: c.created_at, taiochu: c.dt_taiochu, mensetsu: c.dt_mensetsu, kentouchu: c.dt_kentouchu, kengaku: c.dt_kengaku, naitei: c.dt_naitei, nyusha: c.dt_nyusha, zaiseki: c.dt_nyusha, stock: c.dt_stock, ng: c.dt_ng, black: c.created_at }
   const d = dateMap[stage]
   if (!d) return { text: '—', alert: false }
   const dias = Math.floor((Date.now() - new Date(d)) / 86400000)
@@ -475,6 +477,7 @@ const CAMPOS_PDF = [
   { key: 'dt_taiochu',            label: '対応中',       group: 'パイプライン日付', get: c => c.dt_taiochu ? fmtDataPT(c.dt_taiochu) : '—' },
   { key: 'dt_mensetsu',           label: '面接日',       group: 'パイプライン日付', get: c => c.dt_mensetsu ? fmtDataPT(c.dt_mensetsu) : '—' },
   { key: 'mensetsu_hora',         label: '面接時間',     group: 'パイプライン日付', get: c => c.mensetsu_hora || '—' },
+  { key: 'dt_kentouchu',          label: '検討中日',     group: 'パイプライン日付', get: c => c.dt_kentouchu ? fmtDataPT(c.dt_kentouchu) : '—' },
   { key: 'dt_kengaku',            label: '見学・ヒアリング日', group: 'パイプライン日付', get: c => c.dt_kengaku ? fmtDataPT(c.dt_kengaku) : '—' },
   { key: 'kengaku_hora',          label: '見学時間',     group: 'パイプライン日付', get: c => c.kengaku_hora || '—' },
   { key: 'dt_naitei',             label: '内定日',       group: 'パイプライン日付', get: c => c.dt_naitei ? fmtDataPT(c.dt_naitei) : '—' },
@@ -833,6 +836,7 @@ function renderPipeline() {
   document.getElementById('s-renraku').textContent  = grouped.renrakumae.length
   document.getElementById('s-taiochu').textContent  = grouped.taiochu.length
   document.getElementById('s-mensetsu').textContent = grouped.mensetsu.length
+  document.getElementById('s-kentouchu').textContent = grouped.kentouchu.length
   document.getElementById('s-kengaku').textContent  = grouped.kengaku.length
   document.getElementById('s-naitei').textContent   = grouped.naitei.length
   document.getElementById('s-nyusha').textContent   = grouped.nyusha.length
@@ -850,6 +854,7 @@ function renderPipeline() {
     const showZaisekiCol = stage.key === 'zaiseki'
     const showActions4   = stage.key === 'renrakumae'
     const showMensetsuCol = stage.key === 'mensetsu'
+    const showKentouchuCol = stage.key === 'kentouchu'
     const showActions3   = stage.key === 'taiochu'
     if (showNyushaCol || showZaisekiCol) list.sort((a, b) => (a.dt_nyusha || '').localeCompare(b.dt_nyusha || ''))
     if (showKengakuCol) list.sort((a, b) => (b.dt_kengaku || '').localeCompare(a.dt_kengaku || ''))
@@ -863,6 +868,7 @@ function renderPipeline() {
     else if (showZaisekiCol) colClass = ' col-zaiseki'
     else if (showActions4)   colClass = ' col-actions4'
     else if (showMensetsuCol) colClass = ' col-mensetsu'
+    else if (showKentouchuCol) colClass = ' col-kentouchu'
     else if (showActions3)   colClass = ' col-actions3'
 
     let extraHeader = ''
@@ -870,6 +876,7 @@ function renderPipeline() {
     else if (showKengakuCol) extraHeader = '<span>見学日</span><span>入社日</span><span>アクション</span>'
     else if (showZaisekiCol) extraHeader = '<span>入社日</span><span></span>'
     else if (showMensetsuCol) extraHeader = '<span>面接日</span><span>面接時間</span><span>アクション</span>'
+    else if (showKentouchuCol) extraHeader = '<span>検討中日</span><span>アクション</span>'
     else if (showActions4 || showActions3) extraHeader = '<span>アクション</span>'
 
     const rowsHtml = list.length === 0
@@ -887,7 +894,9 @@ function renderPipeline() {
           else if (showActions4)
             extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead amber" onclick="avancarEtapa(event,'${c.id}','dt_taiochu')">対応中</button><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           else if (showMensetsuCol)
-            extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_mensetsu) || '—'}</span><span style="font-size:11px">${c.mensetsu_hora ? c.mensetsu_hora.slice(0,5) : '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_kengaku')">見学</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
+            extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_mensetsu) || '—'}</span><span style="font-size:11px">${c.mensetsu_hora ? c.mensetsu_hora.slice(0,5) : '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_kengaku')">見学</button><button class="btn-lead amber" onclick="avancarEtapa(event,'${c.id}','dt_kentouchu')">検討中</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
+          else if (showKentouchuCol)
+            extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_kentouchu) || '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_kengaku')">見学</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           else if (showActions3) {
             extraCols = `<span onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn-lead green" onclick="avancarEtapa(event,'${c.id}','dt_mensetsu')">面接</button><button class="btn-lead orange" onclick="avancarEtapa(event,'${c.id}','dt_ng','NGにしますか？')">NG</button><button class="btn-lead blue" onclick="avancarEtapa(event,'${c.id}','dt_stock')">ストック</button></span>`
           }
@@ -1125,7 +1134,7 @@ function podeEditar(c) {
 // mas nao mexe em shokai nem no andamento do processo seletivo
 const CAMPOS_BLOQUEADOS_INFO = new Set([
   'f_shokai',
-  'f_oubo', 'f_taio', 'f_mens', 'f_menshora', 'f_keng', 'f_kenghora', 'f_nait', 'f_nyu', 'f_stock', 'f_stockgeral', 'f_ng',
+  'f_oubo', 'f_taio', 'f_mens', 'f_menshora', 'f_kentou', 'f_keng', 'f_kenghora', 'f_nait', 'f_nyu', 'f_stock', 'f_stockgeral', 'f_ng',
   'f_black', 'f_blackmotivo', 'f_alert', 'f_alertnota', 'f_tancom',
 ])
 function podeEditarInfo(c) {
@@ -1220,6 +1229,7 @@ function abrirModal(id) {
         <div class="modal-field"><label>対応中</label><div class="date-with-btn"><input type="date" id="f_taio" value="${c.dt_taiochu||''}"><button class="btn-hoje" onclick="hoje('f_taio')">今日</button></div></div>
         <div class="modal-field"><label>面接日</label><div class="date-with-btn"><input type="date" id="f_mens" value="${c.dt_mensetsu||''}"><button class="btn-hoje" onclick="hoje('f_mens')">今日</button></div></div>
         <div class="modal-field"><label>面接時間</label><input type="time" id="f_menshora" value="${c.mensetsu_hora||''}"></div>
+        <div class="modal-field"><label>検討中日</label><div class="date-with-btn"><input type="date" id="f_kentou" value="${c.dt_kentouchu||''}"><button class="btn-hoje" onclick="hoje('f_kentou')">今日</button></div></div>
         <div class="modal-field"><label>見学・ヒアリング日</label><div class="date-with-btn"><input type="date" id="f_keng" value="${c.dt_kengaku||''}"><button class="btn-hoje" onclick="hoje('f_keng')">今日</button></div></div>
         <div class="modal-field"><label>見学時間</label><input type="time" id="f_kenghora" value="${c.kengaku_hora||''}"></div>
         <div class="modal-field"><label>内定日</label><div class="date-with-btn"><input type="date" id="f_nait" value="${c.dt_naitei||''}"><button class="btn-hoje" onclick="hoje('f_nait')">今日</button></div></div>
@@ -1310,6 +1320,7 @@ async function salvarCandidato() {
     dt_taiochu:           fab2Mudou ? null : (g('f_taio').value    || null),
     dt_mensetsu:          fab2Mudou ? null : (g('f_mens').value    || null),
     mensetsu_hora:        fab2Mudou ? null : (g('f_menshora').value || null),
+    dt_kentouchu:         fab2Mudou ? null : (g('f_kentou').value  || null),
     dt_kengaku:           fab2Mudou ? null : (g('f_keng').value    || null),
     kengaku_hora:         fab2Mudou ? null : (g('f_kenghora').value || null),
     dt_naitei:            fab2Mudou ? null : (g('f_nait').value    || null),
@@ -1452,7 +1463,7 @@ function compartilharVagaLink(i) {
 
 // ─── オーダー状況 (jimusho: proprio escritorio; admin: todos, separados) ───
 const ORDST_STAGE_COLORS = {
-  renrakumae:'#1e88e5', taiochu:'#f57c00', mensetsu:'#00897b', kengaku:'#5e35b1',
+  renrakumae:'#1e88e5', taiochu:'#f57c00', mensetsu:'#00897b', kentouchu:'#f9a825', kengaku:'#5e35b1',
   naitei:'#2e7d32', nyusha:'#7b1fa2', zaiseki:'#00695c', stock:'#e91e8c', ng:'#c62828', black:'#212121',
 }
 
@@ -1746,10 +1757,10 @@ function renderCharts() {
   document.getElementById('cv-nyu').textContent   = pct(comNyu, comNait)
 
   // Funil
-  const stageLabels = ['連絡前','対応中','面接','見学・ヒアリング','内定','入社','在籍','工場ストック','NG','ブラック']
-  const stageKeys   = ['renrakumae','taiochu','mensetsu','kengaku','naitei','nyusha','zaiseki','stock','ng','black']
+  const stageLabels = ['連絡前','対応中','面接','検討中','見学・ヒアリング','内定','入社','在籍','工場ストック','NG','ブラック']
+  const stageKeys   = ['renrakumae','taiochu','mensetsu','kentouchu','kengaku','naitei','nyusha','zaiseki','stock','ng','black']
   const stageCounts = stageKeys.map(k => dados.filter(c => getStage(c) === k).length)
-  const stageColors = ['#1e88e5','#f57c00','#00897b','#5e35b1','#2e7d32','#7b1fa2','#00695c','#e91e8c','#c62828','#212121']
+  const stageColors = ['#1e88e5','#f57c00','#00897b','#f9a825','#5e35b1','#2e7d32','#7b1fa2','#00695c','#e91e8c','#c62828','#212121']
 
   destroyChart('chartFunil')
   chartInstances['chartFunil'] = new Chart(document.getElementById('chartFunil'), {

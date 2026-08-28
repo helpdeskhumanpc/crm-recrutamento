@@ -995,6 +995,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Tabela do estágio 面接 (aba 状況) ganhou colunas 面接日 e 面接時間 — antes só tinha アクション, igual 対応中. Novo `showMensetsuCol` (separado de `showActions3`, que agora é só `taiochu`) e classe CSS `.col-mensetsu` (14 colunas, mesmo total do `.col-kengaku`). Pedido do Eder confuso a princípio ("na parte do 条件") — era o 状況 mesmo, aparência parecida no teclado/tela |
 | 2026-08-25 | Colunas de data na tabela do 状況 (面接日/見学日/入社日) passam a mostrar só mês e dia (`8月19日`), sem o ano — estava quebrando linha na coluna estreita (`2026年8月19日`). Novo helper `fmtDataCurta()`, usado só nessas colunas da tabela; `fmtDataPT()` (com ano) continua igual em todo o resto (modal, exportação, agenda). 面接時間 também passou a cortar os segundos (`c.mensetsu_hora.slice(0,5)`), mostrando `09:06` em vez de `09:06:00` |
 | 2026-08-25 | Bug corrigido: menu ☰ (celular) não abria a sidebar pra quem tinha o estado "sidebar recolhida" salvo no navegador (`localStorage.sidebarCollapsed`, feature de desktop de 2026-08-21). Causa: `body.sidebar-collapsed #sidebar { width:0 }` (CSS.dashboard, linha ~19) nunca foi limitado ao desktop — se esse estado estivesse salvo, o menu no celular até "abria" (`.mobile-open` troca o `transform` certinho) mas ficava com `width:0; overflow:hidden`, invisível. Reproduzido e confirmado com Playwright (viewport de celular + `localStorage.sidebarCollapsed=1`: sidebar media `0px` antes da correção, `210px` depois). Corrigido com um reset de `width`/`overflow` dentro do breakpoint `@media (max-width:768px)` e do modo `force-mobile` — o recolhimento em si (desktop) continua funcionando igual, só não vaza mais pro celular |
+| 2026-08-25 | Novo estágio **検討中** criado no pipeline, entre 面接 e 見学・ヒアリング — cor âmbar (`#f9a825`, mesma já usada no botão 対応中 de Leads do Site). Botões: linha do 検討中 tem 見学/NG/ストック (igual 面接 tinha antes); linha do 面接 ganhou um 4º botão 検討中, junto dos que já existiam. Tocou em bastante coisa: `STAGES`, `getStage()` (nova checagem `dt_kentouchu` entre `dt_kengaku` e `dt_mensetsu`), `diasNaEtapa()`, nova classe `.col-kentouchu`, `.col-mensetsu` alargada (4 botões agora), caixinha nova no quadro de números do topo, checkbox novo no filtro "ステージ▾", campo novo no modal (`検討中日`, entre 面接時間 e 見学・ヒアリング日), bloqueado pra edição parcial de shokaisha (`CAMPOS_BLOQUEADOS_INFO`), nova cor em `ORDST_STAGE_COLORS` (funil de オーダー状況) e nos arrays de `renderCharts()` (グラフ), e nova coluna exportável `検討中日` no `CAMPOS_PDF`. Depende de `ALTER TABLE candidates ADD COLUMN dt_kentouchu date;` no Supabase — ver Pendências |
 
 ## Sistema de Versão
 
@@ -1002,8 +1003,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.42**
-- Tags criadas até agora: `v1.00` a `v1.41`
+- Versão atual: **v1.43**
+- Tags criadas até agora: `v1.00` a `v1.42`
 
 ## Pendências
 
@@ -1014,3 +1015,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - **Trava de coluna só no frontend**: as policies de UPDATE aditivas (tantousha/shokaisha por shokai) liberam a linha inteira no banco — a restrição de "shokaisha não edita 紹介者/datas de pipeline" existe só no modal do dashboard, não no Postgres. Risco aceito pelo contexto (baixo volume, parceiros de confiança), mas vale lembrar se o uso crescer.
 - **Página de vaga com duas tags `og:image` conflitantes**: encontrado em 2026-08-19 na página de Kumamoto — uma aponta pro logo genérico da Human, outra pra foto real da vaga. Pode causar preview errado ao compartilhar no WhatsApp/LINE dependendo de qual tag o app prioriza. Não é algo que se corrige neste repositório (é configuração do WordPress/plugin de SEO).
 - **Mudança combinada mas não implementada: `getStage()` 入社→在籍 sem folga de mês**: Eder pediu (2026-08-25) que a data de `dt_nyusha` já passada vire `在籍` na hora (não esperar virar o mês como hoje), e que `dt_nyusha` futura mostre como `入社` (hoje cai pra `内定` se a data ainda não chegou). Mudança combinada — trocar o bloco de `if (c.dt_nyusha) {...}` em `getStage()` por `c.dt_nyusha <= hojeISO() ? 'zaiseki' : 'nyusha'` — mas ainda não subiu, Eder não confirmou se quer implementar agora. Importante: é reclassificação retroativa, muda o estágio de candidatos que já estão cadastrados assim que a página recarregar, não só daqui pra frente.
+- **Migração pendente: coluna `dt_kentouchu` (v1.43)**: o código já lê/grava `dt_kentouchu` (novo estágio 検討中, entre 面接 e 見学), mas a coluna ainda **não existe** na tabela `candidates` do Supabase — sem rodar o SQL abaixo, salvar um candidato movendo pra 検討中 (ou qualquer save que passe por esse campo) vai quebrar. Rodar no SQL Editor do Supabase antes do deploy do v1.43 estar completo:
+  ```sql
+  ALTER TABLE candidates ADD COLUMN dt_kentouchu date;
+  ```
+  Remover esta pendência assim que confirmado que a coluna existe em produção.
