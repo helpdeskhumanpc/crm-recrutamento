@@ -774,7 +774,7 @@ function getFiltrados(comExcecaoPeriodo = true) {
     if (sexo   && c.sexo !== sexo)                                            return false
     if (jp     && c.nivel_japones !== jp)                                     return false
     if (idade  && c.idade > idade)                                            return false
-    if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
+    if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search) && !String(c.numero_cadastro ?? '').includes(search)) return false
     // filtros do painel
     if (f.jp?.length    && !f.jp.includes(c.nivel_japones))     return false
     if (f.stage?.length && !f.stage.includes(getStage(c)))       return false
@@ -1919,7 +1919,7 @@ function getLeadsFiltrados() {
     if (sexo   && c.sexo !== sexo)                                            return false
     if (jp     && c.nivel_japones !== jp)                                     return false
     if (idade  && c.idade > idade)                                            return false
-    if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search)) return false
+    if (search && !c.shimei?.toLowerCase().includes(search) && !c.telefone?.includes(search) && !String(c.numero_cadastro ?? '').includes(search)) return false
     if (f.jp?.length    && !f.jp.includes(c.nivel_japones))     return false
     if (f.stage?.length && !f.stage.includes(getLeadsStage(c))) return false
     if (f.emp?.length   && !f.emp.includes(c.esta_empregado))    return false
