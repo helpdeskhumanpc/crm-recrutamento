@@ -95,11 +95,33 @@
     <div class="topbar-row" id="topbarRow1">
       <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
       <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.45</span></h1>
+      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.46</span></h1>
       <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
       <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
       <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
       <button class="tab-btn" id="btnOrderStatusTab" style="display:none" onclick="showTab('orderstatus', this)">オーダー状況</button>
+      <div style="position:relative">
+        <button class="btn-refresh" style="background:#5e35b1" onclick="toggleStageFilter()">ステージ ▾</button>
+        <div id="stageFilterBox" style="display:none;position:absolute;top:32px;right:0;background:white;border:1px solid #ddd;border-radius:6px;padding:10px;z-index:50;min-width:160px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
+          <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px">表示ステージ</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="renrakumae" checked onchange="renderPipeline()"> 連絡前</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="taiochu" checked onchange="renderPipeline()"> 対応中</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="mensetsu" checked onchange="renderPipeline()"> 面接</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="kentouchu" checked onchange="renderPipeline()"> 検討中</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="kengaku" checked onchange="renderPipeline()"> 見学・ヒアリング</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="naitei" checked onchange="renderPipeline()"> 内定</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="nyusha" checked onchange="renderPipeline()"> 入社</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="zaiseki" checked onchange="renderPipeline()"> 在籍</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="stock" checked onchange="renderPipeline()"> 工場ストック</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="ng" checked onchange="renderPipeline()"> NG</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="black" checked onchange="renderPipeline()"> ブラック</label>
+          <div style="margin-top:8px;display:flex;gap:6px">
+            <button onclick="selectAllStages(true)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;cursor:pointer">全選択</button>
+            <button onclick="selectAllStages(false)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;cursor:pointer">全解除</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-refresh" style="background:#4527a0" onclick="abrirFilterPanel()">詳細フィルター<span class="filter-badge" id="filterBadge">0</span></button>
       <div class="user-info">
         <span id="userNome"></span>
         <button class="btn-logout" onclick="fazerLogout()">ログアウト</button>
@@ -127,28 +149,6 @@
         <option value="N2 60%〜（中級会話）">N2</option>
         <option value="N1 80%〜（上級会話）">N1</option>
       </select>
-      <div style="position:relative">
-        <button class="btn-refresh" style="background:#5e35b1" onclick="toggleStageFilter()">ステージ ▾</button>
-        <div id="stageFilterBox" style="display:none;position:absolute;top:32px;right:0;background:white;border:1px solid #ddd;border-radius:6px;padding:10px;z-index:50;min-width:160px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
-          <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px">表示ステージ</div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="renrakumae" checked onchange="renderPipeline()"> 連絡前</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="taiochu" checked onchange="renderPipeline()"> 対応中</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="mensetsu" checked onchange="renderPipeline()"> 面接</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="kentouchu" checked onchange="renderPipeline()"> 検討中</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="kengaku" checked onchange="renderPipeline()"> 見学・ヒアリング</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="naitei" checked onchange="renderPipeline()"> 内定</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="nyusha" checked onchange="renderPipeline()"> 入社</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="zaiseki" checked onchange="renderPipeline()"> 在籍</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="stock" checked onchange="renderPipeline()"> 工場ストック</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="ng" checked onchange="renderPipeline()"> NG</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="black" checked onchange="renderPipeline()"> ブラック</label>
-          <div style="margin-top:8px;display:flex;gap:6px">
-            <button onclick="selectAllStages(true)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;cursor:pointer">全選択</button>
-            <button onclick="selectAllStages(false)" style="font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:3px;cursor:pointer">全解除</button>
-          </div>
-        </div>
-      </div>
-      <button class="btn-refresh" style="background:#4527a0" onclick="abrirFilterPanel()">詳細フィルター<span class="filter-badge" id="filterBadge">0</span></button>
       <button class="btn-refresh btn-print-export" style="background:#2e7d32" onclick="imprimirPDF()">PDF印刷</button>
       <button class="btn-refresh btn-print-export" style="background:#8e24aa" onclick="abrirPdfColModal()">項目選択印刷</button>
       <button class="btn-refresh btn-print-export" style="background:#1b5e20" onclick="abrirPdfColModal()">Excel出力</button>
