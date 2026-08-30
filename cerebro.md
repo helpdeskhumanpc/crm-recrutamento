@@ -215,6 +215,9 @@ mensetsu_hora         time          -- 面接時間
 dt_kengaku            date          -- 見学日
 dt_naitei             date          -- 内定
 dt_nyusha             date          -- 入社
+dt_zaiseki            date          -- 在籍 (adicionado 2026-08-25). Opcional — se vazio, 在籍 continua sendo
+                                     -- calculado automaticamente por mês (dt_nyusha em mês anterior ao atual).
+                                     -- Preenchido manualmente = marca 在籍 na hora, sem esperar o mês virar.
 dt_stock              date          -- 工場ストック
 dt_stock_geral        date          -- 全体ストック (libera candidato p/ pool 全体ストック, qualquer fábrica pode assumir)
 dt_ng                 date          -- NG
@@ -1001,7 +1004,9 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Topbar dividido em duas linhas (antes tudo numa fileira só, quebrava desorganizado conforme a largura da tela): linha 1 = título/versão, abas, usuário/logout; linha 2 = busca, período, filtros rápidos, ステージ▾, 詳細フィルター, PDF印刷/項目選択印刷/Excel出力, 更新. Nova classe `.topbar-row` (mobile e force-mobile ajustados pra manter o `flex-wrap:nowrap` que só existia no `#topbar` antes) |
 | 2026-08-25 | Campo de busca do topbar destacado visualmente (borda laranja, fundo levemente colorido, ícone 🔍 no placeholder, mais largo — 260px) pra ficar fácil de localizar; ajustado também no modo escuro (antes ia junto com o cinza padrão dos outros filtros) |
 | 2026-08-25 | Busca do topbar passa a considerar também `numero_cadastro` (番号), não só 氏名/電話番号 — vale tanto pro 状況 (`getFiltrados()`) quanto pra Leads do Site (`getLeadsFiltrados()`) |
-| 2026-08-25 | **Movimentação em massa no 状況** — barra nova (`#bulkActionBar`) aparece quando ≥1 candidato está com o checkbox marcado (reaproveita os checkboxes que já existiam pra seleção de impressão), com um dropdown de etapa-destino + botão 実行. Permite tanto avançar quanto **voltar** candidatos de etapa — voltar apaga automaticamente o(s) campo(s) de tudo que está mais avançado que o destino na ordem `STAGE_CHAIN` (NG > ストック > 入社 > 内定 > 見学・ヒアリング > 検討中 > 面接 > 対応中), e sempre desmarca ブラック se estiver marcado (senão a etapa não mudaria visualmente, já que `getStage()` prioriza ブラック acima de tudo). Ideia original era drag-and-drop, mas o Eder não conseguiu usar bem arrastando — foi pra esse caminho de seleção+botão em vez disso. Regra de confirmação (popup em japonês): 1 pessoa avançando = sem popup (igual aos botões individuais que já existiam); 1 pessoa voltando = popup avisando que vai apagar data; grupo (2+), qualquer direção = sempre popup, com contagem de quantos avançam/voltam quando for misto. Update é em lote (`'.in(id, ids)`, um único payload pra todo mundo, já que a lógica de "limpar tudo acima do alvo" não depende do estado atual de cada um) |
+| 2026-08-25 | **Movimentação em massa no 状況** — barra nova (`#bulkActionBar`) aparece quando ≥1 candidato está com o checkbox marcado (reaproveita os checkboxes que já existiam pra seleção de impressão), com um dropdown de etapa-destino + botão 実行. Permite tanto avançar quanto **voltar** candidatos de etapa — voltar apaga automaticamente o(s) campo(s) de tudo que está mais avançado que o destino na ordem `STAGE_CHAIN` (NG > ストック > 在籍 > 入社 > 内定 > 見学・ヒアリング > 検討中 > 面接 > 対応中), e sempre desmarca ブラック se estiver marcado (senão a etapa não mudaria visualmente, já que `getStage()` prioriza ブラック acima de tudo). Ideia original era drag-and-drop, mas o Eder não conseguiu usar bem arrastando — foi pra esse caminho de seleção+botão em vez disso. Regra de confirmação (popup em japonês): 1 pessoa avançando = sem popup (igual aos botões individuais que já existiam); 1 pessoa voltando = popup avisando que vai apagar data; grupo (2+), qualquer direção = sempre popup, com contagem de quantos avançam/voltam quando for misto. Update é em lote (`'.in(id, ids)`, um único payload pra todo mundo, já que a lógica de "limpar tudo acima do alvo" não depende do estado atual de cada um) |
+| 2026-08-25 | ステージ▾, 詳細フィルター e depois 登録日/性別/年齢上限/日本語 movidos da linha 2 pra linha 1 do topbar (a pedido do Eder, em duas correções seguidas) — linha 1 ficou com título/abas/todos os filtros rápidos/usuário; linha 2 ficou só com busca e os botões de impressão/exportação/atualizar |
+| 2026-08-25 | **Coluna `dt_zaiseki` adicionada** — 在籍 deixa de depender só do cálculo automático por mês (`dt_nyusha` em mês anterior). Agora tem campo próprio no modal (在籍日, com botão 今日, logo após 入社日) e um botão **在籍** na linha da etapa 入社 no 状況 (ao lado direito, mesmo padrão dos outros botões de ação — nova classe CSS `.col-nyusha-action`, separada de `.col-nyusha` que continua servindo só pra 内定). `getStage()` checa `dt_zaiseki` primeiro; se vazio, cai no cálculo automático por mês de antes (as duas formas coexistem). `STAGE_CHAIN` ganhou entrada própria pra 在籍 (entre ストック e 入社), então também virou opção na movimentação em massa. Cor nova de botão `.btn-lead.teal` (mesma cor do card 在籍 na barra de status) |
 
 ## Sistema de Versão
 
@@ -1009,8 +1014,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.47**
-- Tags criadas até agora: `v1.00` a `v1.47`
+- Versão atual: **v1.48**
+- Tags criadas até agora: `v1.00` a `v1.48`
 
 ## Pendências
 

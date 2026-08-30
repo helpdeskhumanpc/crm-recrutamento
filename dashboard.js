@@ -90,6 +90,7 @@ const STAGES = [
 const STAGE_CHAIN = [
   { key:'ng',        label:'NG',      fields:['dt_ng'] },
   { key:'stock',     label:'工場ストック', fields:['dt_stock'] },
+  { key:'zaiseki',   label:'在籍',    fields:['dt_zaiseki'] },
   { key:'nyusha',    label:'入社',    fields:['dt_nyusha'] },
   { key:'naitei',    label:'内定',    fields:['dt_naitei'] },
   { key:'kengaku',   label:'見学・ヒアリング', fields:['dt_kengaku','kengaku_hora'] },
@@ -107,6 +108,7 @@ function getStage(c) {
   if (c.is_blacklisted) return 'black'
   if (c.dt_ng)          return 'ng'
   if (c.dt_stock)       return 'stock'
+  if (c.dt_zaiseki)     return 'zaiseki'
   if (c.dt_nyusha) {
     const now = new Date()
     const nyushaDate = new Date(c.dt_nyusha + 'T00:00:00')
@@ -126,7 +128,7 @@ function getStage(c) {
 
 function diasNaEtapa(c) {
   const stage = getStage(c)
-  const dateMap = { renrakumae: c.created_at, taiochu: c.dt_taiochu, mensetsu: c.dt_mensetsu, kentouchu: c.dt_kentouchu, kengaku: c.dt_kengaku, naitei: c.dt_naitei, nyusha: c.dt_nyusha, zaiseki: c.dt_nyusha, stock: c.dt_stock, ng: c.dt_ng, black: c.created_at }
+  const dateMap = { renrakumae: c.created_at, taiochu: c.dt_taiochu, mensetsu: c.dt_mensetsu, kentouchu: c.dt_kentouchu, kengaku: c.dt_kengaku, naitei: c.dt_naitei, nyusha: c.dt_nyusha, zaiseki: c.dt_zaiseki || c.dt_nyusha, stock: c.dt_stock, ng: c.dt_ng, black: c.created_at }
   const d = dateMap[stage]
   if (!d) return { text: '—', alert: false }
   const dias = Math.floor((Date.now() - new Date(d)) / 86400000)
@@ -496,6 +498,7 @@ const CAMPOS_PDF = [
   { key: 'kengaku_hora',          label: '見学時間',     group: 'パイプライン日付', get: c => c.kengaku_hora || '—' },
   { key: 'dt_naitei',             label: '内定日',       group: 'パイプライン日付', get: c => c.dt_naitei ? fmtDataPT(c.dt_naitei) : '—' },
   { key: 'dt_nyusha',             label: '入社日',       group: 'パイプライン日付', get: c => c.dt_nyusha ? fmtDataPT(c.dt_nyusha) : '—' },
+  { key: 'dt_zaiseki',            label: '在籍日',       group: 'パイプライン日付', get: c => c.dt_zaiseki ? fmtDataPT(c.dt_zaiseki) : '—' },
   { key: 'dt_stock',              label: '工場ストック日', group: 'パイプライン日付', get: c => c.dt_stock ? fmtDataPT(c.dt_stock) : '—' },
   { key: 'dt_stock_geral',        label: '全体ストック日', group: 'パイプライン日付', get: c => c.dt_stock_geral ? fmtDataPT(c.dt_stock_geral) : '—' },
   { key: 'dt_ng',                 label: 'NG日',        group: 'パイプライン日付', get: c => c.dt_ng ? fmtDataPT(c.dt_ng) : '—' },
@@ -876,21 +879,23 @@ function renderPipeline() {
   const stagesVisiveis = getStagesVisiveis()
   document.getElementById('pipeline').innerHTML = STAGES.filter(s => stagesVisiveis.includes(s.key)).map(stage => {
     const list = grouped[stage.key]
-    const showNyushaCol  = stage.key === 'nyusha' || stage.key === 'naitei'
+    const showNaiteiCol  = stage.key === 'naitei'
+    const showNyushaActionCol = stage.key === 'nyusha'
     const showKengakuCol = stage.key === 'kengaku'
     const showZaisekiCol = stage.key === 'zaiseki'
     const showActions4   = stage.key === 'renrakumae'
     const showMensetsuCol = stage.key === 'mensetsu'
     const showKentouchuCol = stage.key === 'kentouchu'
     const showActions3   = stage.key === 'taiochu'
-    if (showNyushaCol || showZaisekiCol) list.sort((a, b) => (a.dt_nyusha || '').localeCompare(b.dt_nyusha || ''))
+    if (showNaiteiCol || showNyushaActionCol || showZaisekiCol) list.sort((a, b) => (a.dt_nyusha || '').localeCompare(b.dt_nyusha || ''))
     if (showKengakuCol) list.sort((a, b) => (b.dt_kengaku || '').localeCompare(a.dt_kengaku || ''))
     if (stage.key === 'mensetsu') list.sort((a, b) => `${a.dt_mensetsu||'9999-99-99'} ${a.mensetsu_hora||'99:99'}`.localeCompare(`${b.dt_mensetsu||'9999-99-99'} ${b.mensetsu_hora||'99:99'}`))
     const expanded = _expandedStages.has(stage.key)
     const show = expanded ? list : list.slice(0, 5)
     const hasMore = list.length > 5 && !expanded
     let colClass = ''
-    if (showNyushaCol)       colClass = ' col-nyusha'
+    if (showNaiteiCol)       colClass = ' col-nyusha'
+    else if (showNyushaActionCol) colClass = ' col-nyusha-action'
     else if (showKengakuCol) colClass = ' col-kengaku'
     else if (showZaisekiCol) colClass = ' col-zaiseki'
     else if (showActions4)   colClass = ' col-actions4'
@@ -899,7 +904,8 @@ function renderPipeline() {
     else if (showActions3)   colClass = ' col-actions3'
 
     let extraHeader = ''
-    if (showNyushaCol)       extraHeader = '<span>入社日</span>'
+    if (showNaiteiCol)       extraHeader = '<span>入社日</span>'
+    else if (showNyushaActionCol) extraHeader = '<span>入社日</span><span>アクション</span>'
     else if (showKengakuCol) extraHeader = '<span>見学日</span><span>入社日</span><span>アクション</span>'
     else if (showZaisekiCol) extraHeader = '<span>入社日</span><span></span>'
     else if (showMensetsuCol) extraHeader = '<span>面接日</span><span>面接時間</span><span>アクション</span>'
@@ -912,8 +918,10 @@ function renderPipeline() {
         show.map(c => {
           const d = diasNaEtapa(c)
           let extraCols = ''
-          if (showNyushaCol)
+          if (showNaiteiCol)
             extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_nyusha) || '—'}</span>`
+          else if (showNyushaActionCol)
+            extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()"><button class="btn-lead teal" onclick="avancarEtapa(event,'${c.id}','dt_zaiseki')">在籍</button></span>`
           else if (showKengakuCol)
             extraCols = `<span style="font-size:11px">${fmtDataCurta(c.dt_kengaku) || '—'}</span><span style="font-size:11px">${fmtDataCurta(c.dt_nyusha) || '—'}</span><span onclick="event.stopPropagation()" style="display:flex;gap:4px;align-items:center"><button class="btn-lead red" onclick="kengakuNG(event,'${c.id}')">NG</button><button class="btn-lead green" onclick="kengakuNaitei(event,'${c.id}')">内定</button></span>`
           else if (showZaisekiCol)
@@ -1262,6 +1270,7 @@ function abrirModal(id) {
         <div class="modal-field"><label>見学時間</label><input type="time" id="f_kenghora" value="${c.kengaku_hora||''}"></div>
         <div class="modal-field"><label>内定日</label><div class="date-with-btn"><input type="date" id="f_nait" value="${c.dt_naitei||''}"><button class="btn-hoje" onclick="hoje('f_nait')">今日</button></div></div>
         <div class="modal-field"><label>入社日</label><div class="date-with-btn"><input type="date" id="f_nyu" value="${c.dt_nyusha||''}"><button class="btn-hoje" onclick="hoje('f_nyu')">今日</button></div></div>
+        <div class="modal-field"><label>在籍日</label><div class="date-with-btn"><input type="date" id="f_zaiseki" value="${c.dt_zaiseki||''}"><button class="btn-hoje" onclick="hoje('f_zaiseki')">今日</button></div></div>
         <div class="modal-field"><label>工場ストック日 <span class="info-icon" onclick="this.classList.toggle('active')">i<span class="info-tip">現在の担当工場だけのストックになります。その工場の担当者だけが見られます。</span></span></label><div class="date-with-btn"><input type="date" id="f_stock" value="${c.dt_stock||''}"><button class="btn-hoje" onclick="hoje('f_stock')">今日</button></div></div>
         <div class="modal-field"><label>全体ストック日 <span class="info-icon" onclick="this.classList.toggle('active')">i<span class="info-tip">全工場向けのストックになります。すべての工場の担当者が見て、引き受けることができます。</span></span></label><div class="date-with-btn"><input type="date" id="f_stockgeral" value="${c.dt_stock_geral||''}"><button class="btn-hoje" onclick="hoje('f_stockgeral')">今日</button></div></div>
         <div class="modal-field"><label>NG日</label><div class="date-with-btn"><input type="date" id="f_ng" value="${c.dt_ng||''}"><button class="btn-hoje" onclick="hoje('f_ng')">今日</button></div></div>
@@ -1353,6 +1362,7 @@ async function salvarCandidato() {
     kengaku_hora:         fab2Mudou ? null : (g('f_kenghora').value || null),
     dt_naitei:            fab2Mudou ? null : (g('f_nait').value    || null),
     dt_nyusha:            fab2Mudou ? null : (g('f_nyu').value     || null),
+    dt_zaiseki:           fab2Mudou ? null : (g('f_zaiseki').value || null),
     dt_stock:             fab2Mudou ? null : (g('f_stock').value   || null),
     dt_stock_geral:       fab2Mudou ? null : (g('f_stockgeral').value || g('f_ng').value || null),
     dt_ng:                fab2Mudou ? null : (g('f_ng').value      || null),
@@ -2183,9 +2193,7 @@ async function avancarEtapa(e, id, field, confirmMsg) {
 // STAGE_CHAIN.length = 連絡前 (nada preenchido, menos avançado que tudo).
 function getStageRank(c) {
   if (c.is_blacklisted) return -1
-  const stage = getStage(c)
-  const key = stage === 'zaiseki' ? 'nyusha' : stage
-  const idx = STAGE_CHAIN.findIndex(s => s.key === key)
+  const idx = STAGE_CHAIN.findIndex(s => s.key === getStage(c))
   return idx === -1 ? STAGE_CHAIN.length : idx
 }
 

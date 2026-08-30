@@ -84,6 +84,7 @@
     .col-header { display: grid; grid-template-columns: 22px 45px 140px 85px 105px 90px 85px 55px 45px 90px 55px minmax(100px, 1fr); gap: 6px; padding: 5px 16px; background: #f5f5f5; font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; }
     .candidate-row { display: grid; grid-template-columns: 22px 45px 140px 85px 105px 90px 85px 55px 45px 90px 55px minmax(100px, 1fr); gap: 6px; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; align-items: center; cursor: pointer; transition: background 0.1s; }
     .col-header.col-nyusha, .candidate-row.col-nyusha { grid-template-columns: 22px 45px 140px 85px 105px 90px 85px 55px 45px 90px 55px 90px minmax(100px, 1fr); }
+    .col-header.col-nyusha-action, .candidate-row.col-nyusha-action { grid-template-columns: 22px 45px 130px 80px 100px 85px 80px 50px 40px 85px 50px 80px 90px minmax(100px, 1fr); }
     .col-header.col-kengaku, .candidate-row.col-kengaku { grid-template-columns: 22px 45px 120px 75px 95px 75px 75px 45px 40px 75px 50px 70px 70px 140px minmax(90px, 1fr); }
     .col-header.col-zaiseki, .candidate-row.col-zaiseki { grid-template-columns: 22px 45px 130px 80px 100px 80px 80px 50px 40px 80px 50px 80px 90px minmax(100px, 1fr); }
     .col-header.col-actions4, .candidate-row.col-actions4 { grid-template-columns: 22px 45px 130px 80px 100px 80px 80px 50px 40px 80px 50px 300px minmax(100px, 1fr); }
@@ -128,6 +129,7 @@
     .btn-lead.orange { background: #e65100; color: white; }
     .btn-lead.red    { background: #c62828; color: white; }
     .btn-lead.amber  { background: #f9a825; color: white; }
+    .btn-lead.teal   { background: #00695c; color: white; }
     .lead-stage-renrakumae .lead-stage-header { background: #1e88e5; }
     .lead-stage-taiochu    .lead-stage-header { background: #f9a825; }
     .lead-stage-indicado   .lead-stage-header { background: #2e7d32; }
