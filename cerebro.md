@@ -1001,6 +1001,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Topbar dividido em duas linhas (antes tudo numa fileira só, quebrava desorganizado conforme a largura da tela): linha 1 = título/versão, abas, usuário/logout; linha 2 = busca, período, filtros rápidos, ステージ▾, 詳細フィルター, PDF印刷/項目選択印刷/Excel出力, 更新. Nova classe `.topbar-row` (mobile e force-mobile ajustados pra manter o `flex-wrap:nowrap` que só existia no `#topbar` antes) |
 | 2026-08-25 | Campo de busca do topbar destacado visualmente (borda laranja, fundo levemente colorido, ícone 🔍 no placeholder, mais largo — 260px) pra ficar fácil de localizar; ajustado também no modo escuro (antes ia junto com o cinza padrão dos outros filtros) |
 | 2026-08-25 | Busca do topbar passa a considerar também `numero_cadastro` (番号), não só 氏名/電話番号 — vale tanto pro 状況 (`getFiltrados()`) quanto pra Leads do Site (`getLeadsFiltrados()`) |
+| 2026-08-25 | **Movimentação em massa no 状況** — barra nova (`#bulkActionBar`) aparece quando ≥1 candidato está com o checkbox marcado (reaproveita os checkboxes que já existiam pra seleção de impressão), com um dropdown de etapa-destino + botão 実行. Permite tanto avançar quanto **voltar** candidatos de etapa — voltar apaga automaticamente o(s) campo(s) de tudo que está mais avançado que o destino na ordem `STAGE_CHAIN` (NG > ストック > 入社 > 内定 > 見学・ヒアリング > 検討中 > 面接 > 対応中), e sempre desmarca ブラック se estiver marcado (senão a etapa não mudaria visualmente, já que `getStage()` prioriza ブラック acima de tudo). Ideia original era drag-and-drop, mas o Eder não conseguiu usar bem arrastando — foi pra esse caminho de seleção+botão em vez disso. Regra de confirmação (popup em japonês): 1 pessoa avançando = sem popup (igual aos botões individuais que já existiam); 1 pessoa voltando = popup avisando que vai apagar data; grupo (2+), qualquer direção = sempre popup, com contagem de quantos avançam/voltam quando for misto. Update é em lote (`'.in(id, ids)`, um único payload pra todo mundo, já que a lógica de "limpar tudo acima do alvo" não depende do estado atual de cada um) |
 
 ## Sistema de Versão
 
@@ -1008,8 +1009,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.44**
-- Tags criadas até agora: `v1.00` a `v1.44`
+- Versão atual: **v1.45**
+- Tags criadas até agora: `v1.00` a `v1.45`
 
 ## Pendências
 
@@ -1025,5 +1026,4 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
   ALTER TABLE candidates ADD COLUMN dt_kentouchu date;
   ```
   Remover esta pendência assim que confirmado que a coluna existe em produção.
-- **Drag-and-drop no 状況 (só desktop, decidido em 2026-08-25)**: Eder quer poder arrastar candidato(s) entre estágios (ex: arrastar pra 面接 preenche `dt_mensetsu = hoje`, igual o botão já faz) e arrastar múltiplos selecionados de uma vez (reaproveitando os checkboxes que já existem nas linhas, hoje usados pra seleção de impressão). Confirmado que **não precisa funcionar no celular** — só desktop, o que permite usar drag-and-drop nativo do navegador em vez de precisar de uma lib externa tipo SortableJS. Ainda não implementado; falta decidir feedback visual (destacar seção de destino, indicar "N candidatos" ao arrastar seleção múltipla) e se substitui os botões atuais ou fica como opção extra.
 - **Bug de permissão silenciosa nas ações de Leads do Site**: `enviarParaFabrica`, `moverParaTaiochu`, `moverParaStock`, `moverNG` e `bloquearLead` (dashboard.js) só checam `{ error }` do retorno do Supabase — quando o RLS bloqueia um UPDATE (0 linhas afetadas por falta de permissão), o Supabase **não retorna erro**, só afeta 0 linhas. O código assume sucesso, atualiza o objeto local otimisticamente e redesenha, dando a impressão de que funcionou — o banco nunca muda de verdade, e o estado volta ao normal na próxima atualização automática ou recarregada de página. Identificado investigando por que o botão 担当者紹介 "não fazia nada" pra um usuário jimusho (causa real, nesse caso, era falta da policy de UPDATE — ver changelog 2026-08-25). Falta decidir com o Eder se vale corrigir (checar linhas afetadas e avisar com alerta quando vier zero) — ele perguntou mas ainda não confirmou.

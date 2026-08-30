@@ -84,6 +84,20 @@ const STAGES = [
   { key:'black',     label:'ブラック', cls:'stage-black'     },
 ]
 
+// Ordem do mais avançado pro menos avançado — usado pra movimentação em massa
+// (avançar/voltar). Cada entrada guarda o(s) campo(s) que marcam essa etapa;
+// "voltar" pra uma etapa apaga o(s) campo(s) de tudo que está acima dela aqui.
+const STAGE_CHAIN = [
+  { key:'ng',        label:'NG',      fields:['dt_ng'] },
+  { key:'stock',     label:'工場ストック', fields:['dt_stock'] },
+  { key:'nyusha',    label:'入社',    fields:['dt_nyusha'] },
+  { key:'naitei',    label:'内定',    fields:['dt_naitei'] },
+  { key:'kengaku',   label:'見学・ヒアリング', fields:['dt_kengaku','kengaku_hora'] },
+  { key:'kentouchu', label:'検討中',  fields:['dt_kentouchu'] },
+  { key:'mensetsu',  label:'面接',    fields:['dt_mensetsu','mensetsu_hora'] },
+  { key:'taiochu',   label:'対応中',  fields:['dt_taiochu'] },
+]
+
 function hojeISO() {
   const n = new Date()
   return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`
@@ -815,6 +829,7 @@ const _selecionadosImpressao = new Set()
 function toggleSelecaoImpressao(id, checked) {
   if (checked) _selecionadosImpressao.add(id)
   else _selecionadosImpressao.delete(id)
+  atualizarBulkActionBar()
 }
 
 function toggleSelecaoEtapa(stageKey, checked) {
@@ -823,6 +838,18 @@ function toggleSelecaoEtapa(stageKey, checked) {
     if (checked) _selecionadosImpressao.add(c.id)
     else _selecionadosImpressao.delete(c.id)
   })
+  renderPipeline()
+}
+
+function atualizarBulkActionBar() {
+  const bar = document.getElementById('bulkActionBar')
+  const n = _selecionadosImpressao.size
+  bar.style.display = n > 0 ? 'flex' : 'none'
+  document.getElementById('bulkActionCount').textContent = `${n}人選択中`
+}
+
+function limparSelecaoCandidatos() {
+  _selecionadosImpressao.clear()
   renderPipeline()
 }
 
@@ -927,6 +954,7 @@ function renderPipeline() {
       <div class="stage-body" id="body-${stage.key}">${rowsHtml}</div>
     </div>`
   }).join('')
+  atualizarBulkActionBar()
 }
 
 function toggleStage(key) { const b = document.getElementById('body-'+key); b.style.display = b.style.display === 'none' ? '' : 'none' }
@@ -2149,6 +2177,71 @@ async function avancarEtapa(e, id, field, confirmMsg) {
   const c = todosOsCandidatos.find(x => x.id === id)
   if (c) c[field] = hoje
   renderPipeline()
+}
+
+// rank: 0 = mais avançado (NG). -1 = ブラック (mais avançado que tudo).
+// STAGE_CHAIN.length = 連絡前 (nada preenchido, menos avançado que tudo).
+function getStageRank(c) {
+  if (c.is_blacklisted) return -1
+  const stage = getStage(c)
+  const key = stage === 'zaiseki' ? 'nyusha' : stage
+  const idx = STAGE_CHAIN.findIndex(s => s.key === key)
+  return idx === -1 ? STAGE_CHAIN.length : idx
+}
+
+function classificarMovimentoMassa(c, targetKey) {
+  const targetRank = STAGE_CHAIN.findIndex(s => s.key === targetKey)
+  return getStageRank(c) > targetRank ? 'backward' : 'forward'
+}
+
+// Sempre limpa tudo que está "acima" do alvo na cadeia (e o flag de ブラック) —
+// é seguro pra todo mundo, avançando ou voltando: quem já não tinha esses
+// campos preenchidos simplesmente recebe null de novo (no-op).
+function construirAtualizacaoMassa(targetKey) {
+  const targetIdx = STAGE_CHAIN.findIndex(s => s.key === targetKey)
+  const target = STAGE_CHAIN[targetIdx]
+  const updates = { [target.fields[0]]: hojeISO(), is_blacklisted: false }
+  STAGE_CHAIN.slice(0, targetIdx).forEach(s => s.fields.forEach(f => { updates[f] = null }))
+  return updates
+}
+
+async function executarMovimentacaoEmMassa() {
+  const targetKey = document.getElementById('bulkMoveTarget').value
+  if (!targetKey) { alert('移動先のステージを選んでください。'); return }
+  const target = STAGE_CHAIN.find(s => s.key === targetKey)
+  const ids = [..._selecionadosImpressao]
+  if (ids.length === 0) return
+  const candidatos = ids.map(id => todosOsCandidatos.find(c => c.id === id)).filter(Boolean)
+
+  let forwardCount = 0, backwardCount = 0
+  candidatos.forEach(c => {
+    if (classificarMovimentoMassa(c, targetKey) === 'backward') backwardCount++
+    else forwardCount++
+  })
+
+  let msg = null
+  if (candidatos.length === 1) {
+    if (backwardCount === 1) msg = `この候補者を「${target.label}」に戻します。それより後の日付（内定日など）は削除されます。よろしいですか？`
+  } else if (backwardCount === 0) {
+    msg = `${candidatos.length}人の候補者を「${target.label}」に移動しますか？`
+  } else if (forwardCount === 0) {
+    msg = `${candidatos.length}人の候補者を「${target.label}」に戻します。それより後の日付は削除されます。よろしいですか？`
+  } else {
+    msg = `${forwardCount}人が前進、${backwardCount}人が後退します（後退する候補者は、それより後の日付が削除されます）。実行しますか？`
+  }
+
+  if (msg && !confirm(msg)) return
+
+  const updates = construirAtualizacaoMassa(targetKey)
+  const { error } = await sb.from('candidates').update(updates).in('id', ids)
+  if (error) { alert('エラー: ' + error.message); return }
+  candidatos.forEach(c => Object.assign(c, updates))
+
+  _selecionadosImpressao.clear()
+  document.getElementById('bulkMoveTarget').value = ''
+  recalcularDuplicados()
+  renderPipeline()
+  carregarSidebar()
 }
 
 async function atribuirParaFabrica(id) {

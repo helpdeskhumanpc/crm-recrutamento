@@ -95,7 +95,7 @@
     <div class="topbar-row" id="topbarRow1">
       <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
       <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.44</span></h1>
+      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.45</span></h1>
       <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
       <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
       <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
@@ -187,6 +187,23 @@
     <div class="stat-card"><div class="stat-num" id="s-zaiseki" style="color:#00695c">-</div><div class="stat-label">在籍</div></div>
     <div class="stat-card"><div class="stat-num" id="s-stock" style="color:#e91e8c">-</div><div class="stat-label">工場ストック</div></div>
     <div class="stat-card"><div class="stat-num" id="s-ng" style="color:#c62828">-</div><div class="stat-label">NG</div></div>
+  </div>
+
+  <div id="bulkActionBar" style="display:none">
+    <strong id="bulkActionCount"></strong>
+    <select id="bulkMoveTarget" class="filter-select">
+      <option value="">移動先を選択</option>
+      <option value="taiochu">対応中</option>
+      <option value="mensetsu">面接</option>
+      <option value="kentouchu">検討中</option>
+      <option value="kengaku">見学・ヒアリング</option>
+      <option value="naitei">内定</option>
+      <option value="nyusha">入社</option>
+      <option value="stock">工場ストック</option>
+      <option value="ng">NG</option>
+    </select>
+    <button class="btn-refresh" style="background:#1565c0" onclick="executarMovimentacaoEmMassa()">実行</button>
+    <button class="btn-refresh" style="background:#888" onclick="limparSelecaoCandidatos()">選択解除</button>
   </div>
 
   <div id="pipeline"><div class="loading">読み込み中...</div></div>
