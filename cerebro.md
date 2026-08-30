@@ -709,7 +709,9 @@ Ordenação especial: 見学・ヒアリング済み por `dt_kengaku` decrescent
 
 ### Filtros disponíveis
 
-**Topbar:** Busca (氏名/電話), 性別, 年齢上限, 日本語レベル
+**Topbar (duas linhas desde 2026-08-25):** linha 1 = título/versão, abas (状況/カレンダー/グラフ/オーダー状況), usuário/logout; linha 2 = busca + filtros + botões (詳細フィルター, ステージ, PDF印刷, 項目選択印刷, Excel出力, 更新)
+
+Busca (氏名/電話/**番号**, desde 2026-08-25 — antes só nome e telefone), 性別, 年齢上限, 日本語レベル. Campo de busca com estilo destacado (borda laranja, placeholder com 🔍) pra ser fácil de achar.
 
 **詳細フィルター (painel):**
 日本語レベル, 年齢上限, 状況, 住居, 就業状況, 性別, 国籍, 都道府県, 可能な直, 引越し, 免許・資格, 工場経験
@@ -996,6 +998,9 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Colunas de data na tabela do 状況 (面接日/見学日/入社日) passam a mostrar só mês e dia (`8月19日`), sem o ano — estava quebrando linha na coluna estreita (`2026年8月19日`). Novo helper `fmtDataCurta()`, usado só nessas colunas da tabela; `fmtDataPT()` (com ano) continua igual em todo o resto (modal, exportação, agenda). 面接時間 também passou a cortar os segundos (`c.mensetsu_hora.slice(0,5)`), mostrando `09:06` em vez de `09:06:00` |
 | 2026-08-25 | Bug corrigido: menu ☰ (celular) não abria a sidebar pra quem tinha o estado "sidebar recolhida" salvo no navegador (`localStorage.sidebarCollapsed`, feature de desktop de 2026-08-21). Causa: `body.sidebar-collapsed #sidebar { width:0 }` (CSS.dashboard, linha ~19) nunca foi limitado ao desktop — se esse estado estivesse salvo, o menu no celular até "abria" (`.mobile-open` troca o `transform` certinho) mas ficava com `width:0; overflow:hidden`, invisível. Reproduzido e confirmado com Playwright (viewport de celular + `localStorage.sidebarCollapsed=1`: sidebar media `0px` antes da correção, `210px` depois). Corrigido com um reset de `width`/`overflow` dentro do breakpoint `@media (max-width:768px)` e do modo `force-mobile` — o recolhimento em si (desktop) continua funcionando igual, só não vaza mais pro celular |
 | 2026-08-25 | Novo estágio **検討中** criado no pipeline, entre 面接 e 見学・ヒアリング — cor âmbar (`#f9a825`, mesma já usada no botão 対応中 de Leads do Site). Botões: linha do 検討中 tem 見学/NG/ストック (igual 面接 tinha antes); linha do 面接 ganhou um 4º botão 検討中, junto dos que já existiam. Tocou em bastante coisa: `STAGES`, `getStage()` (nova checagem `dt_kentouchu` entre `dt_kengaku` e `dt_mensetsu`), `diasNaEtapa()`, nova classe `.col-kentouchu`, `.col-mensetsu` alargada (4 botões agora), caixinha nova no quadro de números do topo, checkbox novo no filtro "ステージ▾", campo novo no modal (`検討中日`, entre 面接時間 e 見学・ヒアリング日), bloqueado pra edição parcial de shokaisha (`CAMPOS_BLOQUEADOS_INFO`), nova cor em `ORDST_STAGE_COLORS` (funil de オーダー状況) e nos arrays de `renderCharts()` (グラフ), e nova coluna exportável `検討中日` no `CAMPOS_PDF`. Depende de `ALTER TABLE candidates ADD COLUMN dt_kentouchu date;` no Supabase — ver Pendências |
+| 2026-08-25 | Topbar dividido em duas linhas (antes tudo numa fileira só, quebrava desorganizado conforme a largura da tela): linha 1 = título/versão, abas, usuário/logout; linha 2 = busca, período, filtros rápidos, ステージ▾, 詳細フィルター, PDF印刷/項目選択印刷/Excel出力, 更新. Nova classe `.topbar-row` (mobile e force-mobile ajustados pra manter o `flex-wrap:nowrap` que só existia no `#topbar` antes) |
+| 2026-08-25 | Campo de busca do topbar destacado visualmente (borda laranja, fundo levemente colorido, ícone 🔍 no placeholder, mais largo — 260px) pra ficar fácil de localizar; ajustado também no modo escuro (antes ia junto com o cinza padrão dos outros filtros) |
+| 2026-08-25 | Busca do topbar passa a considerar também `numero_cadastro` (番号), não só 氏名/電話番号 — vale tanto pro 状況 (`getFiltrados()`) quanto pra Leads do Site (`getLeadsFiltrados()`) |
 
 ## Sistema de Versão
 
@@ -1003,8 +1008,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.43**
-- Tags criadas até agora: `v1.00` a `v1.42`
+- Versão atual: **v1.44**
+- Tags criadas até agora: `v1.00` a `v1.44`
 
 ## Pendências
 
@@ -1020,3 +1025,5 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
   ALTER TABLE candidates ADD COLUMN dt_kentouchu date;
   ```
   Remover esta pendência assim que confirmado que a coluna existe em produção.
+- **Drag-and-drop no 状況 (só desktop, decidido em 2026-08-25)**: Eder quer poder arrastar candidato(s) entre estágios (ex: arrastar pra 面接 preenche `dt_mensetsu = hoje`, igual o botão já faz) e arrastar múltiplos selecionados de uma vez (reaproveitando os checkboxes que já existem nas linhas, hoje usados pra seleção de impressão). Confirmado que **não precisa funcionar no celular** — só desktop, o que permite usar drag-and-drop nativo do navegador em vez de precisar de uma lib externa tipo SortableJS. Ainda não implementado; falta decidir feedback visual (destacar seção de destino, indicar "N candidatos" ao arrastar seleção múltipla) e se substitui os botões atuais ou fica como opção extra.
+- **Bug de permissão silenciosa nas ações de Leads do Site**: `enviarParaFabrica`, `moverParaTaiochu`, `moverParaStock`, `moverNG` e `bloquearLead` (dashboard.js) só checam `{ error }` do retorno do Supabase — quando o RLS bloqueia um UPDATE (0 linhas afetadas por falta de permissão), o Supabase **não retorna erro**, só afeta 0 linhas. O código assume sucesso, atualiza o objeto local otimisticamente e redesenha, dando a impressão de que funcionou — o banco nunca muda de verdade, e o estado volta ao normal na próxima atualização automática ou recarregada de página. Identificado investigando por que o botão 担当者紹介 "não fazia nada" pra um usuário jimusho (causa real, nesse caso, era falta da policy de UPDATE — ver changelog 2026-08-25). Falta decidir com o Eder se vale corrigir (checar linhas afetadas e avisar com alerta quando vier zero) — ele perguntou mas ainda não confirmou.
