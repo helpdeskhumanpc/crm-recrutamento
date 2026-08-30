@@ -709,7 +709,7 @@ Ordenação especial: 見学・ヒアリング済み por `dt_kengaku` decrescent
 
 ### Filtros disponíveis
 
-**Topbar (duas linhas desde 2026-08-25):** linha 1 = título/versão, abas (状況/カレンダー/グラフ/オーダー状況), ステージ▾, 詳細フィルター, usuário/logout; linha 2 = busca + filtros rápidos (登録日/性別/年齢上限/日本語) + PDF印刷/項目選択印刷/Excel出力/更新
+**Topbar (duas linhas desde 2026-08-25):** linha 1 = título/versão, abas (状況/カレンダー/グラフ/オーダー状況), 登録日/性別/年齢上限/日本語, ステージ▾, 詳細フィルター, usuário/logout; linha 2 = busca + PDF印刷/項目選択印刷/Excel出力/更新
 
 Busca (氏名/電話/**番号**, desde 2026-08-25 — antes só nome e telefone), 性別, 年齢上限, 日本語レベル. Campo de busca com estilo destacado (borda laranja, placeholder com 🔍) pra ser fácil de achar.
 
@@ -1009,8 +1009,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.46**
-- Tags criadas até agora: `v1.00` a `v1.46`
+- Versão atual: **v1.47**
+- Tags criadas até agora: `v1.00` a `v1.47`
 
 ## Pendências
 

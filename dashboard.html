@@ -95,11 +95,31 @@
     <div class="topbar-row" id="topbarRow1">
       <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
       <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.46</span></h1>
+      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.47</span></h1>
       <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
       <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
       <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
       <button class="tab-btn" id="btnOrderStatusTab" style="display:none" onclick="showTab('orderstatus', this)">オーダー状況</button>
+      <span id="periodoWrap" style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:12px;color:#555;font-weight:600;white-space:nowrap">登録日</span>
+        <input type="date" id="filterDtIni" class="filter-select" style="width:130px" onchange="onPeriodoChange()">
+        <span style="color:#888">〜</span>
+        <input type="date" id="filterDtFim" class="filter-select" style="width:130px" onchange="onPeriodoChange()">
+      </span>
+      <select class="filter-select" id="filterSexo" onchange="renderPipeline(); renderLeads()">
+        <option value="">性別：全て</option>
+        <option value="男性">男性</option><option value="女性">女性</option>
+      </select>
+      <input type="number" id="filterIdade" class="filter-select" placeholder="年齢上限" style="width:90px" oninput="renderPipeline(); renderLeads()">
+      <select class="filter-select" id="filterJP" onchange="renderPipeline(); renderLeads()">
+        <option value="">日本語：全て</option>
+        <option value="0%（日本語不可）">0%</option>
+        <option value="N5 10%〜（少し話せる）">N5</option>
+        <option value="N4 30%〜（基本会話）">N4</option>
+        <option value="N3 50%〜（日常会話）">N3</option>
+        <option value="N2 60%〜（中級会話）">N2</option>
+        <option value="N1 80%〜（上級会話）">N1</option>
+      </select>
       <div style="position:relative">
         <button class="btn-refresh" style="background:#5e35b1" onclick="toggleStageFilter()">ステージ ▾</button>
         <div id="stageFilterBox" style="display:none;position:absolute;top:32px;right:0;background:white;border:1px solid #ddd;border-radius:6px;padding:10px;z-index:50;min-width:160px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">
@@ -129,26 +149,6 @@
     </div>
     <div class="topbar-row" id="topbarRow2">
       <input type="text" id="searchInput" placeholder="🔍 氏名・電話番号・番号で検索" oninput="renderPipeline(); renderLeads()">
-      <span id="periodoWrap" style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:12px;color:#555;font-weight:600;white-space:nowrap">登録日</span>
-        <input type="date" id="filterDtIni" class="filter-select" style="width:130px" onchange="onPeriodoChange()">
-        <span style="color:#888">〜</span>
-        <input type="date" id="filterDtFim" class="filter-select" style="width:130px" onchange="onPeriodoChange()">
-      </span>
-      <select class="filter-select" id="filterSexo" onchange="renderPipeline(); renderLeads()">
-        <option value="">性別：全て</option>
-        <option value="男性">男性</option><option value="女性">女性</option>
-      </select>
-      <input type="number" id="filterIdade" class="filter-select" placeholder="年齢上限" style="width:90px" oninput="renderPipeline(); renderLeads()">
-      <select class="filter-select" id="filterJP" onchange="renderPipeline(); renderLeads()">
-        <option value="">日本語：全て</option>
-        <option value="0%（日本語不可）">0%</option>
-        <option value="N5 10%〜（少し話せる）">N5</option>
-        <option value="N4 30%〜（基本会話）">N4</option>
-        <option value="N3 50%〜（日常会話）">N3</option>
-        <option value="N2 60%〜（中級会話）">N2</option>
-        <option value="N1 80%〜（上級会話）">N1</option>
-      </select>
       <button class="btn-refresh btn-print-export" style="background:#2e7d32" onclick="imprimirPDF()">PDF印刷</button>
       <button class="btn-refresh btn-print-export" style="background:#8e24aa" onclick="abrirPdfColModal()">項目選択印刷</button>
       <button class="btn-refresh btn-print-export" style="background:#1b5e20" onclick="abrirPdfColModal()">Excel出力</button>
