@@ -271,6 +271,24 @@ function filtrarFabrica(fabrica, el) {
   if (document.getElementById('orderStatusView').style.display !== 'none') renderOrderStatus()
 }
 
+function atualizarDropdownShokai() {
+  const sel = document.getElementById('filterShokaiSelect')
+  if (!sel) return
+  const pool = fabricaAtiva
+    ? todosOsCandidatos.filter(c => fabricaEfetiva(c) === fabricaAtiva)
+    : todosOsCandidatos
+  const nomes = [...new Set(pool.map(c => c.shokai).filter(Boolean))].sort()
+  sel.innerHTML = '<option value="">紹介者：全て</option>' +
+    nomes.map(n => `<option value="${n}" ${n === shokaiAtivo ? 'selected' : ''}>${n}</option>`).join('')
+}
+
+function onShokaiSelectChange() {
+  shokaiAtivo = document.getElementById('filterShokaiSelect').value || null
+  renderPipeline()
+  if (document.getElementById('calendarView').style.display !== 'none') renderCalendar()
+  if (document.getElementById('chartsView').style.display   !== 'none') renderCharts()
+}
+
 function filtrarMeuShokai(el) {
   if (!currentProfile?.shokai_nome) {
     alert('プロフィールに紹介者名（shokai_nome）が設定されていません。管理者に確認してください。')
@@ -857,6 +875,7 @@ function limparSelecaoCandidatos() {
 }
 
 function renderPipeline() {
+  atualizarDropdownShokai()
   const candidatos = getFiltrados()
   const grouped = {}
   STAGES.forEach(s => grouped[s.key] = [])

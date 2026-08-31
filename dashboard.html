@@ -95,7 +95,7 @@
     <div class="topbar-row" id="topbarRow1">
       <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
       <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.48</span></h1>
+      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.49</span></h1>
       <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
       <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
       <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
@@ -149,6 +149,9 @@
     </div>
     <div class="topbar-row" id="topbarRow2">
       <input type="text" id="searchInput" placeholder="🔍 氏名・電話番号・番号で検索" oninput="renderPipeline(); renderLeads()">
+      <select class="filter-select" id="filterShokaiSelect" onchange="onShokaiSelectChange()">
+        <option value="">紹介者：全て</option>
+      </select>
       <button class="btn-refresh btn-print-export" style="background:#2e7d32" onclick="imprimirPDF()">PDF印刷</button>
       <button class="btn-refresh btn-print-export" style="background:#8e24aa" onclick="abrirPdfColModal()">項目選択印刷</button>
       <button class="btn-refresh btn-print-export" style="background:#1b5e20" onclick="abrirPdfColModal()">Excel出力</button>
