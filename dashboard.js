@@ -2280,7 +2280,11 @@ function classificarMovimentoMassa(c, targetKey) {
 function construirAtualizacaoMassa(targetKey) {
   const targetIdx = STAGE_CHAIN.findIndex(s => s.key === targetKey)
   const target = STAGE_CHAIN[targetIdx]
-  const updates = { [target.fields[0]]: hojeISO(), is_blacklisted: false }
+  // dt_stock_geral (全体ストック) não faz parte do STAGE_CHAIN — não decide a etapa
+  // (getStage() nem olha pra ele), só controla se o candidato aparece no pool
+  // 全体ストック Pool. Precisa ser limpo à parte, senão ele fica preso lá mesmo
+  // saindo de NG/ストック pra qualquer outra etapa.
+  const updates = { [target.fields[0]]: hojeISO(), is_blacklisted: false, dt_stock_geral: null }
   STAGE_CHAIN.slice(0, targetIdx).forEach(s => s.fields.forEach(f => { updates[f] = null }))
   return updates
 }
