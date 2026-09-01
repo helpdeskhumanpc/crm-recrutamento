@@ -45,6 +45,7 @@ if (window.innerWidth > 768) {
 let todosOsCandidatos = []
 let todasFabricas = []
 let todasLocations = []
+let nomeParaJimusho = {} // shokai (nome) -> jimusho, combinando shokaisha + perfis_publicos
 let fabricaAtiva = null
 let shokaiAtivo = null
 let jimushoAtivo = false
@@ -151,13 +152,18 @@ async function carregarDados() {
   document.getElementById('pipeline').innerHTML = '<div class="loading">読み込み中...</div>'
   let locQuery = sb.from('locations').select('id,nome,jimusho,order_atual,naitei_atual').eq('tipo', '工場').order('nome')
   if (currentProfile?.role !== 'admin') locQuery = locQuery.eq('ativo', true)
-  const [res1, res2] = await Promise.all([
+  const [res1, res2, res3, res4] = await Promise.all([
     sb.from('candidates').select('*').eq('is_deleted', false).order('created_at', { ascending: false }),
-    locQuery
+    locQuery,
+    sb.from('shokaisha').select('nome,jimusho'),
+    sb.from('perfis_publicos').select('nome,jimusho,shokai_nome'),
   ])
   todosOsCandidatos = res1.data || []
   todasLocations    = res2.data || []
   todasFabricas     = todasLocations.map(f => f.nome)
+  nomeParaJimusho = {}
+  ;(res3.data || []).forEach(s => { if (s.nome && s.jimusho) nomeParaJimusho[s.nome] = s.jimusho })
+  ;(res4.data || []).forEach(p => { if (p.shokai_nome && p.jimusho) nomeParaJimusho[p.shokai_nome] = p.jimusho })
   recalcularDuplicados()
   carregarSidebar()
   carregarCalFabricaFilter()
@@ -1826,41 +1832,90 @@ function renderCharts() {
     options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
   })
 
-  // Por fábrica (só geral)
-  if (!fab) {
-    const fabMap = {}
-    candidatosValidos.forEach(c => { const f = fabricaEfetiva(c); if (f) fabMap[f] = (fabMap[f] || 0) + 1 })
-    const fabLabels = Object.keys(fabMap).sort((a,b) => fabMap[b] - fabMap[a])
-    const fabCounts = fabLabels.map(f => fabMap[f])
-    destroyChart('chartFabrica')
-    chartInstances['chartFabrica'] = new Chart(document.getElementById('chartFabrica'), {
-      type: 'bar',
-      data: { labels: fabLabels, datasets: [{ data: fabCounts, backgroundColor: '#1e88e5', borderRadius: 4 }] },
-      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
-    })
-  }
-
-  // Por mês
-  const mesMap = {}
-  dados.forEach(c => {
-    const m = c.created_at?.slice(0, 7)
-    if (m) mesMap[m] = (mesMap[m] || 0) + 1
-  })
-  const mesLabels = Object.keys(mesMap).sort()
-  destroyChart('chartMes')
-  chartInstances['chartMes'] = new Chart(document.getElementById('chartMes'), {
-    type: 'line',
-    data: { labels: mesLabels, datasets: [{ data: mesLabels.map(m => mesMap[m]), borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.1)', fill: true, tension: 0.3, pointRadius: 4 }] },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
-  })
-
-  // Ranking 紹介者 (barra empilhada por grupo de etapa, em vez das 10 etapas soltas)
+  // Grupos usados tanto no gráfico por escritório quanto no ranking por 紹介者
   const GRUPOS_SHOKAI = [
     { label: '進行中',      color: '#1e88e5', stages: ['renrakumae','taiochu','mensetsu','kengaku'] },
     { label: '成約',        color: '#2e7d32', stages: ['naitei','nyusha','zaiseki'] },
     { label: 'ストック',     color: '#f9a825', stages: ['stock'] },
     { label: 'NG・ブラック', color: '#c62828', stages: ['ng','black'] },
   ]
+
+  // Por escritório (só geral) — mesma ideia do ranking 紹介者, mas agrupado por jimusho.
+  // Candidato sem shokai reconhecido (nome não bate com shokaisha nem perfis_publicos,
+  // inclusive o valor genérico da empresa) cai em その他.
+  if (!fab) {
+    const jmMap = {}
+    const jmGrupoMap = {}
+    candidatosValidos.forEach(c => {
+      const jm = nomeParaJimusho[c.shokai] || 'その他'
+      jmMap[jm] = (jmMap[jm] || 0) + 1
+      if (!jmGrupoMap[jm]) jmGrupoMap[jm] = {}
+      const stg = getStage(c)
+      const grupo = GRUPOS_SHOKAI.find(g => g.stages.includes(stg)) || GRUPOS_SHOKAI[0]
+      jmGrupoMap[jm][grupo.label] = (jmGrupoMap[jm][grupo.label] || 0) + 1
+    })
+    const jmLabels = Object.keys(jmMap).sort((a,b) => jmMap[b] - jmMap[a])
+    destroyChart('chartJimusho')
+    chartInstances['chartJimusho'] = new Chart(document.getElementById('chartJimusho'), {
+      type: 'bar',
+      data: {
+        labels: jmLabels,
+        datasets: GRUPOS_SHOKAI.map(g => ({
+          label: g.label,
+          data: jmLabels.map(j => jmGrupoMap[j]?.[g.label] || 0),
+          backgroundColor: g.color,
+        })),
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+        scales: {
+          x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+          y: { stacked: true, ticks: { autoSkip: false } },
+        }
+      }
+    })
+  }
+
+  // Por dia (período curto, até 45 dias) ou por semana (período mais longo)
+  const diasMap = {}
+  dados.forEach(c => {
+    const d = c.created_at?.slice(0, 10)
+    if (d) diasMap[d] = (diasMap[d] || 0) + 1
+  })
+  const diasOrdenados = Object.keys(diasMap).sort()
+  let periodoLabels = [], periodoCounts = [], periodoTitulo = '日別 応募数'
+  if (diasOrdenados.length) {
+    const primeiro = new Date(diasOrdenados[0] + 'T00:00:00')
+    const ultimo   = new Date(diasOrdenados[diasOrdenados.length - 1] + 'T00:00:00')
+    const spanDias = Math.round((ultimo - primeiro) / 86400000)
+    if (spanDias <= 45) {
+      periodoTitulo  = '日別 応募数'
+      periodoLabels  = diasOrdenados.map(d => { const dt = new Date(d + 'T00:00:00'); return `${dt.getMonth()+1}/${dt.getDate()}` })
+      periodoCounts  = diasOrdenados.map(d => diasMap[d])
+    } else {
+      periodoTitulo = '週別 応募数'
+      const semanaMap = {}
+      diasOrdenados.forEach(d => {
+        const dt = new Date(d + 'T00:00:00')
+        const inicioSemana = new Date(dt); inicioSemana.setDate(dt.getDate() - dt.getDay())
+        const key = `${inicioSemana.getFullYear()}-${String(inicioSemana.getMonth()+1).padStart(2,'0')}-${String(inicioSemana.getDate()).padStart(2,'0')}`
+        semanaMap[key] = (semanaMap[key] || 0) + diasMap[d]
+      })
+      const semanasOrdenadas = Object.keys(semanaMap).sort()
+      periodoLabels = semanasOrdenadas.map(s => { const dt = new Date(s + 'T00:00:00'); return `${dt.getMonth()+1}/${dt.getDate()}〜` })
+      periodoCounts = semanasOrdenadas.map(s => semanaMap[s])
+    }
+  }
+  document.getElementById('chartMesTitulo').textContent = periodoTitulo
+  destroyChart('chartMes')
+  chartInstances['chartMes'] = new Chart(document.getElementById('chartMes'), {
+    type: 'line',
+    data: { labels: periodoLabels, datasets: [{ data: periodoCounts, borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.1)', fill: true, tension: 0.3, pointRadius: 0 }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  })
+
+  // Ranking 紹介者 (barra empilhada por grupo de etapa, em vez das 10 etapas soltas)
   const shMap = {}      // total por shokai, so pra ordenar o ranking
   const shGrupoMap = {} // shokai -> { grupoLabel: count }
   dados.forEach(c => {

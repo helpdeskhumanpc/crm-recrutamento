@@ -95,7 +95,7 @@
     <div class="topbar-row" id="topbarRow1">
       <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
       <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.50</span></h1>
+      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.51</span></h1>
       <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
       <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
       <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
@@ -258,15 +258,15 @@
         <canvas id="chartFunil"></canvas>
       </div>
       <div class="chart-card" id="cardFabrica">
-        <h3>工場別 候補者数</h3>
-        <canvas id="chartFabrica"></canvas>
+        <h3>事務所別 候補者数</h3>
+        <canvas id="chartJimusho"></canvas>
       </div>
     </div>
 
-    <!-- Entradas por mês + Ranking 紹介者 -->
+    <!-- Entradas por dia/semana + Ranking 紹介者 -->
     <div class="charts-row charts-row-2">
       <div class="chart-card">
-        <h3>月別 応募数</h3>
+        <h3 id="chartMesTitulo">日別 応募数</h3>
         <canvas id="chartMes"></canvas>
       </div>
       <div class="chart-card">

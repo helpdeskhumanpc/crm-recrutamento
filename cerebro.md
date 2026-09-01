@@ -373,6 +373,17 @@ created_at  timestamp with time zone default now()
 
 **Escritórios:** 刈谷事務所, 三重事務所, 豊橋事務所, 浜松事務所, 小牧事務所, 埼玉事務所
 
+### `perfis_publicos` — view (adicionada 2026-08-25)
+
+```sql
+create view public.perfis_publicos as
+select id, nome, jimusho, shokai_nome from public.profiles;
+
+grant select on public.perfis_publicos to authenticated;
+```
+
+Espelho só-leitura de `profiles`, sem os campos sensíveis (`role`, `fabricas`) — criada porque o RLS de `profiles` só deixa cada usuário ler o próprio perfil (`auth.uid() = id`), e o dashboard precisava descobrir o `jimusho` de **qualquer** usuário (não só o logado) pra montar o gráfico "事務所別 候補者数". Como view roda com os privilégios de quem criou (não do usuário que consulta), ela contorna o RLS de `profiles` só pra esses 3 campos, mantendo o resto da tabela protegido. Usada junto com `shokaisha` (`dashboard.js`, `nomeParaJimusho`) pra montar o mapa nome→escritório: `shokaisha.nome`/`jimusho` cobre a maioria (nomes cadastrados sem login), `perfis_publicos.shokai_nome`/`jimusho` cobre quem indica com login próprio (tantousha/jimusho usando o link de afiliado).
+
 ---
 
 ## Supabase — Políticas RLS
@@ -1009,6 +1020,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | **Coluna `dt_zaiseki` adicionada** — 在籍 deixa de depender só do cálculo automático por mês (`dt_nyusha` em mês anterior). Agora tem campo próprio no modal (在籍日, com botão 今日, logo após 入社日) e um botão **在籍** na linha da etapa 入社 no 状況 (ao lado direito, mesmo padrão dos outros botões de ação — nova classe CSS `.col-nyusha-action`, separada de `.col-nyusha` que continua servindo só pra 内定). `getStage()` checa `dt_zaiseki` primeiro; se vazio, cai no cálculo automático por mês de antes (as duas formas coexistem). `STAGE_CHAIN` ganhou entrada própria pra 在籍 (entre ストック e 入社), então também virou opção na movimentação em massa. Cor nova de botão `.btn-lead.teal` (mesma cor do card 在籍 na barra de status) |
 | 2026-08-25 | Bug corrigido: agenda de eventos por dia (`renderOrdstAgenda` em オーダー状況, e `agendaList` no calendário mobile) não ordenava os eventos por horário — hora aparecia solta na ordem que os candidatos foram carregados. Corrigido ordenando por `hora` (`'99:99'` como fallback pra eventos sem horário — 入社/アラート —, que ficam no fim do dia) antes de renderizar |
 | 2026-08-25 | **Dropdown de filtro por 紹介者 (shokai)** adicionado no topbar, ao lado direito da busca (`#filterShokaiSelect`) — reaproveita a variável global `shokaiAtivo` que já existia (usada por マイ紹介/`filtrarMeuShokai`) e a condição que `getFiltrados()` já aplicava, então não precisou de query nova nem de mudança no filtro em si. As opções do dropdown são recalculadas em `atualizarDropdownShokai()`, chamada no início de `renderPipeline()` — mostra só nomes de quem já indicou candidato **pra fábrica ativa** (`fabricaEfetiva(c) === fabricaAtiva`); com "全体" selecionado (nenhuma fábrica ativa), mostra todos. Tudo em memória sobre `todosOsCandidatos`, sem custo perceptível. Escondido no mobile, igual aos outros filtros rápidos (`#filterSexo`, `#filterIdade`, `#filterJP`) |
+| 2026-08-25 | **グラフ: "工場別 候補者数" virou "事務所別 候補者数"** — barra empilhada horizontal nos mesmos 4 grupos do ranking 紹介者 (進行中/成約/ストック/NG・ブラック — `GRUPOS_SHOKAI`, movido pro topo de `renderCharts()` pra ser reaproveitado pelos dois gráficos), agora agrupado por escritório em vez de por fábrica. Usa `nomeParaJimusho` (mapa `shokai → jimusho`, montado em `carregarDados()` juntando `shokaisha` + a view nova `perfis_publicos`); quem não bate com nenhuma das duas fontes cai em **その他**. De brinde, corrigiu um bug pré-existente (já anotado no changelog de 2026-08-21, "erro de console Failed to create chart"): o `id="chartFabrica"` era usado tanto no `<select>` do filtro quanto no `<canvas>` do gráfico — `getElementById` sempre pegava o select (primeiro no DOM), então o Chart.js tentava desenhar dentro do select e falhava silenciosamente. O canvas novo se chama `chartJimusho`, sem colisão |
+| 2026-08-25 | **グラフ: "月別 応募数" virou "日別 応募数" (ou "週別" se o período for longo)** — agrupa por dia (`created_at.slice(0,10)`) em vez de por mês; se o período coberto pelos dados passar de 45 dias, agrupa por semana em vez de dia pra não poluir o eixo (`spanDias`, calculado a partir do primeiro/último dia com dado). Título do card (`#chartMesTitulo`) muda de texto dinamicamente conforme o modo. Pontos da linha removidos (`pointRadius: 0`), a pedido do Eder |
 
 ## Sistema de Versão
 
@@ -1016,8 +1029,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.50**
-- Tags criadas até agora: `v1.00` a `v1.50`
+- Versão atual: **v1.51**
+- Tags criadas até agora: `v1.00` a `v1.51`
 
 ## Pendências
 
