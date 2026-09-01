@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Formulário de Cadastro</title>
+  <title>Job Application Form</title>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -45,191 +45,205 @@
 <div class="form-container">
   <form id="vagaForm">
 
-    <!-- DADOS PESSOAIS -->
-    <div class="section-title">Dados Pessoais</div>
+    <!-- PERSONAL INFORMATION -->
+    <div class="section-title">Personal Information</div>
 
     <div class="form-group">
-      <label>Nome completo <span class="required">*</span></label>
-      <input type="text" name="shimei" required placeholder="Ex: João Silva">
+      <label>Full name <span class="required">*</span></label>
+      <input type="text" name="shimei" required placeholder="Ex: John Smith">
     </div>
 
     <div class="form-row">
       <div>
-        <label>Telefone <span class="required">*</span></label>
+        <label>Phone number <span class="required">*</span></label>
         <input type="tel" name="telefone" required placeholder="090-1234-5678">
       </div>
       <div>
-        <label>Data de nascimento</label>
+        <label>Date of birth</label>
         <input type="date" name="data_nascimento">
       </div>
     </div>
 
     <div class="form-row-3">
       <div>
-        <label>Idade <span class="required">*</span></label>
+        <label>Age <span class="required">*</span></label>
         <input type="number" name="idade" required placeholder="30" min="16" max="99">
       </div>
       <div>
-        <label>Gênero <span class="required">*</span></label>
+        <label>Gender <span class="required">*</span></label>
         <select name="sexo" required>
-          <option value="">Selecione</option>
-          <option value="男性">Homem</option>
-          <option value="女性">Mulher</option>
-          <option value="その他">Outro</option>
+          <option value="">Select</option>
+          <option value="男性">Male</option>
+          <option value="女性">Female</option>
+          <option value="その他">Other</option>
         </select>
       </div>
       <div>
-        <label>Nacionalidade <span class="required">*</span></label>
-        <input type="text" name="nacionalidade" required placeholder="Brasileiro">
+        <label>Nationality <span class="required">*</span></label>
+        <select name="nacionalidade_select" id="nacSelect" required onchange="toggleNacOther()">
+          <option value="">Select</option>
+          <option value="Philippines">Philippines</option>
+          <option value="Vietnam">Vietnam</option>
+          <option value="China">China</option>
+          <option value="Indonesia">Indonesia</option>
+          <option value="Nepal">Nepal</option>
+          <option value="Myanmar">Myanmar</option>
+          <option value="Sri Lanka">Sri Lanka</option>
+          <option value="Thailand">Thailand</option>
+          <option value="Mongolia">Mongolia</option>
+          <option value="Peru">Peru</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="text" name="nacionalidade_outro" id="nacOutro" placeholder="Please specify" style="display:none;margin-top:8px">
       </div>
     </div>
 
-    <!-- ENDEREÇO -->
-    <div class="section-title">Endereço</div>
+    <!-- ADDRESS -->
+    <div class="section-title">Address</div>
 
     <div class="form-row">
       <div>
-        <label>CEP (〒)</label>
+        <label>Postal code (〒)</label>
         <input type="text" name="postal_code" placeholder="123-4567">
       </div>
       <div>
-        <label>Província <span class="required">*</span></label>
+        <label>Prefecture <span class="required">*</span></label>
         <input type="text" name="prefecture" required placeholder="Ex: Aichi">
       </div>
     </div>
 
     <div class="form-group">
-      <label>Cidade <span class="required">*</span></label>
+      <label>City <span class="required">*</span></label>
       <input type="text" name="city" required placeholder="Ex: Okazaki">
     </div>
 
-    <!-- DOCUMENTAÇÃO -->
-    <div class="section-title">Documentação</div>
+    <!-- DOCUMENTATION -->
+    <div class="section-title">Documentation</div>
 
     <div class="form-group">
-      <label>Tipo de visto <span class="required">*</span></label>
+      <label>Visa type <span class="required">*</span></label>
       <select name="visa" required>
-        <option value="">Selecione</option>
-        <option value="永住者">Residente permanente</option>
-        <option value="日本人の配偶者">Cônjuge de japonês</option>
-        <option value="永住者の配偶者または子">Cônjuge/filho de residente permanente</option>
-        <option value="定住者（1・3・5年）">Residente fixo (1/3/5 anos)</option>
-        <option value="家族滞在">Dependente familiar</option>
-        <option value="留学">Estudante</option>
-        <option value="日本国籍">Cidadão japonês</option>
-        <option value="特定活動">Atividade específica</option>
+        <option value="">Select</option>
+        <option value="永住者">Permanent resident</option>
+        <option value="日本人の配偶者">Spouse of Japanese national</option>
+        <option value="永住者の配偶者または子">Spouse/child of permanent resident</option>
+        <option value="定住者（1・3・5年）">Long-term resident (1/3/5 years)</option>
+        <option value="家族滞在">Family dependent</option>
+        <option value="留学">Student</option>
+        <option value="日本国籍">Japanese citizen</option>
+        <option value="特定活動">Designated activities</option>
       </select>
     </div>
 
-    <!-- DISPONIBILIDADE -->
-    <div class="section-title">Disponibilidade</div>
+    <!-- AVAILABILITY -->
+    <div class="section-title">Availability</div>
 
     <div class="form-row-3">
       <div>
-        <label>Precisa de moradia? <span class="required">*</span></label>
+        <label>Need housing? <span class="required">*</span></label>
         <select name="precisa_apartamento" required>
-          <option value="">Selecione</option>
-          <option value="true">Sim, preciso</option>
-          <option value="false">Não preciso</option>
+          <option value="">Select</option>
+          <option value="true">Yes, I need it</option>
+          <option value="false">No, I don't</option>
         </select>
       </div>
       <div>
-        <label>Pode se mudar?</label>
+        <label>Can you relocate?</label>
         <select name="pode_mudar">
-          <option value="true">Sim</option>
-          <option value="false">Não</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
         </select>
       </div>
       <div>
-        <label>Possui carro?</label>
+        <label>Do you have a car?</label>
         <select name="tem_carro">
-          <option value="false">Não</option>
-          <option value="true">Sim</option>
+          <option value="false">No</option>
+          <option value="true">Yes</option>
         </select>
       </div>
     </div>
 
     <div class="form-group">
-      <label>Situação atual de trabalho</label>
+      <label>Current work situation</label>
       <select name="esta_empregado">
-        <option value="在職中">Empregado</option>
-        <option value="離職中">Desempregado</option>
-        <option value="アルバイト中">Meio período</option>
-        <option value="退職予定（予告期間中）">Com aviso prévio</option>
-        <option value="無職">Sem trabalho</option>
+        <option value="在職中">Employed</option>
+        <option value="離職中">Unemployed</option>
+        <option value="アルバイト中">Part-time</option>
+        <option value="退職予定（予告期間中）">Giving notice</option>
+        <option value="無職">No job</option>
       </select>
     </div>
 
     <hr class="divider">
 
-    <!-- TURNOS -->
+    <!-- SHIFTS -->
     <div class="form-group">
-      <label style="margin-bottom:10px">Turnos disponíveis</label>
+      <label style="margin-bottom:10px">Available shifts</label>
       <div class="checkbox-grid">
-        <label><input type="checkbox" name="turnos_possiveis" value="二交代"> 2 Turnos (二交代)</label>
-        <label><input type="checkbox" name="turnos_possiveis" value="早番遅番"> Manhã/Tarde (早番遅番)</label>
-        <label><input type="checkbox" name="turnos_possiveis" value="二直三班"> 2 Turnos 3 Times (二直三班)</label>
-        <label><input type="checkbox" name="turnos_possiveis" value="昼勤のみ"> Somente diurno (昼勤のみ)</label>
+        <label><input type="checkbox" name="turnos_possiveis" value="二交代"> 2-shift rotation</label>
+        <label><input type="checkbox" name="turnos_possiveis" value="早番遅番"> Early/late shift</label>
+        <label><input type="checkbox" name="turnos_possiveis" value="二直三班"> 2-shift / 3-team system</label>
+        <label><input type="checkbox" name="turnos_possiveis" value="昼勤のみ"> Day shift only</label>
       </div>
     </div>
 
     <hr class="divider">
 
-    <!-- HABILITAÇÕES -->
+    <!-- LICENSES -->
     <div class="form-group">
-      <label style="margin-bottom:10px">Habilitações e licenças</label>
+      <label style="margin-bottom:10px">Licenses and qualifications</label>
       <div class="checkbox-grid">
-        <label><input type="checkbox" name="habilitacao" value="所持なし"> Não possuo</label>
-        <label><input type="checkbox" name="habilitacao" value="普通自動車"> Carro (普通自動車)</label>
-        <label><input type="checkbox" name="habilitacao" value="バイク"> Moto (バイク)</label>
-        <label><input type="checkbox" name="habilitacao" value="フォークリフト"> Empilhadeira (フォークリフト)</label>
-        <label><input type="checkbox" name="habilitacao" value="玉掛け"> Tamakake (玉掛け)</label>
-        <label><input type="checkbox" name="habilitacao" value="クレーン"> Guindaste (クレーン)</label>
-        <label><input type="checkbox" name="habilitacao" value="溶接"> Soldagem (溶接)</label>
+        <label><input type="checkbox" name="habilitacao" value="所持なし"> None</label>
+        <label><input type="checkbox" name="habilitacao" value="普通自動車"> Driver's license (car)</label>
+        <label><input type="checkbox" name="habilitacao" value="バイク"> Motorcycle license</label>
+        <label><input type="checkbox" name="habilitacao" value="フォークリフト"> Forklift license</label>
+        <label><input type="checkbox" name="habilitacao" value="玉掛け"> Slinging (Tamakake)</label>
+        <label><input type="checkbox" name="habilitacao" value="クレーン"> Crane license</label>
+        <label><input type="checkbox" name="habilitacao" value="溶接"> Welding license</label>
       </div>
     </div>
 
     <hr class="divider">
 
-    <!-- EXPERIÊNCIA -->
+    <!-- EXPERIENCE -->
     <div class="form-group">
-      <label style="margin-bottom:10px">Experiência em fábrica</label>
+      <label style="margin-bottom:10px">Factory experience</label>
       <div class="checkbox-grid">
-        <label><input type="checkbox" name="experiencia" value="経験なし"> Sem experiência</label>
-        <label><input type="checkbox" name="experiencia" value="組み立て（くみたて）"> Montagem (kumitate)</label>
-        <label><input type="checkbox" name="experiencia" value="自動車部品"> Autopeças (jidosha buhin)</label>
-        <label><input type="checkbox" name="experiencia" value="食品"> Alimentícios (shokuhin)</label>
-        <label><input type="checkbox" name="experiencia" value="電子部品"> Eletrônicos (denshi)</label>
-        <label><input type="checkbox" name="experiencia" value="フォークリフト"> Empilhadeira (forklift)</label>
-        <label><input type="checkbox" name="experiencia" value="玉掛け"> Tamakake</label>
-        <label><input type="checkbox" name="experiencia" value="検査"> Inspeção (kensa)</label>
-        <label><input type="checkbox" name="experiencia" value="梱包"> Embalagem (konpo)</label>
-        <label><input type="checkbox" name="experiencia" value="プレス"> Prensa (punisu)</label>
-        <label><input type="checkbox" name="experiencia" value="溶接"> Soldagem (yosetsu)</label>
-        <label><input type="checkbox" name="experiencia" value="塗装"> Pintura (toso)</label>
-        <label><input type="checkbox" name="experiencia" value="建設"> Construção civil (kensetsu)</label>
-        <label><input type="checkbox" name="experiencia" value="物流"> Logística (butsuryu)</label>
-        <label><input type="checkbox" name="experiencia" value="コンビニ"> Konbini</label>
-        <label><input type="checkbox" name="experiencia" value="スーパー"> Supermercado</label>
+        <label><input type="checkbox" name="experiencia" value="経験なし"> No experience</label>
+        <label><input type="checkbox" name="experiencia" value="組み立て（くみたて）"> Assembly (Kumitate)</label>
+        <label><input type="checkbox" name="experiencia" value="自動車部品"> Auto parts</label>
+        <label><input type="checkbox" name="experiencia" value="食品"> Food products</label>
+        <label><input type="checkbox" name="experiencia" value="電子部品"> Electronics</label>
+        <label><input type="checkbox" name="experiencia" value="フォークリフト"> Forklift</label>
+        <label><input type="checkbox" name="experiencia" value="玉掛け"> Slinging (Tamakake)</label>
+        <label><input type="checkbox" name="experiencia" value="検査"> Inspection (Kensa)</label>
+        <label><input type="checkbox" name="experiencia" value="梱包"> Packaging (Konpo)</label>
+        <label><input type="checkbox" name="experiencia" value="プレス"> Press machine</label>
+        <label><input type="checkbox" name="experiencia" value="溶接"> Welding (Yosetsu)</label>
+        <label><input type="checkbox" name="experiencia" value="塗装"> Painting (Toso)</label>
+        <label><input type="checkbox" name="experiencia" value="建設"> Construction (Kensetsu)</label>
+        <label><input type="checkbox" name="experiencia" value="物流"> Logistics (Butsuryu)</label>
+        <label><input type="checkbox" name="experiencia" value="コンビニ"> Convenience store</label>
+        <label><input type="checkbox" name="experiencia" value="スーパー"> Supermarket</label>
         <label><input type="checkbox" name="experiencia" value="ホテル"> Hotel</label>
       </div>
     </div>
 
     <hr class="divider">
 
-    <!-- JAPONÊS -->
-    <div class="section-title">Japonês</div>
+    <!-- JAPANESE LANGUAGE -->
+    <div class="section-title">Japanese Language</div>
 
     <div class="form-group">
-      <label>Nível de japonês <span class="required">*</span></label>
+      <label>Japanese level <span class="required">*</span></label>
       <select name="nivel_japones" required>
-        <option value="">Selecione</option>
-        <option value="0%（日本語不可）">0% — Não falo japonês</option>
-        <option value="N5 10%〜（少し話せる）">N5 — Falo um pouco (10%〜)</option>
-        <option value="N4 30%〜（基本会話）">N4 — Conversação básica (30%〜)</option>
-        <option value="N3 50%〜（日常会話）">N3 — Conversação diária (50%〜)</option>
-        <option value="N2 60%〜（中級会話）">N2 — Intermediário (60%〜)</option>
-        <option value="N1 80%〜（上級会話）">N1 — Avançado (80%〜)</option>
+        <option value="">Select</option>
+        <option value="0%（日本語不可）">0% — I don't speak Japanese</option>
+        <option value="N5 10%〜（少し話せる）">N5 — I speak a little (10%〜)</option>
+        <option value="N4 30%〜（基本会話）">N4 — Basic conversation (30%〜)</option>
+        <option value="N3 50%〜（日常会話）">N3 — Daily conversation (50%〜)</option>
+        <option value="N2 60%〜（中級会話）">N2 — Intermediate (60%〜)</option>
+        <option value="N1 80%〜（上級会話）">N1 — Advanced (80%〜)</option>
       </select>
     </div>
 
@@ -237,43 +251,56 @@
       <div>
         <label>Hiragana</label>
         <select name="hiragana">
-          <option value="読み書きできる">Leitura e escrita</option>
-          <option value="読めるのみ">Só leitura</option>
-          <option value="できない">Não sei</option>
+          <option value="読み書きできる">Read and write</option>
+          <option value="読めるのみ">Read only</option>
+          <option value="できない">Can't read</option>
         </select>
       </div>
       <div>
         <label>Katakana</label>
         <select name="katakana">
-          <option value="読み書きできる">Leitura e escrita</option>
-          <option value="読めるのみ">Só leitura</option>
-          <option value="できない">Não sei</option>
+          <option value="読み書きできる">Read and write</option>
+          <option value="読めるのみ">Read only</option>
+          <option value="できない">Can't read</option>
         </select>
       </div>
       <div>
-        <label>Inglês</label>
+        <label>English</label>
         <select name="fala_ingles">
-          <option value="false">Não falo</option>
-          <option value="true">Falo</option>
+          <option value="false">I don't speak</option>
+          <option value="true">I speak</option>
         </select>
       </div>
     </div>
 
     <hr class="divider">
 
-    <!-- MENSAGEM -->
+    <!-- MESSAGE -->
     <div class="form-group">
-      <label>Mensagem (opcional)</label>
-      <textarea name="comentario" rows="3" placeholder="Alguma informação adicional que queira nos passar..."></textarea>
+      <label>Message (optional)</label>
+      <textarea name="comentario" rows="3" placeholder="Any additional information you'd like to share..."></textarea>
     </div>
 
-    <button type="submit" class="btn-submit" id="submitBtn">Enviar cadastro</button>
+    <button type="submit" class="btn-submit" id="submitBtn">Submit application</button>
     <div id="errorMsg" class="alert-error"></div>
 
   </form>
 </div>
 
 <script>
+function toggleNacOther() {
+  const sel = document.getElementById('nacSelect')
+  const outro = document.getElementById('nacOutro')
+  if (sel.value === 'Other') {
+    outro.style.display = 'block'
+    outro.required = true
+  } else {
+    outro.style.display = 'none'
+    outro.required = false
+    outro.value = ''
+  }
+}
+
 const { createClient } = supabase
 const sb = createClient('https://xzxfwrbebkwagnropgfb.supabase.co', 'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE')
 
@@ -311,11 +338,14 @@ document.getElementById('vagaForm').addEventListener('submit', async (e) => {
   if (!fabrica) fabrica = new URLSearchParams(location.search).get('fabrica') || ''
 
   btn.disabled    = true
-  btn.textContent = 'Enviando...'
+  btn.textContent = 'Submitting...'
 
   const habilitacao      = [...form.querySelectorAll('input[name="habilitacao"]:checked')].map(el => el.value)
   const experiencia      = [...form.querySelectorAll('input[name="experiencia"]:checked')].map(el => el.value)
   const turnos_possiveis = [...form.querySelectorAll('input[name="turnos_possiveis"]:checked')].map(el => el.value)
+
+  const nacSelectVal = data.get('nacionalidade_select')
+  const nacionalidade = nacSelectVal === 'Other' ? data.get('nacionalidade_outro') : nacSelectVal
 
   const payload = {
     shimei:              data.get('shimei'),
@@ -323,7 +353,7 @@ document.getElementById('vagaForm').addEventListener('submit', async (e) => {
     data_nascimento:     data.get('data_nascimento')    || null,
     idade:               parseInt(data.get('idade')),
     sexo:                data.get('sexo'),
-    nacionalidade:       data.get('nacionalidade'),
+    nacionalidade:       nacionalidade,
     postal_code:         data.get('postal_code')        || null,
     prefecture:          data.get('prefecture'),
     city:                data.get('city'),
@@ -350,13 +380,13 @@ document.getElementById('vagaForm').addEventListener('submit', async (e) => {
   const { error } = await sb.from('candidates').insert([payload])
 
   btn.disabled    = false
-  btn.textContent = 'Enviar cadastro'
+  btn.textContent = 'Submit application'
 
   if (error) {
     console.error(error)
     const msg = document.getElementById('errorMsg')
     msg.style.display = 'block'
-    msg.textContent = '❌ Erro ao enviar: ' + (error.message || JSON.stringify(error))
+    msg.textContent = '❌ Submission error: ' + (error.message || JSON.stringify(error))
   } else {
     // Salvar no Google Contacts — keepalive garante o envio mesmo com o redirecionamento abaixo
     fetch(`${CRM_URL}/api/google-contact`, {

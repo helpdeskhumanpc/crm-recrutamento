@@ -1878,7 +1878,7 @@ function renderCharts() {
   // Por dia (período curto, até 45 dias) ou por semana (período mais longo)
   const diasMap = {}
   dados.forEach(c => {
-    const d = c.created_at?.slice(0, 10)
+    const d = c.dt_shokai || c.created_at?.slice(0, 10)
     if (d) diasMap[d] = (diasMap[d] || 0) + 1
   })
   const diasOrdenados = Object.keys(diasMap).sort()
