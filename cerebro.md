@@ -1022,6 +1022,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | **Dropdown de filtro por 紹介者 (shokai)** adicionado no topbar, ao lado direito da busca (`#filterShokaiSelect`) — reaproveita a variável global `shokaiAtivo` que já existia (usada por マイ紹介/`filtrarMeuShokai`) e a condição que `getFiltrados()` já aplicava, então não precisou de query nova nem de mudança no filtro em si. As opções do dropdown são recalculadas em `atualizarDropdownShokai()`, chamada no início de `renderPipeline()` — mostra só nomes de quem já indicou candidato **pra fábrica ativa** (`fabricaEfetiva(c) === fabricaAtiva`); com "全体" selecionado (nenhuma fábrica ativa), mostra todos. Tudo em memória sobre `todosOsCandidatos`, sem custo perceptível. Escondido no mobile, igual aos outros filtros rápidos (`#filterSexo`, `#filterIdade`, `#filterJP`) |
 | 2026-08-25 | **グラフ: "工場別 候補者数" virou "事務所別 候補者数"** — barra empilhada horizontal nos mesmos 4 grupos do ranking 紹介者 (進行中/成約/ストック/NG・ブラック — `GRUPOS_SHOKAI`, movido pro topo de `renderCharts()` pra ser reaproveitado pelos dois gráficos), agora agrupado por escritório em vez de por fábrica. Usa `nomeParaJimusho` (mapa `shokai → jimusho`, montado em `carregarDados()` juntando `shokaisha` + a view nova `perfis_publicos`); quem não bate com nenhuma das duas fontes cai em **その他**. De brinde, corrigiu um bug pré-existente (já anotado no changelog de 2026-08-21, "erro de console Failed to create chart"): o `id="chartFabrica"` era usado tanto no `<select>` do filtro quanto no `<canvas>` do gráfico — `getElementById` sempre pegava o select (primeiro no DOM), então o Chart.js tentava desenhar dentro do select e falhava silenciosamente. O canvas novo se chama `chartJimusho`, sem colisão |
 | 2026-08-25 | **グラフ: "月別 応募数" virou "日別 応募数" (ou "週別" se o período for longo)** — agrupa por dia (`created_at.slice(0,10)`) em vez de por mês; se o período coberto pelos dados passar de 45 dias, agrupa por semana em vez de dia pra não poluir o eixo (`spanDias`, calculado a partir do primeiro/último dia com dado). Título do card (`#chartMesTitulo`) muda de texto dinamicamente conforme o modo. Pontos da linha removidos (`pointRadius: 0`), a pedido do Eder |
+| 2026-08-25 | Bug corrigido: gráfico 事務所別 (novo, item acima) não aparecia quando o `工場フィルター` da própria aba グラフ estava com uma fábrica específica selecionada — herdou sem querer a regra do gráfico antigo por fábrica, que escondia o card nesse caso (fazia sentido pra "por fábrica", não faz mais sentido pra "por escritório"). Removida a condição — o card sempre aparece agora, e passa a usar `dados` (já filtrado pelo 工場フィルター) em vez de `candidatosValidos`, então filtrar uma fábrica mostra de qual escritório vieram os candidatos daquela fábrica especificamente |
 
 ## Sistema de Versão
 
@@ -1029,8 +1030,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.51**
-- Tags criadas até agora: `v1.00` a `v1.51`
+- Versão atual: **v1.52**
+- Tags criadas até agora: `v1.00` a `v1.52`
 
 ## Pendências
 

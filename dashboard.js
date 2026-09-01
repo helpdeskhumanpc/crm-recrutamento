@@ -1805,9 +1805,6 @@ function renderCharts() {
   const candidatosValidos = getFiltrados(false)
   const dados = fab ? candidatosValidos.filter(c => fabricaEfetiva(c) === fab) : candidatosValidos
 
-  // Esconde/mostra gráfico de fábricas quando filtrado
-  document.getElementById('cardFabrica').style.display = fab ? 'none' : ''
-
   // Conversões
   const total   = dados.length
   const comMens = dados.filter(c => c.dt_mensetsu).length
@@ -1840,42 +1837,43 @@ function renderCharts() {
     { label: 'NG・ブラック', color: '#c62828', stages: ['ng','black'] },
   ]
 
-  // Por escritório (só geral) — mesma ideia do ranking 紹介者, mas agrupado por jimusho.
+  // Por escritório — mesma ideia do ranking 紹介者, mas agrupado por jimusho.
   // Candidato sem shokai reconhecido (nome não bate com shokaisha nem perfis_publicos,
-  // inclusive o valor genérico da empresa) cai em その他.
-  if (!fab) {
-    const jmMap = {}
-    const jmGrupoMap = {}
-    candidatosValidos.forEach(c => {
-      const jm = nomeParaJimusho[c.shokai] || 'その他'
-      jmMap[jm] = (jmMap[jm] || 0) + 1
-      if (!jmGrupoMap[jm]) jmGrupoMap[jm] = {}
-      const stg = getStage(c)
-      const grupo = GRUPOS_SHOKAI.find(g => g.stages.includes(stg)) || GRUPOS_SHOKAI[0]
-      jmGrupoMap[jm][grupo.label] = (jmGrupoMap[jm][grupo.label] || 0) + 1
-    })
-    const jmLabels = Object.keys(jmMap).sort((a,b) => jmMap[b] - jmMap[a])
-    destroyChart('chartJimusho')
-    chartInstances['chartJimusho'] = new Chart(document.getElementById('chartJimusho'), {
-      type: 'bar',
-      data: {
-        labels: jmLabels,
-        datasets: GRUPOS_SHOKAI.map(g => ({
-          label: g.label,
-          data: jmLabels.map(j => jmGrupoMap[j]?.[g.label] || 0),
-          backgroundColor: g.color,
-        })),
-      },
-      options: {
-        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
-        scales: {
-          x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
-          y: { stacked: true, ticks: { autoSkip: false } },
-        }
+  // inclusive o valor genérico da empresa) cai em その他. Respeita o 工場フィルター
+  // dessa aba (usa "dados", não "candidatosValidos") — diferente do gráfico antigo,
+  // não faz mais sentido esconder ao filtrar uma fábrica: mesmo filtrado, ainda é
+  // útil saber de qual escritório vieram os candidatos daquela fábrica.
+  const jmMap = {}
+  const jmGrupoMap = {}
+  dados.forEach(c => {
+    const jm = nomeParaJimusho[c.shokai] || 'その他'
+    jmMap[jm] = (jmMap[jm] || 0) + 1
+    if (!jmGrupoMap[jm]) jmGrupoMap[jm] = {}
+    const stg = getStage(c)
+    const grupo = GRUPOS_SHOKAI.find(g => g.stages.includes(stg)) || GRUPOS_SHOKAI[0]
+    jmGrupoMap[jm][grupo.label] = (jmGrupoMap[jm][grupo.label] || 0) + 1
+  })
+  const jmLabels = Object.keys(jmMap).sort((a,b) => jmMap[b] - jmMap[a])
+  destroyChart('chartJimusho')
+  chartInstances['chartJimusho'] = new Chart(document.getElementById('chartJimusho'), {
+    type: 'bar',
+    data: {
+      labels: jmLabels,
+      datasets: GRUPOS_SHOKAI.map(g => ({
+        label: g.label,
+        data: jmLabels.map(j => jmGrupoMap[j]?.[g.label] || 0),
+        backgroundColor: g.color,
+      })),
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+      scales: {
+        x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+        y: { stacked: true, ticks: { autoSkip: false } },
       }
-    })
-  }
+    }
+  })
 
   // Por dia (período curto, até 45 dias) ou por semana (período mais longo)
   const diasMap = {}
