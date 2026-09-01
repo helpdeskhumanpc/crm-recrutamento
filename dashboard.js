@@ -1067,7 +1067,7 @@ function renderCalendar() {
     const day      = date.getDate()
     const isToday  = dateStr === todayStr
     const dowColor = date.getDay()===0 ? 'color:#c62828' : date.getDay()===6 ? 'color:#1565c0' : ''
-    const evRows   = events[dateStr].map(e => `
+    const evRows   = [...events[dateStr]].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99')).map(e => `
       <div class="agenda-event" onclick="abrirModal('${e.candidatoId}')">
         <span class="agenda-chip ${e.tipo}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}</span>
         <span class="agenda-nome">${e.nome||'—'}</span>
@@ -1659,7 +1659,7 @@ function renderOrdstAgenda(cands) {
   const dias = dates.map(dateStr => {
     const date = new Date(dateStr + 'T00:00:00')
     const isToday = dateStr === iso(hoje)
-    const rows = events[dateStr].map(e => `
+    const rows = [...events[dateStr]].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99')).map(e => `
       <div class="agenda-event" onclick="abrirModal('${e.candidatoId}')">
         <span class="agenda-chip ${e.tipo}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}</span>
         <span class="agenda-nome">${e.nome||'—'}</span>
