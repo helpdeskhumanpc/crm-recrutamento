@@ -1029,12 +1029,12 @@ function renderCalendar() {
     `${dias14[0].getMonth()+1}/${dias14[0].getDate()} 〜 ${dias14[13].getMonth()+1}/${dias14[13].getDate()}`
 
   const events = {}
-  const add = (dateStr, tipo, nome, fabrica, candidatoId, hora) => {
+  const add = (dateStr, tipo, nome, fabrica, candidatoId, hora, nota) => {
     if (!dateStr || !calTypesAtivos.has(tipo)) return
     const d = dateStr.split('T')[0]
     if (d < rangeIni || d > rangeFim) return
     if (!events[d]) events[d] = []
-    events[d].push({ tipo, nome, fabrica, candidatoId, hora })
+    events[d].push({ tipo, nome, fabrica, candidatoId, hora, nota })
   }
 
   const jimushoFabsCal = jimushoAtivo ? fabricasDoMeuJimusho() : null
@@ -1046,7 +1046,7 @@ function renderCalendar() {
       add(c.dt_mensetsu, 'mensetsu', c.shimei, c.fabrica, c.id, c.mensetsu_hora)
       add(c.dt_kengaku,  'kengaku',  c.shimei, c.fabrica, c.id, c.kengaku_hora)
       add(c.dt_nyusha,   'nyusha',   c.shimei, c.fabrica, c.id)
-      if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, c.fabrica, c.id)
+      if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, c.fabrica, c.id, null, c.alerta_nota)
     })
 
   const tipoLabel = { mensetsu:'面接', kengaku:'見学', nyusha:'入社', alerta:'アラート' }
@@ -1060,13 +1060,16 @@ function renderCalendar() {
     const isToday   = dateStr === todayStr
     const cls       = ['cal-day', isToday?'today':'', dow===0?'sunday':'', dow===6?'saturday':''].filter(Boolean).join(' ')
     const dayEvents = [...(events[dateStr] || [])].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99'))
-    const evs = dayEvents.map(e => jimushoAtivo
-      ? `<div class="cal-event two-line ${e.tipo}" onclick="abrirModal('${e.candidatoId}')" title="${e.nome}">
-          <div class="cal-event-l1"><span>${e.fabrica||''}</span><span>${tipoLabel[e.tipo]}</span><span>${e.hora ? e.hora.slice(0,5) : ''}</span></div>
-          <div class="cal-event-l2">${e.nome||''}</div>
-        </div>`
-      : `<div class="cal-event ${e.tipo}" onclick="abrirModal('${e.candidatoId}')" title="${e.nome}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}：${e.nome||''}</div>`
-    ).join('')
+    const evs = dayEvents.map(e => {
+      const nota = e.tipo === 'alerta' && e.nota ? escHtml(e.nota) : ''
+      const tituloAttr = nota ? `${e.nome} - ${nota}` : e.nome
+      return jimushoAtivo
+        ? `<div class="cal-event two-line ${e.tipo}" onclick="abrirModal('${e.candidatoId}')" title="${tituloAttr}">
+            <div class="cal-event-l1"><span>${e.fabrica||''}</span><span>${tipoLabel[e.tipo]}</span><span>${e.hora ? e.hora.slice(0,5) : ''}</span></div>
+            <div class="cal-event-l2">${e.nome||''}${nota ? ` - ${nota}` : ''}</div>
+          </div>`
+        : `<div class="cal-event ${e.tipo}" onclick="abrirModal('${e.candidatoId}')" title="${tituloAttr}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}：${e.nome||''}${nota ? ` (${nota})` : ''}</div>`
+    }).join('')
     html += `<div class="${cls}"><div class="cal-day-num">${date.getMonth()+1}/${date.getDate()}${dayEvents.length ? ` <span class="cal-day-count">(${dayEvents.length})</span>` : ''}</div><div class="cal-day-events">${evs}</div></div>`
   })
   grid.innerHTML = html
@@ -1087,12 +1090,15 @@ function renderCalendar() {
     const day      = date.getDate()
     const isToday  = dateStr === todayStr
     const dowColor = date.getDay()===0 ? 'color:#c62828' : date.getDay()===6 ? 'color:#1565c0' : ''
-    const evRows   = [...events[dateStr]].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99')).map(e => `
+    const evRows   = [...events[dateStr]].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99')).map(e => {
+      const nota = e.tipo === 'alerta' && e.nota ? escHtml(e.nota) : ''
+      return `
       <div class="agenda-event" onclick="abrirModal('${e.candidatoId}')">
         <span class="agenda-chip ${e.tipo}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}</span>
-        <span class="agenda-nome">${e.nome||'—'}</span>
+        <span class="agenda-nome">${e.nome||'—'}${nota ? `<span style="display:block;font-size:11px;font-weight:400;color:#888">${nota}</span>` : ''}</span>
         ${e.fabrica ? `<span class="agenda-chip" style="background:${corDaFabrica(e.fabrica)}">${e.fabrica}</span>` : ''}
-      </div>`).join('')
+      </div>`
+    }).join('')
     return `
       <div class="agenda-day">
         <div class="agenda-day-header">
@@ -1661,18 +1667,18 @@ function renderOrdstAgenda(cands) {
   const iso  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
   const tipoLabel = { mensetsu:'面接', kengaku:'見学', nyusha:'入社', alerta:'アラート' }
   const events = {}
-  const add = (dateStr, tipo, nome, fabrica, candidatoId, hora) => {
+  const add = (dateStr, tipo, nome, fabrica, candidatoId, hora, nota) => {
     if (!dateStr) return
     const d = dateStr.split('T')[0]
     if (d < iso(hoje) || d > iso(fim)) return
     if (!events[d]) events[d] = []
-    events[d].push({ tipo, nome, fabrica, candidatoId, hora })
+    events[d].push({ tipo, nome, fabrica, candidatoId, hora, nota })
   }
   cands.forEach(c => {
     add(c.dt_mensetsu, 'mensetsu', c.shimei, fabricaEfetiva(c), c.id, c.mensetsu_hora)
     add(c.dt_kengaku,  'kengaku',  c.shimei, fabricaEfetiva(c), c.id, c.kengaku_hora)
     add(c.dt_nyusha,   'nyusha',   c.shimei, fabricaEfetiva(c), c.id)
-    if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, fabricaEfetiva(c), c.id)
+    if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, fabricaEfetiva(c), c.id, null, c.alerta_nota)
   })
   const dates = Object.keys(events).sort()
   if (!dates.length) return '<div class="ordst-empty">今後14日間の予定はありません。</div>'
@@ -1680,12 +1686,15 @@ function renderOrdstAgenda(cands) {
   const dias = dates.map(dateStr => {
     const date = new Date(dateStr + 'T00:00:00')
     const isToday = dateStr === iso(hoje)
-    const rows = [...events[dateStr]].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99')).map(e => `
+    const rows = [...events[dateStr]].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99')).map(e => {
+      const nota = e.tipo === 'alerta' && e.nota ? escHtml(e.nota) : ''
+      return `
       <div class="agenda-event" onclick="abrirModal('${e.candidatoId}')">
         <span class="agenda-chip ${e.tipo}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}</span>
-        <span class="agenda-nome">${e.nome||'—'}</span>
+        <span class="agenda-nome">${e.nome||'—'}${nota ? `<span style="display:block;font-size:11px;font-weight:400;color:#888">${nota}</span>` : ''}</span>
         ${e.fabrica ? `<span class="agenda-chip" style="background:${corDaFabrica(e.fabrica)}">${e.fabrica}</span>` : ''}
-      </div>`).join('')
+      </div>`
+    }).join('')
     return `
       <div class="agenda-day">
         <div class="agenda-day-header">
