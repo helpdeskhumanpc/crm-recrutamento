@@ -1466,6 +1466,7 @@ function showTab(tab, btn) {
   document.getElementById('shokaiView').style.display    = tab === 'shokai'    ? 'flex'  : 'none'
   document.getElementById('vagasLinkView').style.display = tab === 'vagaslink' ? 'flex'  : 'none'
   document.getElementById('orderStatusView').style.display = tab === 'orderstatus' ? 'block' : 'none'
+  document.getElementById('statsBar').style.display = tab === 'orderstatus' ? 'none' : 'flex'
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
   if (tab === 'leads' || tab === 'stockpool' || tab === 'shokai' || tab === 'vagaslink') {
     document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
