@@ -1029,6 +1029,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | `dt_shokai` (紹介日) passa a ser gravado também em `form-vaga.html`/`form-vaga-ig.html` (igual ao 応募日, na hora do cadastro) — antes só `form-candidato.html` gravava na hora; quem vinha do site ficava com `紹介日` vazio até alguém clicar 担当者紹介, às vezes dias depois (ou nunca, se ninguém processasse). **Lembrete:** essas duas mudanças não sobem sozinhas pro site — precisam ser coladas manualmente no Elementor do WordPress (ver Arquivos do Projeto) |
 | 2026-08-25 | Gráfico 日別/週別 応募数 passa a usar `紹介日` como base, caindo pra `応募日` quando `紹介日` estiver vazio (`c.dt_shokai \|\| c.created_at`) — pedido do Eder pra já aproveitar o `dt_shokai` mais completo, sem quebrar pros candidatos antigos que nunca tiveram esse campo preenchido |
 | 2026-08-25 | Bug corrigido: movimentação em massa não limpava `dt_stock_geral` (全体ストック) — ele não faz parte do `STAGE_CHAIN` (não decide etapa, `getStage()` nem olha pra ele; só controla se o candidato aparece no pool 全体ストック Pool), então mover em massa alguém de NG/ストック pra qualquer outra etapa deixava esse flag preso, e o candidato continuava aparecendo no 全体ストック Pool mesmo já estando ativo em outra etapa. `construirAtualizacaoMassa()` agora sempre limpa `dt_stock_geral` junto |
+| 2026-08-25 | Bug corrigido: espaçamento "aleatório" entre os botões do topbar — a classe `.btn-refresh` (usada em ステージ▾, 詳細フィルター, PDF印刷, 項目選択印刷, Excel出力, 更新) tinha `margin-left:auto` própria, sobrando de quando só existia um botão assim por linha. Com vários botões dessa classe na mesma linha, cada um brigava pelo espaço livre e distribuía de forma desigual. Removido `margin-left:auto` do `.btn-refresh` — só o `.user-info` (nome + logout) mantém essa regra, então só ele fica empurrado pro canto direito; o resto usa o `gap` fixo do `.topbar-row` |
 
 ## Sistema de Versão
 
@@ -1036,8 +1037,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.54**
-- Tags criadas até agora: `v1.00` a `v1.54`
+- Versão atual: **v1.55**
+- Tags criadas até agora: `v1.00` a `v1.55`
 
 ## Pendências
 

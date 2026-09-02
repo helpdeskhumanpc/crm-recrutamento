@@ -50,7 +50,7 @@
     #searchInput { padding: 8px 14px; border: 2px solid #e8621a; border-radius: 6px; font-size: 14px; width: 260px; background: #fff8f3; }
     #searchInput:focus { outline: none; box-shadow: 0 0 0 3px rgba(232,98,26,0.15); }
     .filter-select { padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: white; }
-    .btn-refresh { margin-left: auto; padding: 5px 12px; background: #e8621a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .btn-refresh { padding: 5px 12px; background: #e8621a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
 
     /* ALERT BAR */
     #alertBar { background: #fff3e0; border-bottom: 2px solid #e8621a; padding: 6px 16px; font-size: 12px; display: none; align-items: center; gap: 8px; flex-wrap: wrap; }
