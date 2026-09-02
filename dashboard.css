@@ -643,7 +643,7 @@
       background:var(--ordst-card); color:var(--ordst-text); font-size:12px; padding:3px 2px;
     }
 
-    .ordst-agenda-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .ordst-agenda-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:10px; }
     .ordst-agenda-grid .agenda-day { background:var(--ordst-card); border:1px solid var(--ordst-card-border); box-shadow:var(--ordst-shadow); }
     .ordst-agenda-grid .agenda-day-header { background:transparent; border-bottom:1px solid var(--ordst-card-border); }
     .ordst-agenda-grid .agenda-date { color:var(--ordst-text); }

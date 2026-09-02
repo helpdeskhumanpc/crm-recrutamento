@@ -1031,6 +1031,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Bug corrigido: movimentação em massa não limpava `dt_stock_geral` (全体ストック) — ele não faz parte do `STAGE_CHAIN` (não decide etapa, `getStage()` nem olha pra ele; só controla se o candidato aparece no pool 全体ストック Pool), então mover em massa alguém de NG/ストック pra qualquer outra etapa deixava esse flag preso, e o candidato continuava aparecendo no 全体ストック Pool mesmo já estando ativo em outra etapa. `construirAtualizacaoMassa()` agora sempre limpa `dt_stock_geral` junto |
 | 2026-08-25 | Bug corrigido: espaçamento "aleatório" entre os botões do topbar — a classe `.btn-refresh` (usada em ステージ▾, 詳細フィルター, PDF印刷, 項目選択印刷, Excel出力, 更新) tinha `margin-left:auto` própria, sobrando de quando só existia um botão assim por linha. Com vários botões dessa classe na mesma linha, cada um brigava pelo espaço livre e distribuía de forma desigual. Removido `margin-left:auto` do `.btn-refresh` — só o `.user-info` (nome + logout) mantém essa regra, então só ele fica empurrado pro canto direito; o resto usa o `gap` fixo do `.topbar-row` |
 | 2026-08-25 | Calendário (grid desktop): quando em `<escritório>まとめ` (`jimushoAtivo`), cada evento passa a ter 2 linhas — 1ª linha com fábrica/tipo/hora, 2ª linha com o nome do candidato (`.cal-event.two-line`, `.cal-event-l1`/`l2`) — pra distinguir de qual fábrica é cada compromisso, já que a visão mistura várias. Fora desse modo (カレンダー normal, de uma fábrica só, ou 全体) continua no formato de 1 linha de antes. Eventos do dia também passam a ser ordenados por horário nessa grid (não estava, só a agenda mobile e a de オーダー状況 tinham sido corrigidas antes) |
+| 2026-08-25 | Agenda de オーダー状況 (今後の予定 14日間) vira grid responsivo (`repeat(auto-fit, minmax(340px, 1fr))`) em vez de sempre 2 colunas fixas — tela larga acomoda 3 (ou mais, dependendo do espaço disponível/sidebar recolhida), tela mais estreita cai pra 2, mobile continua em 1 coluna (regra própria, inalterada) |
 
 ## Sistema de Versão
 
@@ -1038,8 +1039,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.57**
-- Tags criadas até agora: `v1.00` a `v1.57`
+- Versão atual: **v1.58**
+- Tags criadas até agora: `v1.00` a `v1.58`
 
 ## Pendências
 
