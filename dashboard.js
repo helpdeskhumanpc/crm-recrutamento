@@ -1051,8 +1051,14 @@ function renderCalendar() {
     const dow       = date.getDay()
     const isToday   = dateStr === todayStr
     const cls       = ['cal-day', isToday?'today':'', dow===0?'sunday':'', dow===6?'saturday':''].filter(Boolean).join(' ')
-    const dayEvents = events[dateStr] || []
-    const evs = dayEvents.map(e => `<div class="cal-event ${e.tipo}" onclick="abrirModal('${e.candidatoId}')" title="${e.nome}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}：${e.nome||''}</div>`).join('')
+    const dayEvents = [...(events[dateStr] || [])].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99'))
+    const evs = dayEvents.map(e => jimushoAtivo
+      ? `<div class="cal-event two-line ${e.tipo}" onclick="abrirModal('${e.candidatoId}')" title="${e.nome}">
+          <div class="cal-event-l1"><span>${e.fabrica||''}</span><span>${tipoLabel[e.tipo]}</span><span>${e.hora ? e.hora.slice(0,5) : ''}</span></div>
+          <div class="cal-event-l2">${e.nome||''}</div>
+        </div>`
+      : `<div class="cal-event ${e.tipo}" onclick="abrirModal('${e.candidatoId}')" title="${e.nome}">${tipoLabel[e.tipo]}${e.hora ? ' ' + e.hora.slice(0,5) : ''}：${e.nome||''}</div>`
+    ).join('')
     html += `<div class="${cls}"><div class="cal-day-num">${date.getMonth()+1}/${date.getDate()}${dayEvents.length ? ` <span class="cal-day-count">(${dayEvents.length})</span>` : ''}</div><div class="cal-day-events">${evs}</div></div>`
   })
   grid.innerHTML = html
