@@ -92,10 +92,16 @@
 
 <div id="main">
   <div id="topbar">
+    <div id="periodoMobileBar">
+      <span>登録日</span>
+      <input type="date" id="filterDtIniMobile" onchange="onPeriodoChangeMobile()">
+      <span>〜</span>
+      <input type="date" id="filterDtFimMobile" onchange="onPeriodoChangeMobile()">
+    </div>
     <div class="topbar-row" id="topbarRow1">
       <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
       <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.60</span></h1>
+      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.61</span></h1>
       <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
       <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
       <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>

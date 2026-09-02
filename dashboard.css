@@ -44,6 +44,7 @@
     /* TOPBAR */
     #topbar { background: #fff; padding: 8px 16px; border-bottom: 1px solid #ddd; display: flex; flex-direction: column; gap: 8px; }
     .topbar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    #periodoMobileBar { display: none; }
     #topbar h1 { font-size: 15px; color: #333; }
     .tab-btn { padding: 5px 14px; border: 1px solid #ddd; border-radius: 4px; background: white; cursor: pointer; font-size: 13px; }
     .tab-btn.active { background: #e8621a; color: white; border-color: #e8621a; }
@@ -302,6 +303,8 @@
       #btnSidebarCollapse { display:none; }
       #filterSexo, #filterIdade, #filterJP, #periodoWrap, #filterShokaiSelect { display:none !important; }
       #searchInput { flex:1; min-width:0; }
+      #periodoMobileBar { display:flex; align-items:center; gap:6px; padding:6px 10px; background:#fff3e0; border-bottom:1px solid #ffe0b2; font-size:12px; color:#555; }
+      #periodoMobileBar input[type=date] { flex:1; min-width:0; padding:5px; border:1px solid #ddd; border-radius:4px; font-size:12px; }
       .btn-print-export { display:none; }
       div[style*="position:relative"] { display:none; } /* ステージ dropdown */
 
@@ -433,6 +436,8 @@
     body.force-mobile #btnSidebarCollapse { display:none; }
     body.force-mobile #filterSexo, body.force-mobile #filterIdade, body.force-mobile #filterJP, body.force-mobile #periodoWrap, body.force-mobile #filterShokaiSelect { display:none !important; }
     body.force-mobile #searchInput { flex:1; min-width:0; }
+    body.force-mobile #periodoMobileBar { display:flex; align-items:center; gap:6px; padding:6px 10px; background:#fff3e0; border-bottom:1px solid #ffe0b2; font-size:12px; color:#555; }
+    body.force-mobile #periodoMobileBar input[type=date] { flex:1; min-width:0; padding:5px; border:1px solid #ddd; border-radius:4px; font-size:12px; }
     body.force-mobile .btn-print-export { display:none; }
     body.force-mobile div[style*="position:relative"] { display:none; }
     body.force-mobile #statsBar { gap:5px; padding:6px 10px; overflow-x:auto; flex-wrap:nowrap; }
@@ -519,6 +524,8 @@
     body.dark-mode .stat-num { color:#e8e8f0; }
     body.dark-mode .stat-label { color:#9494a6; }
     body.dark-mode #alertBar { background:#2b2410; }
+    body.dark-mode #periodoMobileBar { background:#2b2410; border-bottom-color:#3a2f14; color:#c7c7d6; }
+    body.dark-mode #periodoMobileBar input[type=date] { background:#1c1c2b; border-color:#3a3a4d; color:#e0e0e8; }
 
     body.dark-mode .stage-body,
     body.dark-mode .lead-stage-body,

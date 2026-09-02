@@ -1034,6 +1034,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Agenda de オーダー状況 (今後の予定 14日間) vira grid responsivo (`repeat(auto-fit, minmax(340px, 1fr))`) em vez de sempre 2 colunas fixas — tela larga acomoda 3 (ou mais, dependendo do espaço disponível/sidebar recolhida), tela mais estreita cai pra 2, mobile continua em 1 coluna (regra própria, inalterada) |
 | 2026-08-25 | Bug corrigido: aba オーダー状況 (admin/jimusho) não tinha nenhum jeito de ser acessada no celular — as abas do topbar (`.tab-btn`, inclusive `#btnOrderStatusTab`) somem no mobile, e o `#bottomNav` (menu de baixo do celular) nunca teve um botão pra ela, só 状況/カレンダー/グラフ/フィルター. Adicionado `#btnOrderStatusBnav` no bottomNav (ícone 🏭), escondido por padrão e revelado junto do `#btnOrderStatusTab` pra quem é admin/jimusho, em `iniciarDashboard()` |
 | 2026-08-25 | Bug corrigido (mobile): `#statsBar` (barra 総候補者/連絡前/対応中/...) nunca era escondida pelo `showTab()`, ficava sempre visível em cima de qualquer aba — em オーダー状況 no celular isso empurrava e cortava o conteúdo real da aba (que já tem estatística própria por fábrica mais abaixo), forçando scroll horizontal só pra ver números que nem se aplicam a essa tela. Agora `showTab()` esconde o `#statsBar` especificamente na aba `orderstatus` |
+| 2026-08-25 | Bug corrigido: filtro de 登録日 ficava completamente inacessível no celular — `#periodoWrap` já era escondido no mobile (`display:none !important`) e não existia em nenhum outro lugar, então não tinha como trocar o período pelo celular. Adicionada `#periodoMobileBar`, uma barra dedicada no topo do topbar, só-mobile, com seus próprios inputs (`filterDtIniMobile`/`filterDtFimMobile`) sincronizados nos dois sentidos com os campos reais (`onPeriodoChangeMobile()`, e `onPeriodoChange()` passou a espelhar de volta) — inclusive no valor padrão inicial (3 meses atrás → hoje) definido em `iniciarDashboard()` |
 
 ## Sistema de Versão
 
@@ -1041,8 +1042,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.60**
-- Tags criadas até agora: `v1.00` a `v1.60`
+- Versão atual: **v1.61**
+- Tags criadas até agora: `v1.00` a `v1.61`
 
 ## Pendências
 

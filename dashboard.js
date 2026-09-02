@@ -776,12 +776,20 @@ function dentroDoPeriodoOuEvento(c) {
 }
 
 function onPeriodoChange() {
+  document.getElementById('filterDtIniMobile').value = document.getElementById('filterDtIni').value
+  document.getElementById('filterDtFimMobile').value = document.getElementById('filterDtFim').value
   renderPipeline()
   if (document.getElementById('calendarView').style.display !== 'none') renderCalendar()
   if (document.getElementById('chartsView').style.display   !== 'none') renderCharts()
   if (document.getElementById('shokaiView').style.display   !== 'none') renderShokaiAnalise()
   if (document.getElementById('leadsView').style.display    !== 'none') renderLeads()
   if (document.getElementById('orderStatusView').style.display !== 'none') renderOrderStatus()
+}
+
+function onPeriodoChangeMobile() {
+  document.getElementById('filterDtIni').value = document.getElementById('filterDtIniMobile').value
+  document.getElementById('filterDtFim').value = document.getElementById('filterDtFimMobile').value
+  onPeriodoChange()
 }
 
 // fabricas do escritorio ativo no momento (jimusho logado, ou o escritorio que o admin escolheu ver)
@@ -2471,6 +2479,8 @@ async function iniciarDashboard() {
   tresMeses.setMonth(tresMeses.getMonth() - 3)
   document.getElementById('filterDtIni').value = iso(tresMeses)
   document.getElementById('filterDtFim').value = iso(hoje)
+  document.getElementById('filterDtIniMobile').value = iso(tresMeses)
+  document.getElementById('filterDtFimMobile').value = iso(hoje)
 
   showTab('pipeline')
   await carregarDados()
