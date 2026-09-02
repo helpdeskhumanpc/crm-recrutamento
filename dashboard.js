@@ -2460,6 +2460,7 @@ async function iniciarDashboard() {
   }
   if (profile?.role === 'jimusho' || profile?.role === 'admin') {
     document.getElementById('btnOrderStatusTab').style.display = ''
+    document.getElementById('btnOrderStatusBnav').style.display = ''
   }
 
   // Período padrão: 3 meses atrás → hoje (登録日)
