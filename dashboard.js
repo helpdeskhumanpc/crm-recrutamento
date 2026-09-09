@@ -192,11 +192,33 @@ function corDaFabrica(nomeFabrica) {
   return PALETA_FABRICA[idx % PALETA_FABRICA.length]
 }
 
+// currentProfile.fabricas pode vir como array de verdade (coluna jsonb) ou como
+// string JSON (coluna text antiga) — trata os dois pra não quebrar dependendo do tipo.
+function fabricasDelegadasDoPerfil() {
+  const val = currentProfile?.fabricas
+  if (Array.isArray(val)) return val
+  if (typeof val === 'string' && val.trim()) {
+    try { const arr = JSON.parse(val); if (Array.isArray(arr)) return arr } catch {}
+  }
+  return []
+}
+
 function carregarSidebar() {
   const candidatos = todosOsCandidatos.filter(c => c.origem !== 'web' && c.origem !== 'web_stock')
-  const fabricas = currentProfile?.role === 'admin'
-    ? todasFabricas
-    : [...new Set(candidatos.map(c => fabricaEfetiva(c)).filter(Boolean))].sort()
+  const doCandidatos = [...new Set(candidatos.map(c => fabricaEfetiva(c)).filter(Boolean))]
+  let fabricas
+  if (currentProfile?.role === 'admin') {
+    fabricas = todasFabricas
+  } else if (currentProfile?.role === 'jimusho') {
+    // fábrica do próprio escritório aparece mesmo com 0 candidato ainda
+    const doEscritorio = todasLocations.filter(l => l.jimusho === currentProfile.jimusho).map(l => l.nome)
+    fabricas = [...new Set([...doEscritorio, ...doCandidatos])].sort()
+  } else if (currentProfile?.role === 'tantousha') {
+    // fábrica delegada pro tantousha aparece mesmo com 0 candidato ainda
+    fabricas = [...new Set([...fabricasDelegadasDoPerfil(), ...doCandidatos])].sort()
+  } else {
+    fabricas = doCandidatos.sort()
+  }
   const container = document.getElementById('sidebarFabricas')
   container.innerHTML = ''
   document.getElementById('totalCount').textContent = candidatos.length + '名'
