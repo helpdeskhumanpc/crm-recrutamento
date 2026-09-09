@@ -1480,9 +1480,10 @@ function showTab(tab, btn) {
   document.getElementById('shokaiView').style.display    = tab === 'shokai'    ? 'flex'  : 'none'
   document.getElementById('vagasLinkView').style.display = tab === 'vagaslink' ? 'flex'  : 'none'
   document.getElementById('orderStatusView').style.display = tab === 'orderstatus' ? 'block' : 'none'
-  document.getElementById('statsBar').style.display = tab === 'orderstatus' ? 'none' : 'flex'
+  document.getElementById('makotoView').style.display    = tab === 'makoto'     ? 'block' : 'none'
+  document.getElementById('statsBar').style.display = (tab === 'orderstatus' || tab === 'makoto') ? 'none' : 'flex'
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-  if (tab === 'leads' || tab === 'stockpool' || tab === 'shokai' || tab === 'vagaslink') {
+  if (tab === 'leads' || tab === 'stockpool' || tab === 'shokai' || tab === 'vagaslink' || tab === 'makoto') {
     document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
     if (btn) btn.classList.add('active')
   } else {
@@ -1500,6 +1501,7 @@ function showTab(tab, btn) {
   if (tab === 'shokai')    renderShokaiAnalise()
   if (tab === 'vagaslink') renderVagasLink()
   if (tab === 'orderstatus') renderOrderStatus()
+  if (tab === 'makoto') abrirMakotoTab()
 }
 
 // ─── 紹介リンク (プロフィールに shokai_nome があるユーザーのみ) ─────
@@ -1545,6 +1547,506 @@ function compartilharVagaLink(i) {
   else navigator.clipboard.writeText(url).then(() => alert('リンクをコピーしました！'))
 }
 
+// ─── 🤖 Makoto (robô de triagem via WhatsApp) — acesso restrito ao login Helpdesk ───
+// A trava de UI (btnMakotoTab escondido pra outros logins) é só conveniência;
+// quem garante isso de verdade são as policies de RLS + o trigger no banco.
+let makotoConfigId = null
+let makotoFabricas = []
+let makotoSubTabAtual = 'aprovacao'
+let makotoCandidatosCache = {}
+let makotoConversaAtual = null
+
+const MAKOTO_STATUS_LABELS = {
+  conversando:          { label: '会話中',   bg: '#e3f2fd', fg: '#1e88e5' },
+  aguardando_resposta:  { label: '返信待ち', bg: '#e0f2f1', fg: '#00897b' },
+  aguardando_aprovacao: { label: '承認待ち', bg: '#fff3cd', fg: '#8a6d00' },
+  estoque:              { label: '在庫',     bg: '#fce4ec', fg: '#e91e8c' },
+  sem_resposta:         { label: '無応答',   bg: '#f0f0f0', fg: '#666'   },
+}
+
+function tempoRelativoMakoto(iso) {
+  if (!iso) return '—'
+  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (min < 1) return 'agora'
+  if (min < 60) return `${min}min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `${h}h`
+  return `${Math.floor(h / 24)}d`
+}
+
+function abrirMakotoTab() {
+  mudarMakotoSubTab(makotoSubTabAtual)
+}
+
+function mudarMakotoSubTab(tab) {
+  makotoSubTabAtual = tab
+  document.getElementById('makotoAprovacaoPanel').style.display = tab === 'aprovacao' ? '' : 'none'
+  document.getElementById('makotoBuscaPanel').style.display     = tab === 'busca'     ? '' : 'none'
+  document.getElementById('makotoSegurancaPanel').style.display = tab === 'seguranca' ? '' : 'none'
+  document.getElementById('makotoSettingsPanel').style.display  = tab === 'settings'  ? '' : 'none'
+  document.getElementById('makotoSubTabBtnAprovacao').classList.toggle('active', tab === 'aprovacao')
+  document.getElementById('makotoSubTabBtnBusca').classList.toggle('active', tab === 'busca')
+  document.getElementById('makotoSubTabBtnSeguranca').classList.toggle('active', tab === 'seguranca')
+  document.getElementById('makotoSubTabBtnSettings').classList.toggle('active', tab === 'settings')
+  if (tab === 'aprovacao') renderMakotoAprovacao()
+  if (tab === 'busca')     renderMakotoBusca()
+  if (tab === 'seguranca') renderMakotoSeguranca()
+  if (tab === 'settings')  renderMakotoConfig()
+}
+
+async function renderMakotoAprovacao() {
+  const filaEl = document.getElementById('makotoFilaAprovacao')
+  const convEl = document.getElementById('makotoConversasRecentes')
+
+  const fila = await sb.from('candidates')
+    .select('id,shimei,telefone,robo_resumo,robo_vaga_sugerida,robo_mensagem_rascunho,robo_aprovado_em,robo_ultima_interacao_em')
+    .eq('robo_status', 'aguardando_aprovacao')
+    .order('robo_ultima_interacao_em', { ascending: true })
+
+  document.getElementById('makotoFilaCount').textContent = fila.data?.length ?? 0
+
+  if (fila.error) {
+    filaEl.innerHTML = `<div style="padding:14px;color:#c62828;font-size:12px">エラー: ${fila.error.message}</div>`
+  } else if (!fila.data.length) {
+    filaEl.innerHTML = '<div style="padding:14px;color:#999;font-size:12px">承認待ちの候補者はいません</div>'
+  } else {
+    fila.data.forEach(c => makotoCandidatosCache[c.id] = c)
+    filaEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 2fr 1.3fr 70px 170px;gap:10px;padding:8px 16px;font-size:11px;color:#999;border-bottom:1px solid #eee">
+        <span>名前</span><span>ロボが発見したこと</span><span>推薦求人</span><span>待ち時間</span><span></span>
+      </div>
+    ` + fila.data.map(c => `
+      <div style="display:grid;grid-template-columns:1fr 2fr 1.3fr 70px 170px;gap:10px;align-items:center;padding:10px 16px;border-bottom:1px solid #f2f2f2;font-size:12.5px">
+        <span style="font-weight:600">${c.shimei || '—'}</span>
+        <span style="color:#555">${c.robo_resumo || '—'}</span>
+        <span>${c.robo_vaga_sugerida || '—'}</span>
+        <span style="color:#999">${tempoRelativoMakoto(c.robo_ultima_interacao_em)}</span>
+        <span style="display:flex;gap:6px">
+          ${c.robo_aprovado_em
+            ? '<span style="color:#2e7d32;font-size:11.5px;font-weight:600">✓ 送信中...</span>'
+            : `<button class="btn-save" style="background:#2e7d32;padding:5px 10px;font-size:11.5px" onclick="aprovarEEnviarMakoto('${c.id}')">✓ 承認</button>`}
+          <button class="btn-cancel" style="padding:5px 10px;font-size:11.5px" onclick="abrirMakotoConversa('${c.id}')">会話を見る</button>
+        </span>
+      </div>
+    `).join('')
+  }
+
+  const recentes = await sb.from('candidates')
+    .select('id,shimei,telefone,robo_status,robo_ultima_interacao_em')
+    .not('robo_ultima_interacao_em', 'is', null)
+    .order('robo_ultima_interacao_em', { ascending: false })
+    .limit(30)
+
+  if (recentes.error) {
+    convEl.innerHTML = `<div style="padding:14px;color:#c62828;font-size:12px">エラー: ${recentes.error.message}</div>`
+    return
+  }
+  if (!recentes.data.length) {
+    convEl.innerHTML = '<div style="padding:14px;color:#999;font-size:12px">まだ会話がありません</div>'
+    return
+  }
+  recentes.data.forEach(c => makotoCandidatosCache[c.id] = { ...makotoCandidatosCache[c.id], ...c })
+  convEl.innerHTML = recentes.data.map(c => {
+    const info = MAKOTO_STATUS_LABELS[c.robo_status] || { label: c.robo_status || '—', bg: '#f0f0f0', fg: '#666' }
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid #f2f2f2;font-size:13px;cursor:pointer" onclick="abrirMakotoConversa('${c.id}')">
+        <span style="font-weight:600;flex:1">${c.shimei || '—'}</span>
+        <span style="font-size:10.5px;padding:2px 9px;border-radius:10px;font-weight:700;background:${info.bg};color:${info.fg}">${info.label}</span>
+        <span style="font-size:11px;color:#999;width:50px;text-align:right">${tempoRelativoMakoto(c.robo_ultima_interacao_em)}</span>
+      </div>
+    `
+  }).join('')
+}
+
+// robo_mensagem_rascunho guarda JSON com a lista de bolhas — cadastro antigo pode
+// ter texto puro (de antes dessa mudança), então cai pra tratar como 1 item só.
+function parseRascunhoMakoto(texto) {
+  if (!texto) return []
+  try { const arr = JSON.parse(texto); if (Array.isArray(arr)) return arr } catch {}
+  return [texto]
+}
+
+async function abrirMakotoConversa(id) {
+  let c = makotoCandidatosCache[id]
+  if (!c || !c.shimei || c.robo_mensagem_rascunho === undefined) {
+    const { data } = await sb.from('candidates')
+      .select('id,shimei,telefone,robo_status,robo_resumo,robo_vaga_sugerida,robo_mensagem_rascunho,robo_aprovado_em')
+      .eq('id', id).single()
+    c = data
+    makotoCandidatosCache[id] = c
+  }
+  makotoConversaAtual = c
+
+  document.getElementById('mcNome').textContent = c?.shimei || '—'
+  document.getElementById('mcTelefone').textContent = c?.telefone || ''
+  const info = MAKOTO_STATUS_LABELS[c?.robo_status] || { label: c?.robo_status || '—', bg: '#f0f0f0', fg: '#666' }
+  const badgeEl = document.getElementById('mcStatus')
+  badgeEl.textContent = info.label
+  badgeEl.style.background = info.bg
+  badgeEl.style.color = info.fg
+
+  const transcriptEl = document.getElementById('mcTranscript')
+  transcriptEl.innerHTML = '<div style="text-align:center;color:#999;font-size:12px">読み込み中...</div>'
+  document.getElementById('makotoConversaModal').style.display = 'flex'
+
+  const { data: msgs } = await sb.from('robo_mensagens')
+    .select('direcao,texto,criado_em')
+    .eq('candidate_id', id)
+    .order('criado_em', { ascending: true })
+
+  transcriptEl.innerHTML = (msgs || []).map(m => `
+    <div style="display:flex;justify-content:${m.direcao === 'enviada' ? 'flex-end' : 'flex-start'}">
+      <div style="max-width:78%;padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.5;white-space:pre-wrap;background:${m.direcao === 'enviada' ? '#d9f2e6' : '#fff'}">${m.texto}</div>
+    </div>
+  `).join('') || '<div style="text-align:center;color:#999;font-size:12px">メッセージがありません</div>'
+
+  if (c?.robo_status === 'aguardando_aprovacao' && c?.robo_mensagem_rascunho) {
+    const bolhas = parseRascunhoMakoto(c.robo_mensagem_rascunho)
+    transcriptEl.innerHTML += bolhas.map((texto, i) => `
+      <div style="display:flex;justify-content:flex-end">
+        <div style="max-width:78%;padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.5;white-space:pre-wrap;background:#fff;border:1.5px dashed #e8621a;color:#7a4d16">
+          ${i === 0 ? '<div style="font-size:10px;font-weight:700;color:#e8621a;margin-bottom:4px;text-transform:uppercase">Rascunho — não enviado ainda</div>' : ''}
+          ${texto}
+        </div>
+      </div>
+    `).join('')
+  }
+  transcriptEl.scrollTop = transcriptEl.scrollHeight
+
+  document.getElementById('mcResumoBox').innerHTML = c?.robo_resumo
+    ? `<b>ロボ要約:</b> ${c.robo_resumo}${c.robo_vaga_sugerida ? `<br><b>推薦求人:</b> ${c.robo_vaga_sugerida}` : ''}`
+    : ''
+
+  document.getElementById('mcAprovarBox').style.display =
+    (c?.robo_status === 'aguardando_aprovacao' && !c?.robo_aprovado_em) ? 'flex' : 'none'
+}
+
+function fecharMakotoConversaModal() {
+  document.getElementById('makotoConversaModal').style.display = 'none'
+  makotoConversaAtual = null
+}
+
+async function aprovarEEnviarMakoto(id) {
+  const candidateId = id || makotoConversaAtual?.id
+  if (!candidateId) return
+  const { error } = await sb.from('candidates').update({ robo_aprovado_em: new Date().toISOString() }).eq('id', candidateId)
+  if (error) { alert('エラー: ' + error.message); return }
+  fecharMakotoConversaModal()
+  renderMakotoAprovacao()
+}
+
+// ─── 🔍 Buscar candidatos pra uma vaga (contato proativo, robô fala primeiro) ───
+let makotoResultadoBusca = [] // candidatos compatíveis da última busca
+
+async function renderMakotoBusca() {
+  document.getElementById('mbResultadoWrap').style.display = 'none'
+  const sel = document.getElementById('mbVaga')
+  sel.innerHTML = '<option value="">carregando...</option>'
+  const { data, error } = await sb.from('locations')
+    .select('id,nome,robo_nome_leitura,order_atual,robo_idade_min,robo_idade_max,robo_genero,robo_japones_minimo,robo_exige_carro,robo_exige_hiragana,robo_exige_katakana,robo_habilitacoes_exigidas,robo_experiencia_exigida,robo_turno_oferecido')
+    .eq('robo_indicavel', true)
+    .order('order_atual', { ascending: false })
+  if (error) { sel.innerHTML = `<option value="">エラー: ${error.message}</option>`; return }
+  makotoVagasBusca = data || []
+  if (!makotoVagasBusca.length) { sel.innerHTML = '<option value="">nenhuma fábrica marcada como indicável</option>'; return }
+  sel.innerHTML = makotoVagasBusca.map(v =>
+    `<option value="${v.id}">${v.nome}${v.robo_nome_leitura ? ' — ' + v.robo_nome_leitura : ''}${v.order_atual ? ` (オーダー ${v.order_atual})` : ''}</option>`
+  ).join('')
+}
+let makotoVagasBusca = []
+
+function rankJapones(nivelTexto) {
+  const m = String(nivelTexto || '').match(/N([1-5])/)
+  return m ? 6 - parseInt(m[1]) : 0 // N1=5 ... N5=1, sem nível=0
+}
+function podeLerMB(valor) {
+  return valor === '読み書きできる' || valor === '読めるのみ'
+}
+// Alguns cadastros antigos guardam esses campos como string em vez de array de verdade.
+function paraArrayMB(valor) {
+  if (Array.isArray(valor)) return valor
+  if (typeof valor === 'string' && valor.trim()) {
+    try { const parsed = JSON.parse(valor); if (Array.isArray(parsed)) return parsed } catch {}
+    return [valor]
+  }
+  return []
+}
+// Overlap tolerante: "二交代" (candidato) precisa bater com "2 Turnos (二交代)" (vaga) —
+// os dois lados usam vocabulário diferente, então checa se um contém o outro.
+function arraysComOverlapMB(doCandidato, exigidoPelaVaga) {
+  const exigido = paraArrayMB(exigidoPelaVaga)
+  if (!exigido.length) return true
+  // Sem dado do candidato = não sei, não exclui (ex: turnos_possiveis está vazio
+  // pra praticamente todo mundo no cadastro real — tratar como incompatível zeraria a busca).
+  const doCand = paraArrayMB(doCandidato)
+  if (!doCand.length) return true
+  return doCand.some(a => exigido.some(b => String(a).includes(String(b)) || String(b).includes(String(a))))
+}
+function candidatoCompativelMB(c, vaga) {
+  if (c.is_blacklisted || c.dt_ng) return false
+  if (['conversando', 'aguardando_resposta', 'aguardando_aprovacao'].includes(c.robo_status)) return false
+  if (vaga.robo_idade_min && c.idade && c.idade < vaga.robo_idade_min) return false
+  if (vaga.robo_idade_max && c.idade && c.idade > vaga.robo_idade_max) return false
+  if (vaga.robo_genero === 'Somente Homem' && c.sexo !== '男性') return false
+  if (vaga.robo_genero === 'Somente Mulher' && c.sexo !== '女性') return false
+  if (vaga.robo_japones_minimo && rankJapones(c.nivel_japones) < rankJapones(vaga.robo_japones_minimo)) return false
+  if (vaga.robo_exige_carro && !c.tem_carro) return false
+  if (vaga.robo_exige_hiragana && !podeLerMB(c.hiragana)) return false
+  if (vaga.robo_exige_katakana && !podeLerMB(c.katakana)) return false
+  if (!arraysComOverlapMB(c.habilitacao, vaga.robo_habilitacoes_exigidas)) return false
+  if (!arraysComOverlapMB(c.experiencia, vaga.robo_experiencia_exigida)) return false
+  if (!arraysComOverlapMB(c.turnos_possiveis, vaga.robo_turno_oferecido)) return false
+  return true
+}
+
+async function buscarCandidatosCompativeisMakoto() {
+  const vagaId = document.getElementById('mbVaga').value
+  const vaga = makotoVagasBusca.find(v => v.id === vagaId)
+  if (!vaga) return
+
+  const wrap = document.getElementById('mbResultadoWrap')
+  wrap.style.display = ''
+  document.getElementById('mbResultadoTabela').innerHTML = '<div class="loading">読み込み中...</div>'
+
+  const { data, error } = await sb.from('candidates')
+    .select('id,shimei,telefone,idade,sexo,nivel_japones,turnos_possiveis,city,prefecture,tem_carro,hiragana,katakana,habilitacao,experiencia,is_blacklisted,dt_ng,robo_status')
+    .or('origem.eq.web_stock,dt_stock_geral.not.is.null')
+  if (error) { document.getElementById('mbResultadoTabela').innerHTML = `<div style="padding:14px;color:#c62828;font-size:12px">エラー: ${error.message}</div>`; return }
+
+  makotoResultadoBusca = (data || []).filter(c => candidatoCompativelMB(c, vaga))
+  window._makotoVagaEscolhidaMB = vaga
+
+  document.getElementById('mbContagem').textContent = `${makotoResultadoBusca.length} candidatos compatíveis`
+  document.getElementById('mbSelecionarTodos').checked = true
+
+  if (!makotoResultadoBusca.length) {
+    document.getElementById('mbResultadoTabela').innerHTML = '<div style="padding:14px;color:#999;font-size:12px">Nenhum candidato do estoque bate com os requisitos dessa vaga.</div>'
+    return
+  }
+
+  document.getElementById('mbResultadoTabela').innerHTML = `
+    <div style="display:grid;grid-template-columns:26px 1.3fr 60px 60px 1fr 1fr;gap:10px;padding:8px 16px;font-size:11px;color:#999;border-bottom:1px solid #eee">
+      <span></span><span>Nome</span><span>Idade</span><span>Gên.</span><span>日本語</span><span>Cidade</span>
+    </div>
+  ` + makotoResultadoBusca.map(c => `
+    <div style="display:grid;grid-template-columns:26px 1.3fr 60px 60px 1fr 1fr;gap:10px;align-items:center;padding:8px 16px;border-bottom:1px solid #f2f2f2;font-size:12.5px">
+      <input type="checkbox" class="mb-check" data-id="${c.id}" checked onchange="atualizarContagemMB()">
+      <span style="font-weight:600">${c.shimei || '—'}</span>
+      <span>${c.idade || '—'}</span>
+      <span>${c.sexo === '男性' ? 'M' : c.sexo === '女性' ? 'F' : '—'}</span>
+      <span style="font-size:11px">${(c.nivel_japones || '—').split(' ')[0]}</span>
+      <span style="font-size:11px">${c.city || '—'}</span>
+    </div>
+  `).join('')
+  atualizarContagemMB()
+}
+
+function alternarSelecaoTodosMB(marcado) {
+  document.querySelectorAll('.mb-check').forEach(el => el.checked = marcado)
+  atualizarContagemMB()
+}
+function atualizarContagemMB() {
+  const marcados = document.querySelectorAll('.mb-check:checked').length
+  document.getElementById('mbContagem').textContent = `${marcados} de ${makotoResultadoBusca.length} selecionados`
+}
+
+async function confirmarEnvioLoteMakoto() {
+  const ids = [...document.querySelectorAll('.mb-check:checked')].map(el => el.dataset.id)
+  if (!ids.length) return
+  const vaga = window._makotoVagaEscolhidaMB
+  if (!confirm(`Confirma o envio pra ${ids.length} candidato(s) sobre "${vaga.nome}"? As mensagens saem espaçadas, uma de cada vez.`)) return
+
+  const { error } = await sb.from('candidates')
+    .update({ robo_fila_envio_em: new Date().toISOString(), robo_vaga_sugerida: vaga.nome })
+    .in('id', ids)
+  if (error) { alert('エラー: ' + error.message); return }
+  alert(`${ids.length} candidato(s) na fila — o robô vai iniciar contato aos poucos.`)
+  renderMakotoBusca()
+}
+
+async function renderMakotoConfig() {
+  const salvoMsg = document.getElementById('makotoConfigSalvo')
+  salvoMsg.textContent = ''
+
+  const { data, error } = await sb.from('robo_config').select('*').limit(1)
+  const cfg = (data && data[0]) || null
+  makotoConfigId = cfg?.id || null
+  document.getElementById('makotoInstrucoes').value = cfg?.instrucoes_base || ''
+  document.getElementById('makotoSugestoes').value  = cfg?.sugestoes || ''
+  document.getElementById('makotoLimiteDiario').value = cfg?.limite_diario_mensagens ?? 150
+  if (error) salvoMsg.style.color = '#c62828', salvoMsg.textContent = '読み込みエラー: ' + error.message
+
+  const locRes = await sb.from('locations')
+    .select('id,nome,robo_indicavel,robo_nome_leitura,robo_endereco,robo_descricao,robo_japones_minimo,robo_idade_min,robo_idade_max,robo_genero,robo_habilitacoes_exigidas,robo_experiencia_exigida,robo_turno_oferecido,robo_exige_carro,robo_oferece_apartamento,robo_exige_hiragana,robo_exige_katakana')
+    .eq('tipo', '工場')
+    .order('nome')
+  makotoFabricas = locRes.data || []
+  renderMakotoFabricasTable()
+}
+
+async function salvarMakotoConfigGeral() {
+  const payload = {
+    instrucoes_base: document.getElementById('makotoInstrucoes').value,
+    sugestoes:        document.getElementById('makotoSugestoes').value,
+    limite_diario_mensagens: parseInt(document.getElementById('makotoLimiteDiario').value) || 150,
+  }
+  const salvoMsg = document.getElementById('makotoConfigSalvo')
+  const { error } = makotoConfigId
+    ? await sb.from('robo_config').update(payload).eq('id', makotoConfigId)
+    : await sb.from('robo_config').insert(payload)
+  salvoMsg.style.color = error ? '#c62828' : '#2e7d32'
+  salvoMsg.textContent = error ? 'エラー: ' + error.message : '保存しました ✓'
+  if (!error) renderMakotoConfig()
+}
+
+// ─── 🛡️ Segurança e uso (ritmo de envio, pausar, custo do mês) ───
+function inicioDoDiaJSTBrowser() {
+  const jstOffsetMs = 9 * 3600 * 1000
+  const jstAgora = new Date(Date.now() + jstOffsetMs)
+  const meiaNoiteJST = Date.UTC(jstAgora.getUTCFullYear(), jstAgora.getUTCMonth(), jstAgora.getUTCDate())
+  return new Date(meiaNoiteJST - jstOffsetMs).toISOString()
+}
+function inicioDoMesISO() {
+  const agora = new Date()
+  return new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1)).toISOString()
+}
+
+async function renderMakotoSeguranca() {
+  const { data: cfgLinhas } = await sb.from('robo_config').select('pausado,limite_diario_mensagens').limit(1)
+  const cfg = (cfgLinhas && cfgLinhas[0]) || { pausado: false, limite_diario_mensagens: 150 }
+  makotoPausadoAtual = !!cfg.pausado
+
+  const contagemRes = await sb.from('robo_mensagens')
+    .select('*', { count: 'exact', head: true })
+    .eq('direcao', 'enviada')
+    .gte('criado_em', inicioDoDiaJSTBrowser())
+  const enviadasHojeQtd = contagemRes.count ?? 0
+  const limite = cfg.limite_diario_mensagens || 150
+  const pct = Math.min(100, Math.round((enviadasHojeQtd / limite) * 100))
+
+  document.getElementById('msRitmoTexto').textContent = `${enviadasHojeQtd} / ${limite} mensagens enviadas hoje`
+  document.getElementById('msRitmoTexto').style.color = pct >= 100 ? '#c62828' : pct >= 80 ? '#f57c00' : '#2e7d32'
+  document.getElementById('msRitmoBarra').style.width = pct + '%'
+  document.getElementById('msRitmoBarra').style.background = pct >= 100 ? '#c62828' : pct >= 80 ? '#f57c00' : '#2e7d32'
+
+  const btnPausar = document.getElementById('msBtnPausar')
+  if (makotoPausadoAtual) {
+    btnPausar.textContent = '▶ Retomar robô'
+    btnPausar.style.background = '#2e7d32'
+  } else {
+    btnPausar.textContent = '⏸ Pausar robô agora'
+    btnPausar.style.background = '#c62828'
+  }
+
+  const inicioMes = inicioDoMesISO()
+  const [msgsMesRes, usoIaRes] = await Promise.all([
+    sb.from('robo_mensagens').select('candidate_id,direcao').gte('criado_em', inicioMes),
+    sb.from('robo_uso_ia').select('tokens_entrada,tokens_saida').gte('criado_em', inicioMes),
+  ])
+  const msgsMes = msgsMesRes.data || []
+  const conversasMes = new Set(msgsMes.map(m => m.candidate_id)).size
+  document.getElementById('msConversasMes').textContent = conversasMes
+  document.getElementById('msMensagensMes').textContent = msgsMes.length
+
+  const usoIa = usoIaRes.data || []
+  const entradaTotal = usoIa.reduce((s, u) => s + (u.tokens_entrada || 0), 0)
+  const saidaTotal   = usoIa.reduce((s, u) => s + (u.tokens_saida || 0), 0)
+  // Mesma estimativa aproximada (claude-haiku-4-5, $1/$5 por Mtok, câmbio ¥150) usada no robo-makoto.js
+  const custoJpy = (entradaTotal / 1e6 * 1 + saidaTotal / 1e6 * 5) * 150
+  document.getElementById('msCustoMes').textContent = usoIaRes.error ? '—' : `¥${custoJpy.toFixed(0)}`
+}
+let makotoPausadoAtual = false
+
+async function alternarPausaMakoto() {
+  const novoValor = !makotoPausadoAtual
+  if (novoValor && !confirm('Pausar o robô agora? Ele para de ler e responder mensagens até você retomar.')) return
+  const { data: cfgLinhas } = await sb.from('robo_config').select('id').limit(1)
+  const id = cfgLinhas?.[0]?.id
+  if (!id) { alert('Configuração do robô não encontrada.'); return }
+  const { error } = await sb.from('robo_config').update({ pausado: novoValor }).eq('id', id)
+  if (error) { alert('エラー: ' + error.message); return }
+  renderMakotoSeguranca()
+}
+
+function renderMakotoFabricasTable() {
+  const container = document.getElementById('makotoFabricasTable')
+  if (!makotoFabricas.length) {
+    container.innerHTML = '<div style="padding:14px;color:#999;font-size:12px">工場が見つかりません</div>'
+    return
+  }
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 80px 70px;gap:8px;padding:8px 16px;font-size:11px;color:#999;border-bottom:1px solid #eee">
+      <span>工場名</span><span>読み方</span><span>紹介ON</span><span></span>
+    </div>
+  ` + makotoFabricas.map(f => `
+    <div style="display:grid;grid-template-columns:1fr 1fr 80px 70px;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid #f2f2f2;font-size:13px">
+      <span>${f.nome}</span>
+      <span style="color:${f.robo_nome_leitura ? '#333' : '#c62828'}">${f.robo_nome_leitura || '(未設定)'}</span>
+      <span><input type="checkbox" ${f.robo_indicavel ? 'checked' : ''} onchange="toggleMakotoIndicavel('${f.id}', this.checked)"></span>
+      <button class="btn-save" style="padding:4px 10px;font-size:12px" onclick="abrirMakotoFabricaModal('${f.id}')">編集</button>
+    </div>
+  `).join('')
+}
+
+async function toggleMakotoIndicavel(id, checked) {
+  const { error } = await sb.from('locations').update({ robo_indicavel: checked }).eq('id', id)
+  if (error) { alert('エラー: ' + error.message); return }
+  const f = makotoFabricas.find(x => x.id === id)
+  if (f) f.robo_indicavel = checked
+}
+
+function abrirMakotoFabricaModal(id) {
+  const f = makotoFabricas.find(x => x.id === id)
+  if (!f) return
+  document.getElementById('makotoFabricaModal').dataset.locId = id
+  document.getElementById('makotoFabricaModalTitulo').textContent = f.nome
+  document.getElementById('mfNomeLeitura').value    = f.robo_nome_leitura || ''
+  document.getElementById('mfEndereco').value       = f.robo_endereco || ''
+  document.getElementById('mfDescricao').value      = f.robo_descricao || ''
+  document.getElementById('mfJaponesMinimo').value  = f.robo_japones_minimo || ''
+  document.getElementById('mfGenero').value         = f.robo_genero || ''
+  document.getElementById('mfIdadeMin').value       = f.robo_idade_min ?? ''
+  document.getElementById('mfIdadeMax').value       = f.robo_idade_max ?? ''
+  document.getElementById('mfTurno').value          = (f.robo_turno_oferecido || []).join(', ')
+  document.getElementById('mfHabilitacoes').value   = (f.robo_habilitacoes_exigidas || []).join(', ')
+  document.getElementById('mfExperiencia').value    = (f.robo_experiencia_exigida || []).join(', ')
+  document.getElementById('mfExigeCarro').checked   = !!f.robo_exige_carro
+  document.getElementById('mfOfereceApto').checked  = !!f.robo_oferece_apartamento
+  document.getElementById('mfExigeHiragana').checked = !!f.robo_exige_hiragana
+  document.getElementById('mfExigeKatakana').checked = !!f.robo_exige_katakana
+  document.getElementById('makotoFabricaModal').style.display = 'flex'
+}
+
+function fecharMakotoFabricaModal() {
+  document.getElementById('makotoFabricaModal').style.display = 'none'
+}
+
+async function salvarMakotoFabrica() {
+  const id = document.getElementById('makotoFabricaModal').dataset.locId
+  const listaOuNull = txt => { const arr = txt.split(',').map(s => s.trim()).filter(Boolean); return arr.length ? arr : null }
+  const numOuNull = v => v === '' ? null : parseInt(v)
+  const payload = {
+    robo_nome_leitura:          document.getElementById('mfNomeLeitura').value.trim() || null,
+    robo_endereco:              document.getElementById('mfEndereco').value.trim() || null,
+    robo_descricao:             document.getElementById('mfDescricao').value,
+    robo_japones_minimo:        document.getElementById('mfJaponesMinimo').value || null,
+    robo_genero:                document.getElementById('mfGenero').value || null,
+    robo_idade_min:             numOuNull(document.getElementById('mfIdadeMin').value),
+    robo_idade_max:             numOuNull(document.getElementById('mfIdadeMax').value),
+    robo_turno_oferecido:       listaOuNull(document.getElementById('mfTurno').value),
+    robo_habilitacoes_exigidas: listaOuNull(document.getElementById('mfHabilitacoes').value),
+    robo_experiencia_exigida:   listaOuNull(document.getElementById('mfExperiencia').value),
+    robo_exige_carro:           document.getElementById('mfExigeCarro').checked,
+    robo_oferece_apartamento:   document.getElementById('mfOfereceApto').checked,
+    robo_exige_hiragana:        document.getElementById('mfExigeHiragana').checked,
+    robo_exige_katakana:        document.getElementById('mfExigeKatakana').checked,
+  }
+  const { error } = await sb.from('locations').update(payload).eq('id', id)
+  if (error) { alert('エラー: ' + error.message); return }
+  fecharMakotoFabricaModal()
+  renderMakotoConfig()
+}
+
 // ─── オーダー状況 (jimusho: proprio escritorio; admin: todos, separados) ───
 const ORDST_STAGE_COLORS = {
   renrakumae:'#1e88e5', taiochu:'#f57c00', mensetsu:'#00897b', kentouchu:'#f9a825', kengaku:'#5e35b1',
@@ -1574,6 +2076,17 @@ async function renderOrderStatus() {
     return
   }
   container.innerHTML = jimushos.map(jm => renderOrderStatusEscritorio(jm)).join('<div class="ordst-divider"></div>')
+}
+
+// Navegação da agenda do オーダー状況 — desloca a janela de 14 dias pra frente/trás.
+let ordstAgendaOffsetDias = 0
+function ordstAgendaNav(passos) {
+  ordstAgendaOffsetDias += passos * 14
+  renderOrderStatus()
+}
+function ordstAgendaHoje() {
+  ordstAgendaOffsetDias = 0
+  renderOrderStatus()
 }
 
 function renderOrderStatusEscritorio(jimusho) {
@@ -1626,8 +2139,12 @@ function renderOrderStatusEscritorio(jimusho) {
       </div>`
   }).join('')
 
-  // agenda dos proximos 14 dias, escopo do escritorio inteiro (nao so quem tem order)
-  const agendaHtml = renderOrdstAgenda(cands)
+  // agenda de uma janela de 14 dias (navegável), escopo do escritorio inteiro (nao so quem tem order)
+  const agendaHtml = renderOrdstAgenda(cands, ordstAgendaOffsetDias)
+  const ordstDt = d => `${d.getMonth() + 1}/${d.getDate()}`
+  const agendaInicio = new Date(); agendaInicio.setHours(0, 0, 0, 0); agendaInicio.setDate(agendaInicio.getDate() + ordstAgendaOffsetDias)
+  const agendaFim = new Date(agendaInicio); agendaFim.setDate(agendaFim.getDate() + 13)
+  const agendaTitulo = `予定（${ordstDt(agendaInicio)}〜${ordstDt(agendaFim)}）`
 
   return `
     <div class="ordst-escritorio">
@@ -1646,7 +2163,14 @@ function renderOrderStatusEscritorio(jimusho) {
         ? `<div class="ordst-grid">${cardsOrder}</div>`
         : '<div class="ordst-empty">オーダーが登録されているファブリカがありません。工場別のフィルターで各ファブリカを選び、上のバーから登録してください。</div>'}
 
-      <h3 class="ordst-subtitulo">今後の予定（14日間）</h3>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+        <h3 class="ordst-subtitulo" style="margin:0">${agendaTitulo}</h3>
+        <div class="cal-nav" style="gap:4px">
+          <button onclick="ordstAgendaNav(-1)">← 前</button>
+          <button onclick="ordstAgendaHoje()">今日</button>
+          <button onclick="ordstAgendaNav(1)">次 →</button>
+        </div>
+      </div>
       ${agendaHtml}
 
       <h3 class="ordst-subtitulo">状況</h3>
@@ -1661,16 +2185,18 @@ function renderOrderStatusEscritorio(jimusho) {
     </div>`
 }
 
-function renderOrdstAgenda(cands) {
-  const hoje = new Date(); hoje.setHours(0,0,0,0)
-  const fim  = new Date(hoje); fim.setDate(fim.getDate() + 14)
+// offsetDias desloca a janela de 14 dias inteira (negativo = passado, 0 = a partir de
+// hoje, positivo = futuro) — navegado pelos botões "← 前" / "次 →" no cabeçalho.
+function renderOrdstAgenda(cands, offsetDias = 0) {
+  const inicio = new Date(); inicio.setHours(0,0,0,0); inicio.setDate(inicio.getDate() + offsetDias)
+  const fim    = new Date(inicio); fim.setDate(fim.getDate() + 13)
   const iso  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
   const tipoLabel = { mensetsu:'面接', kengaku:'見学', nyusha:'入社', alerta:'アラート' }
   const events = {}
   const add = (dateStr, tipo, nome, fabrica, candidatoId, hora, nota) => {
     if (!dateStr) return
     const d = dateStr.split('T')[0]
-    if (d < iso(hoje) || d > iso(fim)) return
+    if (d < iso(inicio) || d > iso(fim)) return
     if (!events[d]) events[d] = []
     events[d].push({ tipo, nome, fabrica, candidatoId, hora, nota })
   }
@@ -1681,11 +2207,12 @@ function renderOrdstAgenda(cands) {
     if (c.alerta_data) add(c.alerta_data, 'alerta', c.shimei, fabricaEfetiva(c), c.id, null, c.alerta_nota)
   })
   const dates = Object.keys(events).sort()
-  if (!dates.length) return '<div class="ordst-empty">今後14日間の予定はありません。</div>'
+  if (!dates.length) return '<div class="ordst-empty">この期間の予定はありません。</div>'
   const dows = ['日','月','火','水','木','金','土']
+  const hojeReal = new Date(); hojeReal.setHours(0,0,0,0)
   const dias = dates.map(dateStr => {
     const date = new Date(dateStr + 'T00:00:00')
-    const isToday = dateStr === iso(hoje)
+    const isToday = dateStr === iso(hojeReal)
     const rows = [...events[dateStr]].sort((a, b) => (a.hora || '99:99').localeCompare(b.hora || '99:99')).map(e => {
       const nota = e.tipo === 'alerta' && e.nota ? escHtml(e.nota) : ''
       return `
@@ -2479,6 +3006,11 @@ async function iniciarDashboard() {
   if (profile?.role === 'jimusho' || profile?.role === 'admin') {
     document.getElementById('btnOrderStatusTab').style.display = ''
     document.getElementById('btnOrderStatusBnav').style.display = ''
+  }
+  // Makoto (robô de triagem): tela restrita ao login Helpdesk, não a todo admin —
+  // a proteção de verdade está em RLS/trigger no banco, isso aqui só esconde o botão.
+  if (profile?.id === 'dbff001a-0d95-4ea8-ae36-1f97d29692c0') {
+    document.getElementById('btnMakotoTab').style.display = ''
   }
 
   // Período padrão: 3 meses atrás → hoje (登録日)

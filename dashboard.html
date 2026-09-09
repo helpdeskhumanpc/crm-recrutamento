@@ -66,6 +66,9 @@
   <div class="sidebar-item sidebar-nav sidebar-special" id="btnVagasLinkTab" style="display:none" onclick="showTab('vagaslink', this)">
     <div class="factory-name">紹介リンク</div>
   </div>
+  <div class="sidebar-item sidebar-nav sidebar-special" id="btnMakotoTab" style="display:none" onclick="showTab('makoto', this)">
+    <div class="factory-name">🤖 Makoto設定</div>
+  </div>
   <div class="sidebar-item sidebar-special" id="btnMeuShokai" onclick="filtrarMeuShokai(this)">
     <div class="factory-name">マイ紹介</div>
     <div class="factory-count" id="meuShokaiCount"></div>
@@ -351,6 +354,190 @@
   <!-- オーダー状況 (jimusho: proprio escritorio; admin: todos, separados) -->
   <div id="orderStatusView"></div>
 
+  <!-- MAKOTO (robô de triagem via WhatsApp) — acesso restrito ao login Helpdesk -->
+  <div id="makotoView">
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="tab-btn active" id="makotoSubTabBtnAprovacao" onclick="mudarMakotoSubTab('aprovacao')">💬 承認・会話</button>
+      <button class="tab-btn" id="makotoSubTabBtnBusca" onclick="mudarMakotoSubTab('busca')">🔍 候補者検索</button>
+      <button class="tab-btn" id="makotoSubTabBtnSeguranca" onclick="mudarMakotoSubTab('seguranca')">🛡️ 安全・使用状況</button>
+      <button class="tab-btn" id="makotoSubTabBtnSettings" onclick="mudarMakotoSubTab('settings')">⚙️ 設定</button>
+    </div>
+
+    <!-- 承認・会話 -->
+    <div id="makotoAprovacaoPanel">
+      <div style="background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow:hidden">
+        <div style="padding:10px 16px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px;font-weight:700;color:#333">承認待ち</span>
+          <span id="makotoFilaCount" style="font-size:11px;background:#fff3cd;color:#8a6d00;padding:2px 8px;border-radius:10px;font-weight:700"></span>
+        </div>
+        <div id="makotoFilaAprovacao"><div class="loading">読み込み中...</div></div>
+      </div>
+
+      <div style="background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow:hidden;margin-top:14px">
+        <div style="padding:10px 16px;border-bottom:1px solid #eee;font-size:14px;font-weight:700;color:#333">会話履歴（最近）</div>
+        <div id="makotoConversasRecentes"><div class="loading">読み込み中...</div></div>
+      </div>
+    </div>
+
+    <!-- 候補者検索 (busca proativa + envio em lote) -->
+    <div id="makotoBuscaPanel" style="display:none">
+      <div style="background:white;border-radius:8px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+        <div style="font-size:14px;font-weight:700;color:#333;margin-bottom:2px">🔍 Buscar candidatos pra uma vaga</div>
+        <div style="font-size:11px;color:#999;margin-bottom:10px">O robô compara o estoque de candidatos com os requisitos da vaga escolhida — nada é enviado sem você confirmar.</div>
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Vaga / fábrica</label>
+        <select id="mbVaga" style="width:100%;max-width:460px;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px"></select>
+        <div style="margin-top:12px">
+          <button class="btn-save" onclick="buscarCandidatosCompativeisMakoto()">Buscar candidatos compatíveis</button>
+        </div>
+      </div>
+
+      <div id="mbResultadoWrap" style="display:none;background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow:hidden;margin-top:14px">
+        <div style="padding:10px 16px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px">
+          <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px"><input type="checkbox" id="mbSelecionarTodos" onchange="alternarSelecaoTodosMB(this.checked)"> selecionar todos</label>
+          <span id="mbContagem" style="font-size:12px;color:#666;margin-left:auto"></span>
+        </div>
+        <div id="mbResultadoTabela"></div>
+        <div style="padding:12px 16px;border-top:1px solid #eee;display:flex;align-items:center;gap:12px">
+          <button class="btn-save" style="background:#e8621a" id="mbBtnConfirmar" onclick="confirmarEnvioLoteMakoto()">Confirmar envio</button>
+          <span style="font-size:11px;color:#999">Cada mensagem sai espaçada (não é tudo de uma vez) — o robô só fala de verdade com o telefone de teste enquanto estiver em modo teste.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 安全・使用状況 (ritmo de envio, pausar, custo do mês) -->
+    <div id="makotoSegurancaPanel" style="display:none">
+      <div style="display:flex;gap:14px;align-items:stretch;flex-wrap:wrap">
+        <div style="flex:1.4;min-width:280px;background:white;border-radius:8px;padding:18px 22px;box-shadow:0 1px 3px rgba(0,0,0,0.08);display:flex;align-items:center;gap:20px">
+          <div style="flex:1">
+            <div style="font-size:13.5px;font-weight:700;color:#2a2d3a">Ritmo de envio hoje</div>
+            <div id="msRitmoTexto" style="font-size:12px;font-weight:600;margin-top:4px">—</div>
+            <div style="background:#e2e5ee;border-radius:4px;height:12px;overflow:hidden;margin-top:8px;max-width:280px">
+              <div id="msRitmoBarra" style="height:100%;background:#2e7d32;border-radius:4px;width:0%"></div>
+            </div>
+            <div style="font-size:11px;color:#999;margin-top:4px">Limite pensado pra reduzir risco de bloqueio do número no WhatsApp</div>
+          </div>
+          <button class="btn-save" id="msBtnPausar" style="background:#c62828;padding:12px 20px;font-size:13px;flex:none" onclick="alternarPausaMakoto()">⏸ Pausar robô agora</button>
+        </div>
+        <div style="flex:1;min-width:220px;background:white;border-radius:8px;padding:16px 22px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+          <div style="font-size:12px;font-weight:700;color:#8a8fa3;text-transform:uppercase;margin-bottom:8px">Uso este mês</div>
+          <div style="display:flex;gap:22px;flex-wrap:wrap">
+            <div><div id="msConversasMes" style="font-size:16px;font-weight:700;color:#2a2d3a">—</div><div style="font-size:10.5px;color:#8a8fa3">conversas</div></div>
+            <div><div id="msMensagensMes" style="font-size:16px;font-weight:700;color:#2a2d3a">—</div><div style="font-size:10.5px;color:#8a8fa3">mensagens</div></div>
+            <div><div id="msCustoMes" style="font-size:16px;font-weight:700;color:#2a2d3a">—</div><div style="font-size:10.5px;color:#8a8fa3">custo IA (aprox.)</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 設定 -->
+    <div id="makotoSettingsPanel" style="display:none">
+      <div style="background:white;border-radius:8px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+        <div style="font-size:14px;font-weight:700;color:#333;margin-bottom:2px">🤖 Makoto — configuração geral</div>
+        <div style="font-size:11px;color:#999;margin-bottom:10px">Instruções que valem pra toda conversa do robô, em qualquer fábrica.</div>
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Instruções base</label>
+        <textarea id="makotoInstrucoes" rows="14" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:6px;resize:vertical"></textarea>
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin:10px 0 4px">Sugestões adicionais do time</label>
+        <textarea id="makotoSugestoes" rows="4" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:6px;resize:vertical"></textarea>
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin:10px 0 4px">Limite diário de mensagens enviadas</label>
+        <input id="makotoLimiteDiario" type="number" min="1" style="width:120px;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px">
+        <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+          <button class="btn-save" onclick="salvarMakotoConfigGeral()">保存 (salvar)</button>
+          <span id="makotoConfigSalvo" style="font-size:12px;color:#2e7d32"></span>
+        </div>
+      </div>
+
+      <div style="background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow:hidden;margin-top:14px">
+        <div style="padding:10px 16px;font-size:14px;font-weight:700;color:#333;border-bottom:1px solid #eee">工場別の設定</div>
+        <div id="makotoFabricasTable"><div class="loading">読み込み中...</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: CONVERSA DO MAKOTO (transcript + aprovar) -->
+<div id="makotoConversaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center" onclick="if(event.target===this) fecharMakotoConversaModal()">
+  <div style="background:white;border-radius:8px;width:640px;max-width:92vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px">
+      <div>
+        <div id="mcNome" style="font-weight:700;font-size:15px"></div>
+        <div id="mcTelefone" style="font-size:11px;color:#888"></div>
+      </div>
+      <span id="mcStatus" style="margin-left:auto;font-size:11px;padding:3px 10px;border-radius:10px;font-weight:700"></span>
+      <button onclick="fecharMakotoConversaModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#999">✕</button>
+    </div>
+    <div id="mcTranscript" style="flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:8px;background:#eef0f6"></div>
+    <div id="mcResumoBox" style="padding:10px 18px;border-top:1px solid #eee;font-size:12px;color:#444;background:#fafbfd"></div>
+    <div id="mcAprovarBox" style="padding:12px 18px;border-top:1px solid #eee;display:none;align-items:center;gap:10px">
+      <button class="btn-save" style="background:#2e7d32" onclick="aprovarEEnviarMakoto()">✓ Aprovar e enviar</button>
+      <span style="font-size:11px;color:#999">A mensagem só sai quando o robô confirmar (poucos segundos, simula digitação)</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDIÇÃO DE FÁBRICA NO MAKOTO -->
+<div id="makotoFabricaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center" onclick="if(event.target===this) fecharMakotoFabricaModal()">
+  <div style="background:white;border-radius:8px;padding:20px;width:640px;max-width:92vw;max-height:88vh;overflow-y:auto">
+    <h3 id="makotoFabricaModalTitulo" style="margin:0 0 14px;font-size:16px"></h3>
+    <div style="display:flex;flex-direction:column;gap:10px" id="makotoFabricaModalBody">
+      <label style="font-size:12px;font-weight:600;color:#555">Como falar o nome (katakana ou romaji)
+        <input id="mfNomeLeitura" type="text" placeholder="ex: Tokai Rika" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px">
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#555">Link do endereço (Google Maps)
+        <input id="mfEndereco" type="text" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px">
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#555">Descrição da vaga (texto livre que o robô lê pra comparar e explicar)
+        <textarea id="mfDescricao" rows="10" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px;font-size:12px"></textarea>
+      </label>
+      <div style="display:flex;gap:10px">
+        <label style="font-size:12px;font-weight:600;color:#555;flex:1">Japonês mínimo
+          <select id="mfJaponesMinimo" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px">
+            <option value="">— sem exigência —</option>
+            <option value="N5">N5</option>
+            <option value="N4">N4</option>
+            <option value="N3">N3</option>
+            <option value="N2">N2</option>
+            <option value="N1">N1</option>
+          </select>
+        </label>
+        <label style="font-size:12px;font-weight:600;color:#555;flex:1">Gênero
+          <select id="mfGenero" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px">
+            <option value="">— sem exigência —</option>
+            <option value="Homem ou Mulher">Homem ou Mulher</option>
+            <option value="Somente Homem">Somente Homem</option>
+            <option value="Somente Mulher">Somente Mulher</option>
+          </select>
+        </label>
+      </div>
+      <div style="display:flex;gap:10px">
+        <label style="font-size:12px;font-weight:600;color:#555;flex:1">Idade mínima
+          <input id="mfIdadeMin" type="number" min="0" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px">
+        </label>
+        <label style="font-size:12px;font-weight:600;color:#555;flex:1">Idade máxima
+          <input id="mfIdadeMax" type="number" min="0" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px">
+        </label>
+      </div>
+      <label style="font-size:12px;font-weight:600;color:#555">Turnos oferecidos (separe por vírgula)
+        <input id="mfTurno" type="text" placeholder="ex: 2 Turnos (二交代), Noturno" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px">
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#555">Habilitações exigidas (separe por vírgula)
+        <input id="mfHabilitacoes" type="text" placeholder="ex: 普通自動車" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px">
+      </label>
+      <label style="font-size:12px;font-weight:600;color:#555">Experiência exigida (separe por vírgula)
+        <input id="mfExperiencia" type="text" placeholder="ex: 組み立て" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ddd;border-radius:4px;margin-top:3px">
+      </label>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px"><input id="mfExigeCarro" type="checkbox"> Exige condução própria</label>
+        <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px"><input id="mfOfereceApto" type="checkbox"> Oferece apartamento</label>
+        <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px"><input id="mfExigeHiragana" type="checkbox"> Exige ler hiragana</label>
+        <label style="font-size:12px;color:#555;display:flex;align-items:center;gap:5px"><input id="mfExigeKatakana" type="checkbox"> Exige ler katakana</label>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+      <button class="btn-cancel" onclick="fecharMakotoFabricaModal()">キャンセル</button>
+      <button class="btn-save" onclick="salvarMakotoFabrica()">保存</button>
+    </div>
+  </div>
 </div>
 
 <!-- BOTTOM NAV (mobile only) -->
