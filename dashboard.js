@@ -2760,6 +2760,9 @@ async function bloquearLead(id) {
 }
 
 // ─── STOCK POOL ───────────────────────────────────────────────
+let _poolExpanded = false
+function expandPool() { _poolExpanded = true; renderStockPool() }
+
 function renderStockPool() {
   const jp     = document.getElementById('filterJP')?.value    || ''
   const sexo   = document.getElementById('filterSexo')?.value  || ''
@@ -2780,7 +2783,14 @@ function renderStockPool() {
     return
   }
 
-  body.innerHTML = pool.map(c => `
+  // Renderizar centenas de linhas de uma vez deixava a aba pesada a ponto de
+  // parecer travada (nem mouse nem toque respondiam). Igual ao 状況, mostra
+  // só os primeiros e expande sob demanda.
+  const PAGE = 30
+  const show = _poolExpanded ? pool : pool.slice(0, PAGE)
+  const hasMore = pool.length > PAGE && !_poolExpanded
+
+  body.innerHTML = show.map(c => `
     <div class="pool-row">
       <span style="font-weight:600;cursor:pointer;color:#1e88e5" onclick="abrirModal('${c.id}')">${c.shimei || '—'}</span>
       <span>${c.telefone || '—'}</span>
@@ -2791,7 +2801,7 @@ function renderStockPool() {
       <span style="font-size:11px">${c.nivel_japones?.split(' ')[0] || '—'}</span>
       <span><button class="btn-atribuir" onclick="atribuirParaFabrica('${c.id}')">Atribuir fábrica</button></span>
     </div>
-  `).join('')
+  `).join('') + (hasMore ? `<div style="padding:10px 16px;font-size:12px;color:#1e88e5;cursor:pointer;text-align:center" onclick="expandPool()">+ さらに ${pool.length - PAGE} 件</div>` : '')
 }
 
 async function kengakuNG(e, id) {
