@@ -2761,12 +2761,16 @@ async function bloquearLead(id) {
 
 // ─── STOCK POOL ───────────────────────────────────────────────
 function renderStockPool() {
-  const jp   = document.getElementById('poolFilterJP')?.value   || ''
-  const sexo = document.getElementById('poolFilterSexo')?.value || ''
+  const jp     = document.getElementById('filterJP')?.value    || ''
+  const sexo   = document.getElementById('filterSexo')?.value  || ''
+  const idade  = parseInt(document.getElementById('filterIdade')?.value) || null
+  const search = document.getElementById('searchInput')?.value.toLowerCase() || ''
 
   let pool = todosOsCandidatos.filter(c => c.origem === 'web_stock' || c.dt_stock_geral)
-  if (jp)   pool = pool.filter(c => c.nivel_japones === jp)
-  if (sexo) pool = pool.filter(c => c.sexo === sexo)
+  if (jp)     pool = pool.filter(c => c.nivel_japones === jp)
+  if (sexo)   pool = pool.filter(c => c.sexo === sexo)
+  if (idade)  pool = pool.filter(c => c.idade <= idade)
+  if (search) pool = pool.filter(c => c.shimei?.toLowerCase().includes(search) || c.telefone?.includes(search) || String(c.numero_cadastro ?? '').includes(search))
 
   document.getElementById('pool-count').textContent = `(${pool.length})`
   const body = document.getElementById('poolBody')

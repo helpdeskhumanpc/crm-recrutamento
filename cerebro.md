@@ -1036,6 +1036,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Bug corrigido (mobile): `#statsBar` (barra 総候補者/連絡前/対応中/...) nunca era escondida pelo `showTab()`, ficava sempre visível em cima de qualquer aba — em オーダー状況 no celular isso empurrava e cortava o conteúdo real da aba (que já tem estatística própria por fábrica mais abaixo), forçando scroll horizontal só pra ver números que nem se aplicam a essa tela. Agora `showTab()` esconde o `#statsBar` especificamente na aba `orderstatus` |
 | 2026-08-25 | Bug corrigido: filtro de 登録日 ficava completamente inacessível no celular — `#periodoWrap` já era escondido no mobile (`display:none !important`) e não existia em nenhum outro lugar, então não tinha como trocar o período pelo celular. Adicionada `#periodoMobileBar`, uma barra dedicada no topo do topbar, só-mobile, com seus próprios inputs (`filterDtIniMobile`/`filterDtFimMobile`) sincronizados nos dois sentidos com os campos reais (`onPeriodoChangeMobile()`, e `onPeriodoChange()` passou a espelhar de volta) — inclusive no valor padrão inicial (3 meses atrás → hoje) definido em `iniciarDashboard()` |
 | 2026-08-25 | Conteúdo do `alerta_nota` passa a aparecer nos eventos tipo アラート no カレンダー (grid desktop, 1 e 2 linhas, e agenda mobile) e na agenda de オーダー状況 — antes só mostrava "アラート：Nome", sem dar pra saber do que se tratava sem abrir o candidato. Função `add()` dos dois calendários ganhou parâmetro `nota`; texto escapado com `escHtml()` |
+| 2026-09-11 | 全体ストック Pool ganha busca/filtro: a busca (氏名/電話/番号) e os filtros 性別/年齢上限/日本語 do topbar, antes exclusivos do 状況/Leads do Site, agora também filtram `renderStockPool()`. Removidos os dropdowns duplicados (日本語/性別) que existiam só nessa aba, deixando um aviso indicando que os filtros de cima já valem ali. Período (登録日) e fábrica da sidebar **não** foram incluídos de propósito — candidatos no pool podem estar há meses lá, aplicar o período padrão de 3 meses esconderia gente que hoje aparece normal |
 
 ## Sistema de Versão
 
@@ -1043,8 +1044,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.62**
-- Tags criadas até agora: `v1.00` a `v1.62`
+- Versão atual: **v1.65**
+- Tags criadas até agora: `v1.00` a `v1.65` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 
