@@ -1038,6 +1038,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-08-25 | Conteúdo do `alerta_nota` passa a aparecer nos eventos tipo アラート no カレンダー (grid desktop, 1 e 2 linhas, e agenda mobile) e na agenda de オーダー状況 — antes só mostrava "アラート：Nome", sem dar pra saber do que se tratava sem abrir o candidato. Função `add()` dos dois calendários ganhou parâmetro `nota`; texto escapado com `escHtml()` |
 | 2026-09-11 | 全体ストック Pool ganha busca/filtro: a busca (氏名/電話/番号) e os filtros 性別/年齢上限/日本語 do topbar, antes exclusivos do 状況/Leads do Site, agora também filtram `renderStockPool()`. Removidos os dropdowns duplicados (日本語/性別) que existiam só nessa aba, deixando um aviso indicando que os filtros de cima já valem ali. Período (登録日) e fábrica da sidebar **não** foram incluídos de propósito — candidatos no pool podem estar há meses lá, aplicar o período padrão de 3 meses esconderia gente que hoje aparece normal |
 | 2026-09-11 | Bug corrigido: 全体ストック Pool travava de verdade (nem mouse nem toque rolavam) — CSS de rolagem estava correto (igual a outras abas que funcionam), causa real era renderizar centenas de linhas de uma vez sem paginação, sobrecarregando o navegador. Igual ao 状況, agora mostra só os primeiros 30 (`_poolExpanded`, `expandPool()`) com botão "+さらに N件" pra carregar o resto |
+| 2026-09-11 | Bug de rolagem no 全体ストック Pool — a paginação (item acima) não resolveu sozinha e o Eder notou que nem aparecia barra de rolagem, mesmo com poucas linhas (indício de que `#stockPoolView` não estava recebendo altura limitada de verdade pela cadeia de flexbox, por motivo não identificado com certeza só lendo o CSS). Correção aplicada: `#poolBody` ganhou `max-height:calc(100vh - 280px)` e `overflow-y:auto` próprios, deixando de depender da cadeia `body → #main → #stockPoolView` pra calcular a altura — rolagem interna garantida independente da causa raiz exata. Header da tabela (`.pool-col-header`) fica fixo, só as linhas rolam |
 
 ## Sistema de Versão
 
@@ -1045,8 +1046,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.66**
-- Tags criadas até agora: `v1.00` a `v1.66` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.67**
+- Tags criadas até agora: `v1.00` a `v1.67` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 
