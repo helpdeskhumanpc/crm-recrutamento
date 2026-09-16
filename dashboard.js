@@ -992,7 +992,7 @@ function renderPipeline() {
           }
           return `<div class="candidate-row${colClass}" onclick="abrirModal('${c.id}')">
             <span onclick="event.stopPropagation()"><input type="checkbox" onchange="toggleSelecaoImpressao('${c.id}', this.checked)" ${_selecionadosImpressao.has(c.id) ? 'checked' : ''}></span>
-            <span style="font-size:11px;color:#999">${c.numero_cadastro ?? '—'}</span>
+            <span style="font-size:13px;color:#222;font-weight:600">${c.numero_cadastro ?? '—'}</span>
             <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}">${c.is_blacklisted ? '<span class="black-flag">⚠</span> ' : ''}${c.shimei || '—'}</span>
             <span style="font-size:11px;color:#666">${c.shokai || '—'}</span>
             <span>${c.telefone || '—'}</span>
