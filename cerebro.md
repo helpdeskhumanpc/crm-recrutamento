@@ -1040,6 +1040,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-09-11 | Bug corrigido: 全体ストック Pool travava de verdade (nem mouse nem toque rolavam) — CSS de rolagem estava correto (igual a outras abas que funcionam), causa real era renderizar centenas de linhas de uma vez sem paginação, sobrecarregando o navegador. Igual ao 状況, agora mostra só os primeiros 30 (`_poolExpanded`, `expandPool()`) com botão "+さらに N件" pra carregar o resto |
 | 2026-09-11 | Bug de rolagem no 全体ストック Pool — a paginação (item acima) não resolveu sozinha e o Eder notou que nem aparecia barra de rolagem, mesmo com poucas linhas (indício de que `#stockPoolView` não estava recebendo altura limitada de verdade pela cadeia de flexbox, por motivo não identificado com certeza só lendo o CSS). Correção aplicada: `#poolBody` ganhou `max-height:calc(100vh - 280px)` e `overflow-y:auto` próprios, deixando de depender da cadeia `body → #main → #stockPoolView` pra calcular a altura — rolagem interna garantida independente da causa raiz exata. Header da tabela (`.pool-col-header`) fica fixo, só as linhas rolam |
 | 2026-09-16 | Coluna 番号 (numero_cadastro) no 状況 fica mais legível — cor cinza clara (#999) trocada por preto mais sólido (#222) com negrito leve, e fonte de 11px pra 13px |
+| 2026-09-23 | Visto `技術・人文知識・国際業務` (Engenheiro/Humanidades/Serv. Internacionais) adicionado em todos os formulários de visto: `form-candidato.html`, `dashboard.js` (select do modal + `VISA_PT`), `form-vaga.html`, `form-vaga-ig.html`, `pg-regiao-nagoya.html`, `server.js` (tradução do Telegram). De brinde, corrigido: o select de ビザ do modal (`dashboard.js`) nunca tinha `特定活動` — quem tinha esse visto aparecia com o campo em branco ao abrir o candidato. `form-vaga.html`, `form-vaga-ig.html` e `pg-regiao-nagoya.html` precisam ser colados manualmente onde estão publicados (não sobem sozinhos) |
 
 ## Sistema de Versão
 
@@ -1047,8 +1048,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.68**
-- Tags criadas até agora: `v1.00` a `v1.68` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.69**
+- Tags criadas até agora: `v1.00` a `v1.69` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 

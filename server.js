@@ -27,6 +27,7 @@ const VISA = {
   '永住者の配偶者または子': 'Spouse/Child of Permanent Resident',
   '定住者（1・3・5年）': 'Long-term Resident', '家族滞在': 'Dependent',
   '留学': 'Student', '日本国籍': 'Japanese Citizen', '特定活動': 'Designated Activities',
+  '技術・人文知識・国際業務': 'Engineer/Specialist in Humanities/International Services',
 }
 const KANA = { '読み書きできる': 'Reading and Writing', '読めるのみ': 'Reading only', 'できない': 'Cannot' }
 const SEXO = { '男性': 'Man', '女性': 'Woman', 'その他': 'Other' }

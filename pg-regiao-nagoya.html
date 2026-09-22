@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vagas de Emprego no Japão — Região de Nagoya</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Barlow', sans-serif; background: #f5f5f5; color: #333; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4e 60%, #e8621a 150%);
+      color: white; padding: 56px 20px 64px;
+    }
+    .hero-inner { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center; text-align: left; }
+    .hero-image { width: 100%; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.35); display: block; }
+    .hero .badge {
+      display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+      padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 18px; letter-spacing: 0.3px;
+    }
+    .hero h1 { font-size: 32px; font-weight: 800; line-height: 1.3; margin-bottom: 14px; }
+    .hero h1 span { color: #ffb74d; }
+    .hero p.sub { font-size: 16px; color: #ddd; max-width: 520px; margin: 0 0 28px; line-height: 1.6; }
+
+    .salary-box {
+      background: white; color: #1a1a2e; display: inline-block; border-radius: 12px;
+      padding: 20px 36px; margin-bottom: 28px; box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    }
+    .salary-box .label { font-size: 13px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .salary-box .value { font-size: 36px; font-weight: 800; color: #e8621a; line-height: 1.2; }
+    .salary-box .est   { font-size: 13px; color: #666; margin-top: 4px; }
+
+    .btn-cta {
+      display: inline-block; background: #e8621a; color: white; font-size: 17px; font-weight: 700;
+      padding: 16px 40px; border-radius: 8px; text-decoration: none; box-shadow: 0 6px 20px rgba(232,98,26,0.4);
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-cta:hover { background: #cf5217; transform: translateY(-2px); }
+
+    .urgency { margin-top: 18px; font-size: 13px; color: #ffb74d; font-weight: 700; letter-spacing: 0.3px; }
+
+    /* SECTION GENERIC */
+    .section { max-width: 960px; margin: 0 auto; padding: 56px 20px; }
+    .section h2 { font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 8px; color: #1a1a2e; }
+    .section p.lead { text-align: center; color: #666; font-size: 15px; margin-bottom: 36px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+    /* CARDS GRID */
+    .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .card { background: white; border-radius: 10px; padding: 24px 18px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+    .card .icon { font-size: 32px; margin-bottom: 12px; }
+    .card .title { font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #1a1a2e; }
+    .card .desc { font-size: 13px; color: #777; line-height: 1.5; }
+
+    /* FACTORIES STRIP */
+    .factories-strip { background: #1a1a2e; color: white; padding: 32px 20px; text-align: center; }
+    .factories-strip .title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #ffb74d; margin-bottom: 10px; }
+    .factories-strip .cities { font-size: 17px; font-weight: 600; max-width: 760px; margin: 0 auto; line-height: 1.6; }
+
+    /* FAQ */
+    .faq-item { background: white; border-radius: 8px; padding: 18px 22px; margin-bottom: 12px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+    .faq-item .q { font-weight: 700; font-size: 15px; color: #1a1a2e; margin-bottom: 6px; }
+    .faq-item .q::before { content: "Q. "; color: #e8621a; }
+    .faq-item .a { font-size: 14px; color: #555; line-height: 1.6; }
+
+    .cta-mid { text-align: center; padding: 8px 20px 56px; }
+
+    /* FORM */
+    #candidatar { background: #eceef2; padding: 56px 20px; }
+    .form-container { max-width: 800px; margin: 0 auto; background: white; padding: 32px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .form-container h2 { color: #e8621a; font-size: 20px; margin-bottom: 6px; text-align: left; }
+    .form-container > p.lead-form { text-align: left; color: #777; font-size: 13px; margin-bottom: 24px; }
+    .section-title { font-weight: 700; font-size: 14px; color: #e8621a; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #f0d0c0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group { margin-bottom: 18px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+    label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; color: #444; }
+    .required { color: #e8621a; margin-left: 2px; }
+    input[type="text"], input[type="tel"], input[type="date"], input[type="number"], select, textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; color: #333; background: white;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #e8621a; box-shadow: 0 0 0 2px rgba(232,98,26,0.1); }
+
+    .checkbox-grid { display: flex; flex-wrap: wrap; gap: 8px 0; margin-top: 4px; }
+    .checkbox-grid label { font-weight: normal; display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; color: #333; min-width: 220px; padding: 4px 8px 4px 0; }
+    .checkbox-grid input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #e8621a; flex-shrink: 0; }
+
+    .divider { border: none; border-top: 1px solid #eee; margin: 24px 0; }
+    .btn-submit { width: 100%; padding: 14px; background: #e8621a; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 28px; transition: background 0.2s; letter-spacing: 0.3px; }
+    .btn-submit:hover { background: #cf5217; }
+    .btn-submit:disabled { background: #aaa; cursor: not-allowed; }
+    .alert-error { display: none; padding: 12px 16px; border-radius: 4px; margin-top: 14px; font-size: 13px; background: #ffebee; color: #c62828; }
+
+    footer { text-align: center; padding: 24px 20px; font-size: 12px; color: #999; }
+
+    /* WHATSAPP FLOAT */
+    .whatsapp-float {
+      position: fixed; bottom: 22px; right: 22px; z-index: 999;
+      display: flex; align-items: center; gap: 10px;
+      background: #25d366; color: white; text-decoration: none;
+      padding: 14px 20px; border-radius: 50px; font-weight: 700; font-size: 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.4s;
+      opacity: 0; pointer-events: none;
+    }
+    .whatsapp-float.show { opacity: 1; pointer-events: auto; }
+    .whatsapp-float:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .whatsapp-float svg { width: 26px; height: 26px; flex-shrink: 0; }
+    @media (max-width: 600px) {
+      .whatsapp-float span { display: none; }
+      .whatsapp-float { padding: 14px; }
+    }
+
+    @media (max-width: 768px) {
+      .hero-inner { grid-template-columns: 1fr; text-align: center; }
+      .hero-image { order: -1; max-width: 320px; margin: 0 auto 24px; }
+      .hero p.sub { margin: 0 auto 28px; }
+      .hero h1 { font-size: 24px; }
+      .salary-box .value { font-size: 28px; }
+      .cards-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .form-container { padding: 20px; }
+      .form-row, .form-row-3 { grid-template-columns: 1fr; }
+      .checkbox-grid label { min-width: 160px; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <span class="badge">📍 Região de Nagoya — Aichi, Gifu e Mie</span>
+        <h1>Vagas de Emprego em <span>Fábricas no Japão</span><br>perto de Nagoya</h1>
+        <p class="sub">Diversas vagas abertas em várias fábricas da região. Não precisa de experiência anterior — só vontade de trabalhar!</p>
+
+        <div class="salary-box">
+          <div class="label">Salário por hora</div>
+          <div class="value">¥1.600 ~ ¥2.000</div>
+          <div class="est">Ganho estimado de ¥260.000 a ¥430.000/mês, variando com hora extra</div>
+        </div>
+        <br>
+        <a href="#candidatar" class="btn-cta">Candidate-se Agora →</a>
+        <div class="urgency">⚡ Vagas abertas agora — contratação imediata</div>
+      </div>
+      <img class="hero-image" src="https://jobs-human.com/wp-content/uploads/2026/06/emprego-aichi-mie-gifu-homem-mulher-servico-vaga-.png" alt="Vagas de emprego em fábricas no Japão — região de Aichi, Mie e Gifu, para homens e mulheres">
+    </div>
+  </section>
+
+  <!-- QUEM PODE SE CANDIDATAR -->
+  <section class="section">
+    <h2>Quem pode se candidatar</h2>
+    <p class="lead">Os requisitos são simples — confira se você se encaixa:</p>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="icon">🎂</div>
+        <div class="title">18 a 49 anos</div>
+        <div class="desc">Faixa de idade aceita para as vagas</div>
+      </div>
+      <div class="card">
+        <div class="icon">🚗</div>
+        <div class="title">Condução própria</div>
+        <div class="desc">Importante ter carro ou moto para o deslocamento</div>
+      </div>
+      <div class="card">
+        <div class="icon">🗣️</div>
+        <div class="title">Qualquer nível de japonês</div>
+        <div class="desc">Temos vagas do básico ao avançado — cada vaga tem seu próprio requisito</div>
+      </div>
+      <div class="card">
+        <div class="icon">🚻</div>
+        <div class="title">Homens e mulheres</div>
+        <div class="desc">Vagas abertas para os dois gêneros</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- O QUE OFERECEMOS -->
+  <section class="section" style="padding-top:0">
+    <h2>O que oferecemos</h2>
+    <p class="lead">Além do salário competitivo, você conta com apoio em pontos essenciais:</p>
+    <div class="cards-grid" style="grid-template-columns:repeat(2,1fr); max-width:640px; margin:0 auto">
+      <div class="card">
+        <div class="icon">🏠</div>
+        <div class="title">Apoio com apartamento</div>
+        <div class="desc">Ajudamos você a conseguir seu próprio apartamento</div>
+      </div>
+      <div class="card">
+        <div class="icon">🏭</div>
+        <div class="title">Diversas fábricas</div>
+        <div class="desc">Várias opções de vaga na mesma região</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FÁBRICAS NA REGIÃO -->
+  <div class="factories-strip">
+    <div class="title">Fábricas disponíveis nas seguintes cidades</div>
+    <div class="cities">Komaki, Tajimi, Inabe, Kakamigahara, Aguchi e muitas outras na região de Aichi, Gifu e Mie</div>
+  </div>
+
+  <!-- FAQ -->
+  <section class="section">
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-item">
+      <div class="q">Preciso falar japonês fluente?</div>
+      <div class="a">Depende da vaga. Temos oportunidades para quem fala só o básico até vagas que exigem japonês avançado. No formulário você informa seu nível e te indicamos a vaga compatível.</div>
+    </div>
+    <div class="faq-item">
+      <div class="q">Vocês ajudam a conseguir moradia?</div>
+      <div class="a">Sim, damos apoio para você conseguir seu próprio apartamento na região.</div>
+    </div>
+    <div class="faq-item">
+      <div class="q">Preciso de experiência em fábrica?</div>
+      <div class="a">Não é obrigatório. Há vagas para quem nunca trabalhou em fábrica também.</div>
+    </div>
+    <div class="faq-item">
+      <div class="q">É necessário ter carro?</div>
+      <div class="a">Sim, é importante ter condução própria (carro ou moto) para o deslocamento até a fábrica.</div>
+    </div>
+  </section>
+
+  <div class="cta-mid">
+    <a href="#candidatar" class="btn-cta">Candidate-se Agora →</a>
+  </div>
+
+  <!-- FORMULÁRIO -->
+  <section id="candidatar">
+    <div class="form-container">
+      <h2>Preencha o formulário para se candidatar</h2>
+      <p class="lead-form">Vagas na região de Nagoya (Aichi, Gifu e Mie) — preencha seus dados abaixo.</p>
+
+      <form id="vagaForm">
+
+        <!-- DADOS PESSOAIS -->
+        <div class="section-title">Dados Pessoais</div>
+
+        <div class="form-group">
+          <label>Nome completo <span class="required">*</span></label>
+          <input type="text" name="shimei" required placeholder="Ex: João Silva">
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label>Telefone <span class="required">*</span></label>
+            <input type="tel" name="telefone" required placeholder="090-1234-5678">
+          </div>
+          <div>
+            <label>Data de nascimento</label>
+            <input type="date" name="data_nascimento">
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div>
+            <label>Idade <span class="required">*</span></label>
+            <input type="number" name="idade" required placeholder="30" min="18" max="49">
+          </div>
+          <div>
+            <label>Gênero <span class="required">*</span></label>
+            <select name="sexo" required>
+              <option value="">Selecione</option>
+              <option value="男性">Homem</option>
+              <option value="女性">Mulher</option>
+              <option value="その他">Outro</option>
+            </select>
+          </div>
+          <div>
+            <label>Nacionalidade <span class="required">*</span></label>
+            <input type="text" name="nacionalidade" required placeholder="Brasileiro">
+          </div>
+        </div>
+
+        <!-- ENDEREÇO -->
+        <div class="section-title">Endereço</div>
+
+        <div class="form-row">
+          <div>
+            <label>CEP (〒)</label>
+            <input type="text" name="postal_code" placeholder="123-4567">
+          </div>
+          <div>
+            <label>Província <span class="required">*</span></label>
+            <input type="text" name="prefecture" required placeholder="Ex: Aichi">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Cidade <span class="required">*</span></label>
+          <input type="text" name="city" required placeholder="Ex: Okazaki">
+        </div>
+
+        <!-- DOCUMENTAÇÃO -->
+        <div class="section-title">Documentação</div>
+
+        <div class="form-group">
+          <label>Tipo de visto <span class="required">*</span></label>
+          <select name="visa" required>
+            <option value="">Selecione</option>
+            <option value="永住者">Residente permanente</option>
+            <option value="日本人の配偶者">Cônjuge de japonês</option>
+            <option value="永住者の配偶者または子">Cônjuge/filho de residente permanente</option>
+            <option value="定住者（1・3・5年）">Residente fixo (1/3/5 anos)</option>
+            <option value="家族滞在">Dependente familiar</option>
+            <option value="留学">Estudante</option>
+            <option value="日本国籍">Cidadão japonês</option>
+            <option value="特定活動">Atividade específica</option>
+            <option value="技術・人文知識・国際業務">Engenheiro/Humanidades/Serv. Internacionais</option>
+          </select>
+        </div>
+
+        <!-- DISPONIBILIDADE -->
+        <div class="section-title">Disponibilidade</div>
+
+        <div class="form-row-3">
+          <div>
+            <label>Precisa de moradia? <span class="required">*</span></label>
+            <select name="precisa_apartamento" required>
+              <option value="">Selecione</option>
+              <option value="true">Sim, preciso</option>
+              <option value="false">Não preciso</option>
+            </select>
+          </div>
+          <div>
+            <label>Pode se mudar?</label>
+            <select name="pode_mudar">
+              <option value="true">Sim</option>
+              <option value="false">Não</option>
+            </select>
+          </div>
+          <div>
+            <label>Possui carro?</label>
+            <select name="tem_carro">
+              <option value="false">Não</option>
+              <option value="true">Sim</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Situação atual de trabalho</label>
+          <select name="esta_empregado">
+            <option value="在職中">Empregado</option>
+            <option value="離職中">Desempregado</option>
+            <option value="アルバイト中">Meio período</option>
+            <option value="退職予定（予告期間中）">Com aviso prévio</option>
+            <option value="無職">Sem trabalho</option>
+          </select>
+        </div>
+
+        <hr class="divider">
+
+        <!-- TURNOS -->
+        <div class="form-group">
+          <label style="margin-bottom:10px">Turnos disponíveis</label>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="turnos_possiveis" value="二交代"> 2 Turnos (二交代)</label>
+            <label><input type="checkbox" name="turnos_possiveis" value="早番遅番"> Manhã/Tarde (早番遅番)</label>
+            <label><input type="checkbox" name="turnos_possiveis" value="二直三班"> 2 Turnos 3 Times (二直三班)</label>
+            <label><input type="checkbox" name="turnos_possiveis" value="昼勤のみ"> Somente diurno (昼勤のみ)</label>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- HABILITAÇÕES -->
+        <div class="form-group">
+          <label style="margin-bottom:10px">Habilitações e licenças</label>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="habilitacao" value="所持なし"> Não possuo</label>
+            <label><input type="checkbox" name="habilitacao" value="普通自動車"> Carro (普通自動車)</label>
+            <label><input type="checkbox" name="habilitacao" value="バイク"> Moto (バイク)</label>
+            <label><input type="checkbox" name="habilitacao" value="フォークリフト"> Empilhadeira (フォークリフト)</label>
+            <label><input type="checkbox" name="habilitacao" value="玉掛け"> Tamakake (玉掛け)</label>
+            <label><input type="checkbox" name="habilitacao" value="クレーン"> Guindaste (クレーン)</label>
+            <label><input type="checkbox" name="habilitacao" value="溶接"> Soldagem (溶接)</label>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- EXPERIÊNCIA -->
+        <div class="form-group">
+          <label style="margin-bottom:10px">Experiência em fábrica</label>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="experiencia" value="経験なし"> Sem experiência</label>
+            <label><input type="checkbox" name="experiencia" value="組み立て（くみたて）"> Montagem (kumitate)</label>
+            <label><input type="checkbox" name="experiencia" value="自動車部品"> Autopeças (jidosha buhin)</label>
+            <label><input type="checkbox" name="experiencia" value="食品"> Alimentícios (shokuhin)</label>
+            <label><input type="checkbox" name="experiencia" value="電子部品"> Eletrônicos (denshi)</label>
+            <label><input type="checkbox" name="experiencia" value="フォークリフト"> Empilhadeira (forklift)</label>
+            <label><input type="checkbox" name="experiencia" value="玉掛け"> Tamakake</label>
+            <label><input type="checkbox" name="experiencia" value="検査"> Inspeção (kensa)</label>
+            <label><input type="checkbox" name="experiencia" value="梱包"> Embalagem (konpo)</label>
+            <label><input type="checkbox" name="experiencia" value="プレス"> Prensa (punisu)</label>
+            <label><input type="checkbox" name="experiencia" value="溶接"> Soldagem (yosetsu)</label>
+            <label><input type="checkbox" name="experiencia" value="塗装"> Pintura (toso)</label>
+            <label><input type="checkbox" name="experiencia" value="建設"> Construção civil (kensetsu)</label>
+            <label><input type="checkbox" name="experiencia" value="物流"> Logística (butsuryu)</label>
+            <label><input type="checkbox" name="experiencia" value="コンビニ"> Konbini</label>
+            <label><input type="checkbox" name="experiencia" value="スーパー"> Supermercado</label>
+            <label><input type="checkbox" name="experiencia" value="ホテル"> Hotel</label>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- JAPONÊS -->
+        <div class="section-title">Japonês</div>
+
+        <div class="form-group">
+          <label>Nível de japonês <span class="required">*</span></label>
+          <select name="nivel_japones" required>
+            <option value="">Selecione</option>
+            <option value="0%（日本語不可）">0% — Não falo japonês</option>
+            <option value="N5 10%〜（少し話せる）">N5 — Falo um pouco (10%〜)</option>
+            <option value="N4 30%〜（基本会話）">N4 — Conversação básica (30%〜)</option>
+            <option value="N3 50%〜（日常会話）">N3 — Conversação diária (50%〜)</option>
+            <option value="N2 60%〜（中級会話）">N2 — Intermediário (60%〜)</option>
+            <option value="N1 80%〜（上級会話）">N1 — Avançado (80%〜)</option>
+          </select>
+        </div>
+
+        <div class="form-row-3">
+          <div>
+            <label>Hiragana</label>
+            <select name="hiragana">
+              <option value="読み書きできる">Leitura e escrita</option>
+              <option value="読めるのみ">Só leitura</option>
+              <option value="できない">Não sei</option>
+            </select>
+          </div>
+          <div>
+            <label>Katakana</label>
+            <select name="katakana">
+              <option value="読み書きできる">Leitura e escrita</option>
+              <option value="読めるのみ">Só leitura</option>
+              <option value="できない">Não sei</option>
+            </select>
+          </div>
+          <div>
+            <label>Inglês</label>
+            <select name="fala_ingles">
+              <option value="false">Não falo</option>
+              <option value="true">Falo</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- MENSAGEM -->
+        <div class="form-group">
+          <label>Mensagem (opcional)</label>
+          <textarea name="comentario" rows="3" placeholder="Alguma informação adicional que queira nos passar..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">Enviar cadastro</button>
+        <div id="errorMsg" class="alert-error"></div>
+
+      </form>
+    </div>
+  </section>
+
+  <footer>© Vagas Região de Nagoya — Aichi, Gifu e Mie</footer>
+
+  <a id="whatsappFloat" class="whatsapp-float" target="_blank" rel="noopener"
+     href="https://wa.me/819035283777?text=Gostaria%20de%20saber%20mais%20sobre%20as%20vagas%20na%20regi%C3%A3o%20de%20Nagoya">
+    <svg viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M16.001 3.2c-7.07 0-12.8 5.73-12.8 12.8 0 2.41.67 4.65 1.83 6.58L3.2 28.8l6.4-1.78a12.74 12.74 0 0 0 6.4 1.73c7.07 0 12.8-5.73 12.8-12.8s-5.73-12.75-12.8-12.75zm0 23.27c-2.06 0-3.97-.58-5.6-1.6l-.4-.24-3.78 1.05 1.03-3.68-.26-.42a10.42 10.42 0 0 1-1.6-5.58c0-5.76 4.7-10.46 10.46-10.46s10.46 4.7 10.46 10.46-4.6 10.47-10.31 10.47zm5.74-7.84c-.31-.16-1.85-.91-2.14-1.02-.29-.1-.5-.16-.71.16-.21.31-.81 1.02-1 1.23-.18.21-.37.23-.68.08-.31-.16-1.3-.48-2.48-1.53-.92-.82-1.54-1.83-1.72-2.14-.18-.31-.02-.47.14-.63.16-.16.36-.4.55-.6.18-.21.24-.36.36-.6.12-.23.06-.44-.05-.6-.1-.16-.97-2.34-1.33-3.2-.35-.86-.71-.74-.97-.75-.25-.01-.54-.01-.83-.01s-.76.1-1.05.4c-.29.31-1.1 1.07-1.1 2.6 0 1.54 1.12 3.02 1.28 3.23.16.21 2.18 3.34 5.34 4.55 2.65 1.02 3.19.82 3.77.76.58-.06 1.85-.75 2.11-1.49.26-.73.26-1.36.18-1.49-.08-.13-.31-.21-.62-.37z"/></svg>
+    <span>Falar no WhatsApp</span>
+  </a>
+
+  <script>
+    setTimeout(() => document.getElementById('whatsappFloat').classList.add('show'), 7000)
+
+    const { createClient } = supabase
+    const sb = createClient('https://xzxfwrbebkwagnropgfb.supabase.co', 'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE')
+
+    // URL do servidor CRM no Railway
+    const CRM_URL = 'https://crm-recrutamento-production.up.railway.app'
+
+    document.getElementById('vagaForm').addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const form = e.target
+      const btn  = document.getElementById('submitBtn')
+      const data = new FormData(form)
+
+      btn.disabled    = true
+      btn.textContent = 'Enviando...'
+
+      const habilitacao      = [...form.querySelectorAll('input[name="habilitacao"]:checked')].map(el => el.value)
+      const experiencia      = [...form.querySelectorAll('input[name="experiencia"]:checked')].map(el => el.value)
+      const turnos_possiveis = [...form.querySelectorAll('input[name="turnos_possiveis"]:checked')].map(el => el.value)
+
+      const payload = {
+        shimei:              data.get('shimei'),
+        telefone:            data.get('telefone'),
+        data_nascimento:     data.get('data_nascimento')    || null,
+        idade:               parseInt(data.get('idade')),
+        sexo:                data.get('sexo'),
+        nacionalidade:       data.get('nacionalidade'),
+        postal_code:         data.get('postal_code')        || null,
+        prefecture:          data.get('prefecture'),
+        city:                data.get('city'),
+        visa:                data.get('visa'),
+        precisa_apartamento: data.get('precisa_apartamento') === 'true',
+        pode_mudar:          data.get('pode_mudar')          === 'true',
+        tem_carro:           data.get('tem_carro')           === 'true',
+        esta_empregado:      data.get('esta_empregado'),
+        turnos_possiveis,
+        habilitacao,
+        experiencia,
+        nivel_japones:       data.get('nivel_japones'),
+        hiragana:            data.get('hiragana'),
+        katakana:            data.get('katakana'),
+        fala_ingles:         data.get('fala_ingles')         === 'true',
+        comentario:          data.get('comentario')          || null,
+        // campo fixo desta página — formulário único da região de Nagoya
+        fabrica:             '名古屋付近',
+        shokai:              'ヒューマンシステム（西留）',
+        origem:              'web',
+      }
+
+      const { error } = await sb.from('candidates').insert([payload])
+
+      btn.disabled    = false
+      btn.textContent = 'Enviar cadastro'
+
+      if (error) {
+        console.error(error)
+        const msg = document.getElementById('errorMsg')
+        msg.style.display = 'block'
+        msg.textContent = '❌ Erro ao enviar: ' + (error.message || JSON.stringify(error))
+      } else {
+        // Salvar no Google Contacts — keepalive garante o envio mesmo com o redirecionamento abaixo
+        fetch(`${CRM_URL}/api/google-contact`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload),
+          keepalive: true,
+        }).catch(err => console.warn('Google Contacts:', err))
+
+        // Redireciona para a página de agradecimento — dispara o evento Lead já configurado no PixelYourSite
+        window.location.href = 'https://jobs-human.com/obrigado'
+      }
+    })
+  </script>
+</body>
+</html>

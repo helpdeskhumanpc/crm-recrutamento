@@ -1144,6 +1144,7 @@ const VISA_PT = {
   '留学': 'Estudante',
   '日本国籍': 'Cidadão Japonês',
   '特定活動': 'Atividades Designadas',
+  '技術・人文知識・国際業務': 'Engenheiro/Humanidades/Serv. Internacionais',
 }
 const KANA_PT = { '読み書きできる': 'Leitura e escrita', '読めるのみ': 'Leitura', 'できない': 'Não sabe' }
 const NIHONGO_PT = {
@@ -1279,7 +1280,7 @@ function abrirModal(id) {
     <div class="modal-section">
       <div class="modal-section-title">仕事情報</div>
       <div class="modal-grid">
-        <div class="modal-field"><label>ビザ</label><select id="f_visa"><option value="">—</option>${sel(['永住者','日本人の配偶者','永住者の配偶者または子','定住者（1・3・5年）','家族滞在','留学','日本国籍'],c.visa)}</select></div>
+        <div class="modal-field"><label>ビザ</label><select id="f_visa"><option value="">—</option>${sel(['永住者','日本人の配偶者','永住者の配偶者または子','定住者（1・3・5年）','家族滞在','留学','日本国籍','特定活動','技術・人文知識・国際業務'],c.visa)}</select></div>
         <div class="modal-field"><label>工場</label><select id="f_fab"><option value="">—</option>${todasFabricas.map(f=>`<option value="${f}" ${f===c.fabrica?'selected':''}>${f}</option>`).join('')}</select></div>
         <div class="modal-field"><label>工場２</label><select id="f_fab2"><option value="">—</option>${todasFabricas.map(f=>`<option value="${f}" ${f===c.fabrica2?'selected':''}>${f}</option>`).join('')}</select></div>
         <div class="modal-field"><label>紹介者${shokaiBloqueado(c) ? ' 🔒' : ''}</label><input id="f_shokai" value="${c.shokai||''}" ${shokaiBloqueado(c) ? 'disabled style="background:#f5f5f5;color:#999"' : ''}></div>
