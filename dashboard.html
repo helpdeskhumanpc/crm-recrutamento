@@ -104,7 +104,7 @@
     <div class="topbar-row" id="topbarRow1">
       <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
       <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.69</span></h1>
+      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.70</span></h1>
       <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
       <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
       <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
@@ -139,6 +139,7 @@
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="kentouchu" checked onchange="renderPipeline()"> 検討中</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="kengaku" checked onchange="renderPipeline()"> 見学・ヒアリング</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="naitei" checked onchange="renderPipeline()"> 内定</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="naitei2" checked onchange="renderPipeline()"> 内定２</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="nyusha" checked onchange="renderPipeline()"> 入社</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="zaiseki" checked onchange="renderPipeline()"> 在籍</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer"><input type="checkbox" class="stage-chk" value="stock" checked onchange="renderPipeline()"> 工場ストック</label>
@@ -195,6 +196,7 @@
     <div class="stat-card"><div class="stat-num" id="s-kentouchu" style="color:#f9a825">-</div><div class="stat-label">検討中</div></div>
     <div class="stat-card"><div class="stat-num" id="s-kengaku">-</div><div class="stat-label">見学・ヒアリング</div></div>
     <div class="stat-card"><div class="stat-num" id="s-naitei">-</div><div class="stat-label">内定</div></div>
+    <div class="stat-card"><div class="stat-num" id="s-naitei2" style="color:#66bb6a">-</div><div class="stat-label">内定２</div></div>
     <div class="stat-card"><div class="stat-num" id="s-nyusha">-</div><div class="stat-label">入社</div></div>
     <div class="stat-card"><div class="stat-num" id="s-zaiseki" style="color:#00695c">-</div><div class="stat-label">在籍</div></div>
     <div class="stat-card"><div class="stat-num" id="s-stock" style="color:#e91e8c">-</div><div class="stat-label">工場ストック</div></div>
@@ -210,6 +212,7 @@
       <option value="kentouchu">検討中</option>
       <option value="kengaku">見学・ヒアリング</option>
       <option value="naitei">内定</option>
+      <option value="naitei2">内定２</option>
       <option value="nyusha">入社</option>
       <option value="zaiseki">在籍</option>
       <option value="stock">工場ストック</option>
@@ -580,6 +583,7 @@
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="mensetsu"> 面接</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="kengaku"> 見学・ヒアリング</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="naitei"> 内定</label>
+        <label class="fp-chip"><input type="checkbox" class="fp-stage" value="naitei2"> 内定２</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="nyusha"> 入社</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="zaiseki"> 在籍</label>
         <label class="fp-chip"><input type="checkbox" class="fp-stage" value="stock"> 工場ストック</label>
