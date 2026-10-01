@@ -46,6 +46,7 @@ let todosOsCandidatos = []
 let todasFabricas = []
 let todasLocations = []
 let nomeParaJimusho = {} // shokai (nome) -> jimusho, combinando shokaisha + perfis_publicos
+let todosPerfisPublicos = [] // nome/jimusho/shokai_nome/role/fabricas de todos os perfis (view perfis_publicos)
 let fabricaAtiva = null
 let shokaiAtivo = null
 let jimushoAtivo = false
@@ -156,11 +157,12 @@ async function carregarDados() {
     sb.from('candidates').select('*').eq('is_deleted', false).order('created_at', { ascending: false }),
     locQuery,
     sb.from('shokaisha').select('nome,jimusho'),
-    sb.from('perfis_publicos').select('nome,jimusho,shokai_nome'),
+    sb.from('perfis_publicos').select('nome,jimusho,shokai_nome,role,fabricas'),
   ])
   todosOsCandidatos = res1.data || []
   todasLocations    = res2.data || []
   todasFabricas     = todasLocations.map(f => f.nome)
+  todosPerfisPublicos = res4.data || []
   nomeParaJimusho = {}
   ;(res3.data || []).forEach(s => { if (s.nome && s.jimusho) nomeParaJimusho[s.nome] = s.jimusho })
   ;(res4.data || []).forEach(p => { if (p.shokai_nome && p.jimusho) nomeParaJimusho[p.shokai_nome] = p.jimusho })
@@ -2286,6 +2288,20 @@ function podeEditarOrderFabrica(fabricaNome) {
   return false
 }
 
+// tantousha com essa fábrica no array, ou jimusho do mesmo escritório dela
+function pessoasComAcessoFabrica(fabricaNome) {
+  const loc = todasLocations.find(l => l.nome === fabricaNome)
+  if (!loc) return []
+  return todosPerfisPublicos
+    .filter(p => {
+      if (p.role === 'jimusho')   return p.jimusho === loc.jimusho
+      if (p.role === 'tantousha') return (p.fabricas || []).includes(fabricaNome)
+      return false
+    })
+    .map(p => p.nome)
+    .filter(Boolean)
+}
+
 function atualizarFabricaOrderBar() {
   const bar = document.getElementById('fabricaOrderBar')
   const loc = fabricaAtiva ? todasLocations.find(l => l.nome === fabricaAtiva) : null
@@ -2298,6 +2314,8 @@ function atualizarFabricaOrderBar() {
   document.getElementById('fabricaOrderNome').textContent = loc.nome
   document.getElementById('fabricaOrderNum').value = loc.order_atual || 0
   document.getElementById('fabricaNaiteiNum').value = loc.naitei_atual || 0
+  const nomes = pessoasComAcessoFabrica(fabricaAtiva)
+  document.getElementById('fabricaOrderResponsaveis').textContent = nomes.length ? nomes.join('、') : '—'
   bar.style.display = 'flex'
 }
 

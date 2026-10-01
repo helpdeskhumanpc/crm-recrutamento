@@ -376,16 +376,20 @@ created_at  timestamp with time zone default now()
 
 **Escritórios:** 刈谷事務所, 三重事務所, 豊橋事務所, 浜松事務所, 小牧事務所, 埼玉事務所
 
-### `perfis_publicos` — view (adicionada 2026-08-25)
+### `perfis_publicos` — view (adicionada 2026-08-25, ampliada 2026-10-01)
 
 ```sql
-create view public.perfis_publicos as
-select id, nome, jimusho, shokai_nome from public.profiles;
+create or replace view public.perfis_publicos as
+select id, nome, jimusho, shokai_nome, role, fabricas from public.profiles;
 
 grant select on public.perfis_publicos to authenticated;
 ```
 
-Espelho só-leitura de `profiles`, sem os campos sensíveis (`role`, `fabricas`) — criada porque o RLS de `profiles` só deixa cada usuário ler o próprio perfil (`auth.uid() = id`), e o dashboard precisava descobrir o `jimusho` de **qualquer** usuário (não só o logado) pra montar o gráfico "事務所別 候補者数". Como view roda com os privilégios de quem criou (não do usuário que consulta), ela contorna o RLS de `profiles` só pra esses 3 campos, mantendo o resto da tabela protegido. Usada junto com `shokaisha` (`dashboard.js`, `nomeParaJimusho`) pra montar o mapa nome→escritório: `shokaisha.nome`/`jimusho` cobre a maioria (nomes cadastrados sem login), `perfis_publicos.shokai_nome`/`jimusho` cobre quem indica com login próprio (tantousha/jimusho usando o link de afiliado).
+Espelho só-leitura de `profiles` — criada porque o RLS de `profiles` só deixa cada usuário ler o próprio perfil (`auth.uid() = id`), e o dashboard precisava descobrir dados de **qualquer** usuário (não só o logado). Como view roda com os privilégios de quem criou (não do usuário que consulta), ela contorna o RLS de `profiles` pra esses campos, mantendo o resto da tabela (sem campos realmente sensíveis, tipo e-mail — isso fica em `auth.users`) acessível só por essa via. Usos:
+- `nome`/`jimusho`/`shokai_nome` + `shokaisha` (`dashboard.js`, `nomeParaJimusho`) — mapa nome→escritório pro gráfico "事務所別 候補者数"
+- `role`/`fabricas` (adicionado 2026-10-01, `todosPerfisPublicos`) — pra listar quem tem acesso de edição numa fábrica específica (barra `#fabricaOrderBar`, ver abaixo)
+
+**Nota de exposição:** desde 2026-10-01, `role` e `fabricas` de todo mundo ficam visíveis pra qualquer usuário logado (antes só nome/escritório/shokai_nome). Decisão consciente do Eder — quem vê a barra de fábrica já tem alguma relação de gestão com ela.
 
 ---
 
@@ -1043,6 +1047,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-09-23 | Visto `技術・人文知識・国際業務` (Engenheiro/Humanidades/Serv. Internacionais) adicionado em todos os formulários de visto: `form-candidato.html`, `dashboard.js` (select do modal + `VISA_PT`), `form-vaga.html`, `form-vaga-ig.html`, `pg-regiao-nagoya.html`, `server.js` (tradução do Telegram). De brinde, corrigido: o select de ビザ do modal (`dashboard.js`) nunca tinha `特定活動` — quem tinha esse visto aparecia com o campo em branco ao abrir o candidato. `form-vaga.html`, `form-vaga-ig.html` e `pg-regiao-nagoya.html` precisam ser colados manualmente onde estão publicados (não sobem sozinhos) |
 | 2026-09-25 | Nova etapa **内定２** (`dt_naitei2`), seção própria logo abaixo de 内定 no 状況, em verde mais claro (`#66bb6a`). É um passo **depois** da 内定 (prioridade em `getStage()`: 入社/在籍 > 内定２ > 内定; `STAGE_CHAIN` ganhou entrada entre 入社 e 内定, então também é opção na movimentação em massa). Linha da 内定２ igual à da 内定 (só mostra 入社日, sem botões — `showNaiteiCol` cobre as duas). Na etapa 見学, agora são 3 botões: **NG / 内定 / 内定２** (o novo usa `avancarEtapa(..., 'dt_naitei2')`; coluna de ações do `.col-kengaku` alargada de 140px pra 180px). Modal ganhou campo `内定２日` (bloqueado pra edição parcial de shokaisha, em `CAMPOS_BLOQUEADOS_INFO`). Card novo no topo, checkbox no ステージ▾, chip no 詳細フィルター, opção no dropdown de movimentação em massa, coluna exportável 内定２日. **Conta junto com 内定** onde 内定 é contado como conversão (オーダー状況 e グラフ: `dt_naitei \|\| dt_naitei2`), e entra no grupo 成約 do gráfico de 紹介者/事務所. Depende de `ALTER TABLE candidates ADD COLUMN dt_naitei2 date;` no Supabase antes do deploy, senão o salvar do modal quebra. Anotado (não corrigido): `f_zaiseki` também não está em `CAMPOS_BLOQUEADOS_INFO` (shokaisha com edição parcial consegue mexer em 在籍日) |
 | 2026-09-27 | **内定２ removida** (v1.71), a pedido do Eder — `git revert` do commit da v1.70. Some do código (etapa, botão na 見学, campo no modal, card, filtros, gráficos, exportação), mas a coluna `dt_naitei2` **continua na tabela `candidates`** (sem uso, inofensiva) e qualquer valor já gravado nela fica guardado: quem foi marcado 内定２ nesse meio tempo volta a aparecer na etapa que o resto das datas indicar (ex: quem foi direto da 見学 pra 内定２ volta pra 見学). Se quiser limpar de vez: `ALTER TABLE candidates DROP COLUMN dt_naitei2;` |
+| 2026-10-01 | Barra `#fabricaOrderBar` (aparece ao selecionar uma fábrica específica) ganha "担当者" com os nomes de quem tem acesso de edição a ela — `tantousha` com a fábrica no array `fabricas`, ou `jimusho` do mesmo escritório dela (`pessoasComAcessoFabrica()`, mesma regra de `podeEditarOrderFabrica()`, só que pra todo mundo, não só o usuário logado). `admin` e `shokaisha` ficam de fora da lista a pedido do Eder (admin edita tudo sempre, não diz nada específico sobre a fábrica; shokaisha não tem edição por fábrica). Depende da view `perfis_publicos` expor `role`/`fabricas` (ver acima) |
 
 ## Sistema de Versão
 
@@ -1050,8 +1055,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.71**
-- Tags criadas até agora: `v1.00` a `v1.71` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.72**
+- Tags criadas até agora: `v1.00` a `v1.72` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 
