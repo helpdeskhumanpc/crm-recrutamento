@@ -1048,6 +1048,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-09-25 | Nova etapa **内定２** (`dt_naitei2`), seção própria logo abaixo de 内定 no 状況, em verde mais claro (`#66bb6a`). É um passo **depois** da 内定 (prioridade em `getStage()`: 入社/在籍 > 内定２ > 内定; `STAGE_CHAIN` ganhou entrada entre 入社 e 内定, então também é opção na movimentação em massa). Linha da 内定２ igual à da 内定 (só mostra 入社日, sem botões — `showNaiteiCol` cobre as duas). Na etapa 見学, agora são 3 botões: **NG / 内定 / 内定２** (o novo usa `avancarEtapa(..., 'dt_naitei2')`; coluna de ações do `.col-kengaku` alargada de 140px pra 180px). Modal ganhou campo `内定２日` (bloqueado pra edição parcial de shokaisha, em `CAMPOS_BLOQUEADOS_INFO`). Card novo no topo, checkbox no ステージ▾, chip no 詳細フィルター, opção no dropdown de movimentação em massa, coluna exportável 内定２日. **Conta junto com 内定** onde 内定 é contado como conversão (オーダー状況 e グラフ: `dt_naitei \|\| dt_naitei2`), e entra no grupo 成約 do gráfico de 紹介者/事務所. Depende de `ALTER TABLE candidates ADD COLUMN dt_naitei2 date;` no Supabase antes do deploy, senão o salvar do modal quebra. Anotado (não corrigido): `f_zaiseki` também não está em `CAMPOS_BLOQUEADOS_INFO` (shokaisha com edição parcial consegue mexer em 在籍日) |
 | 2026-09-27 | **内定２ removida** (v1.71), a pedido do Eder — `git revert` do commit da v1.70. Some do código (etapa, botão na 見学, campo no modal, card, filtros, gráficos, exportação), mas a coluna `dt_naitei2` **continua na tabela `candidates`** (sem uso, inofensiva) e qualquer valor já gravado nela fica guardado: quem foi marcado 内定２ nesse meio tempo volta a aparecer na etapa que o resto das datas indicar (ex: quem foi direto da 見学 pra 内定２ volta pra 見学). Se quiser limpar de vez: `ALTER TABLE candidates DROP COLUMN dt_naitei2;` |
 | 2026-10-01 | Barra `#fabricaOrderBar` (aparece ao selecionar uma fábrica específica) ganha "担当者" com os nomes de quem tem acesso de edição a ela — `tantousha` com a fábrica no array `fabricas`, ou `jimusho` do mesmo escritório dela (`pessoasComAcessoFabrica()`, mesma regra de `podeEditarOrderFabrica()`, só que pra todo mundo, não só o usuário logado). `admin` e `shokaisha` ficam de fora da lista a pedido do Eder (admin edita tudo sempre, não diz nada específico sobre a fábrica; shokaisha não tem edição por fábrica). Depende da view `perfis_publicos` expor `role`/`fabricas` (ver acima) |
+| 2026-10-01 | Rótulo da barra de fábrica trocado de "担当者" pra "この工場を編集できる担当者" — deixa explícito em japonês, pra todo mundo que ver, que aqueles nomes são quem tem permissão de editar os dados daquela fábrica |
 
 ## Sistema de Versão
 
@@ -1055,8 +1056,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.72**
-- Tags criadas até agora: `v1.00` a `v1.72` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.73**
+- Tags criadas até agora: `v1.00` a `v1.73` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 
