@@ -2389,10 +2389,20 @@ let chartInstances = {}
 
 function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id] } }
 
+Chart.register(ChartDataLabels)
+
 function renderCharts() {
   const dark = document.body.classList.contains('dark-mode')
   Chart.defaults.color = dark ? '#c7c7d6' : '#666'
   Chart.defaults.borderColor = dark ? '#3a3a4d' : '#e0e0e0'
+  Chart.defaults.plugins.datalabels = { display: false }
+  const labelColor = dark ? '#e0e0e8' : '#333'
+  // barras empilhadas: mostra só o total na ponta, no último segmento
+  const rotuloTotal = {
+    display: ctx => ctx.datasetIndex === ctx.chart.data.datasets.length - 1,
+    anchor: 'end', align: 'end', color: labelColor, font: { weight: 'bold' },
+    formatter: (v, ctx) => ctx.chart.data.datasets.reduce((s, d) => s + (d.data[ctx.dataIndex] || 0), 0) || '',
+  }
   const fab = document.getElementById('chartFabrica').value
   const candidatosValidos = getFiltrados(false)
   const dados = fab ? candidatosValidos.filter(c => fabricaEfetiva(c) === fab) : candidatosValidos
@@ -2418,7 +2428,7 @@ function renderCharts() {
   chartInstances['chartFunil'] = new Chart(document.getElementById('chartFunil'), {
     type: 'bar',
     data: { labels: stageLabels, datasets: [{ data: stageCounts, backgroundColor: stageColors, borderRadius: 4 }] },
-    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+    options: { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'end', color: labelColor, font: { weight: 'bold' }, formatter: v => v > 0 ? v : '' } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
   })
 
   // Grupos usados tanto no gráfico por escritório quanto no ranking por 紹介者
@@ -2459,7 +2469,7 @@ function renderCharts() {
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }, datalabels: rotuloTotal },
       scales: {
         x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
         y: { stacked: true, ticks: { autoSkip: false } },
@@ -2498,10 +2508,17 @@ function renderCharts() {
     }
   }
   document.getElementById('chartMesTitulo').textContent = periodoTitulo
+  const maxVal = Math.max(...periodoCounts, 0)
+  const minNaoZero = periodoCounts.filter(v => v > 0).reduce((a, b) => Math.min(a, b), Infinity)
+  const idxPico = periodoCounts.indexOf(maxVal)
+  const idxVale = periodoCounts.indexOf(minNaoZero)
+  const ehPicoOuVale = i => (i === idxPico && maxVal > 0) || (i === idxVale && minNaoZero !== maxVal && minNaoZero !== Infinity)
   destroyChart('chartMes')
   chartInstances['chartMes'] = new Chart(document.getElementById('chartMes'), {
     type: 'line',
-    data: { labels: periodoLabels, datasets: [{ data: periodoCounts, borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.1)', fill: true, tension: 0.3, pointRadius: 0 }] },
+    data: { labels: periodoLabels, datasets: [{ data: periodoCounts, borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.1)', fill: true, tension: 0.3,
+      pointRadius: ctx => ehPicoOuVale(ctx.dataIndex) ? 4 : 0,
+      datalabels: { display: ctx => ehPicoOuVale(ctx.dataIndex), anchor: 'end', align: 'top', color: '#1e88e5', font: { weight: 'bold' }, formatter: v => v } }] },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
   })
 
@@ -2532,7 +2549,7 @@ function renderCharts() {
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }, datalabels: rotuloTotal },
       scales: {
         x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
         y: { stacked: true, ticks: { autoSkip: false } },

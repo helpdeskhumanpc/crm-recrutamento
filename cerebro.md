@@ -1049,6 +1049,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-09-27 | **内定２ removida** (v1.71), a pedido do Eder — `git revert` do commit da v1.70. Some do código (etapa, botão na 見学, campo no modal, card, filtros, gráficos, exportação), mas a coluna `dt_naitei2` **continua na tabela `candidates`** (sem uso, inofensiva) e qualquer valor já gravado nela fica guardado: quem foi marcado 内定２ nesse meio tempo volta a aparecer na etapa que o resto das datas indicar (ex: quem foi direto da 見学 pra 内定２ volta pra 見学). Se quiser limpar de vez: `ALTER TABLE candidates DROP COLUMN dt_naitei2;` |
 | 2026-10-01 | Barra `#fabricaOrderBar` (aparece ao selecionar uma fábrica específica) ganha "担当者" com os nomes de quem tem acesso de edição a ela — `tantousha` com a fábrica no array `fabricas`, ou `jimusho` do mesmo escritório dela (`pessoasComAcessoFabrica()`, mesma regra de `podeEditarOrderFabrica()`, só que pra todo mundo, não só o usuário logado). `admin` e `shokaisha` ficam de fora da lista a pedido do Eder (admin edita tudo sempre, não diz nada específico sobre a fábrica; shokaisha não tem edição por fábrica). Depende da view `perfis_publicos` expor `role`/`fabricas` (ver acima) |
 | 2026-10-01 | Rótulo da barra de fábrica trocado de "担当者" pra "この工場を編集できる担当者" — deixa explícito em japonês, pra todo mundo que ver, que aqueles nomes são quem tem permissão de editar os dados daquela fábrica |
+| 2026-10-03 | Números nos gráficos da aba グラフ, pra facilitar a leitura, sem poluir: plugin `chartjs-plugin-datalabels@2.2.0` carregado do jsdelivr e registrado no `dashboard.js`, desligado por padrão (`Chart.defaults.plugins.datalabels`) e ligado só onde faz sentido — funil (barras simples, número na ponta, zeros escondidos), 事務所別 e 紹介者 (barras empilhadas, só o **total** na ponta, via `rotuloTotal` no último segmento), e 日別/週別 応募数 (linha, só o pico mais alto e o ponto mais baixo não-zero, com ponto visível só nesses dois — `ehPicoOuVale`) |
 
 ## Sistema de Versão
 
@@ -1056,8 +1057,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.73**
-- Tags criadas até agora: `v1.00` a `v1.73` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.74**
+- Tags criadas até agora: `v1.00` a `v1.74` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 
