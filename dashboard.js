@@ -2282,7 +2282,7 @@ function podeEditarOrderFabrica(fabricaNome) {
   if (role === 'admin') return true
   if (role === 'jimusho') {
     const loc = todasLocations.find(l => l.nome === fabricaNome)
-    return loc?.jimusho === currentProfile?.jimusho
+    return loc?.jimusho === currentProfile?.jimusho || (currentProfile?.fabricas || []).includes(fabricaNome)
   }
   if (role === 'tantousha') return (currentProfile?.fabricas || []).includes(fabricaNome)
   return false
@@ -2294,7 +2294,7 @@ function pessoasComAcessoFabrica(fabricaNome) {
   if (!loc) return []
   return todosPerfisPublicos
     .filter(p => {
-      if (p.role === 'jimusho')   return p.jimusho === loc.jimusho
+      if (p.role === 'jimusho')   return p.jimusho === loc.jimusho || (p.fabricas || []).includes(fabricaNome)
       if (p.role === 'tantousha') return (p.fabricas || []).includes(fabricaNome)
       return false
     })

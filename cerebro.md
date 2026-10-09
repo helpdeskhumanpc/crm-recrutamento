@@ -103,10 +103,11 @@ Campo `fabricas` é um array — formato JSON:
 - **`tantousha update proprios indicados`** (nova, 2026-08-19) — policy adicional (permissiva, soma com as acima via OR): tantousha pode dar UPDATE em qualquer candidato onde `shokai = profiles.shokai_nome`, **independente da fábrica** — cobre o caso de ela processar (担当者紹介 etc.) um lead que ela mesma trouxe via link de afiliado, mesmo que a fábrica não seja uma das dela
 - **`shokaisha update proprios leads`** (nova, 2026-08-19) — mesma lógica, mas pra `role = 'shokaisha'`, e só enquanto `origem in ('web','web_indicado','web_stock')` (ou seja, enquanto o candidato ainda está no universo de "Leads do Site")
 - **`jimusho select proprios indicados`** e **`jimusho update proprios indicados`** (novas, 2026-08-25) — mesma lógica das duas de cima, mas pra `role = 'jimusho'`, sem restrição de `origem`. Corrige um gap: `jimusho` nunca teve cláusula de `shokai` na `select por cargo` original (só `fabrica`), então mesmo com `shokai_nome` idêntico em `profiles`/`shokaisha`/`candidates` (confirmado por hash, não era erro de digitação), o Supabase nunca entregava esses candidatos pro navegador — afetava tanto Leads do Site quanto o "全体" documentado abaixo em `<escritório>`まとめ, que já assumia (incorretamente, até aqui) que esse match funcionava
+- **`jimusho select fabricas array`** (nova, 2026-10-09) — `jimusho` passa a ver também candidatos cuja `fabrica`/`fabrica2` esteja no array `fabricas` do próprio perfil, **mesmo que a fábrica seja de outro escritório** (mesmo padrão que já existia só pra `tantousha`). Pedido do Eder: o perfil `jimusho` tinha fábricas cadastradas no array (ex: uma fábrica de outro escritório) que nunca apareciam, porque a `select por cargo` original só olhava `locations.jimusho = profiles.jimusho`, nunca o array
 - `anon select temp` — anon pode ler tudo (temporário, remover quando todos migrarem para login)
 
 ### Ver vs Editar (importante, não confundir)
-- **Ver (select):** `shokaisha` vê o que indicou; `tantousha` vê suas fábricas + o que indicou; `jimusho` vê as fábricas do escritório + o que indicou pessoalmente via `shokai` (esse último só a partir de 2026-08-25 — antes não funcionava, ver policy acima)
+- **Ver (select):** `shokaisha` vê o que indicou; `tantousha` vê suas fábricas (array `fabricas`) + o que indicou; `jimusho` vê as fábricas do escritório + as fábricas do array `fabricas` dele (mesmo que de outro escritório, desde 2026-10-09) + o que indicou pessoalmente via `shokai` (desde 2026-08-25)
 - **Editar (update) — regra desde 2026-08-25:**
   - `admin`: tudo, sempre
   - `jimusho`: candidatos das fábricas do escritório (edição completa) **OU** candidatos que ele mesmo indicou, independente da fábrica (edição completa, via a nova policy — igual ao padrão de `tantousha`)
@@ -459,6 +460,17 @@ create policy "jimusho update proprios indicados" on candidates for update
     is_deleted = false
     and exists (select 1 from profiles where profiles.id = auth.uid()
       and profiles.role = 'jimusho' and profiles.shokai_nome = candidates.shokai)
+  );
+
+-- 2026-10-09: jimusho tambem ve pelo array fabricas (igual tantousha), mesmo
+-- que a fabrica seja de outro escritorio (so SELECT, edicao de jimusho ja era
+-- irrestrita antes disso)
+create policy "jimusho select fabricas array" on candidates for select
+  using (
+    is_deleted = false
+    and exists (select 1 from profiles p where p.id = auth.uid()
+      and p.role = 'jimusho'
+      and (candidates.fabrica = any(p.fabricas) or candidates.fabrica2 = any(p.fabricas)))
   );
 
 -- 2026-07-02: acesso anônimo (auth.uid() is null) REMOVIDO do select — só logados leem candidates
@@ -1050,6 +1062,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-10-01 | Barra `#fabricaOrderBar` (aparece ao selecionar uma fábrica específica) ganha "担当者" com os nomes de quem tem acesso de edição a ela — `tantousha` com a fábrica no array `fabricas`, ou `jimusho` do mesmo escritório dela (`pessoasComAcessoFabrica()`, mesma regra de `podeEditarOrderFabrica()`, só que pra todo mundo, não só o usuário logado). `admin` e `shokaisha` ficam de fora da lista a pedido do Eder (admin edita tudo sempre, não diz nada específico sobre a fábrica; shokaisha não tem edição por fábrica). Depende da view `perfis_publicos` expor `role`/`fabricas` (ver acima) |
 | 2026-10-01 | Rótulo da barra de fábrica trocado de "担当者" pra "この工場を編集できる担当者" — deixa explícito em japonês, pra todo mundo que ver, que aqueles nomes são quem tem permissão de editar os dados daquela fábrica |
 | 2026-10-03 | Números nos gráficos da aba グラフ, pra facilitar a leitura, sem poluir: plugin `chartjs-plugin-datalabels@2.2.0` carregado do jsdelivr e registrado no `dashboard.js`, desligado por padrão (`Chart.defaults.plugins.datalabels`) e ligado só onde faz sentido — funil (barras simples, número na ponta, zeros escondidos), 事務所別 e 紹介者 (barras empilhadas, só o **total** na ponta, via `rotuloTotal` no último segmento), e 日別/週別 応募数 (linha, só o pico mais alto e o ponto mais baixo não-zero, com ponto visível só nesses dois — `ehPicoOuVale`) |
+| 2026-10-09 | Bug de dado corrigido: perfil `jimusho` do 伊藤　達哉 não via **nenhum** candidato — `profiles.jimusho` tinha um espaço sobrando no final ("小牧事務所 ", hex confirmado) que não batia com `locations.jimusho` ("小牧事務所"), então a política de SELECT nunca encontrava fábrica nenhuma pra ele. Como `tantousha` funcionava normal, porque esse papel não usa o campo `jimusho`. Corrigido com `update profiles set jimusho = trim(jimusho)`; conferido que nenhum outro `jimusho` tinha o mesmo problema |
+| 2026-10-09 | `jimusho` passa a ver (e ter a barra de オーダー/内定, e aparecer na lista "担当者 que editam") fábricas do array `fabricas` do próprio perfil, **mesmo sendo de outro escritório** — igual já funcionava pra `tantousha`. Nova policy aditiva `jimusho select fabricas array`; frontend: `podeEditarOrderFabrica()` e `pessoasComAcessoFabrica()` passam a checar `currentProfile.fabricas`/`p.fabricas` também pra `jimusho`, não só o escritório. Motivado pelo caso real do 伊藤さん, que tinha `山清工業` (fábrica do 熊本事務所) no array dele sem conseguir ver nada de lá |
 
 ## Sistema de Versão
 
@@ -1057,8 +1071,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.74**
-- Tags criadas até agora: `v1.00` a `v1.74` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.75**
+- Tags criadas até agora: `v1.00` a `v1.75` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 
