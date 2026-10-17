@@ -45,6 +45,7 @@ if (window.innerWidth > 768) {
 let todosOsCandidatos = []
 let todasFabricas = []
 let todasLocations = []
+let docsConfirmadosPorCandidato = new Map() // candidate_id -> quantidade de documentos confirmados
 let nomeParaJimusho = {} // shokai (nome) -> jimusho, combinando shokaisha + perfis_publicos
 let todosPerfisPublicos = [] // nome/jimusho/shokai_nome/role/fabricas de todos os perfis (view perfis_publicos)
 let fabricaAtiva = null
@@ -128,6 +129,19 @@ function getStage(c) {
   return 'renrakumae'
 }
 
+function docsStatus(c) {
+  const total = c.tem_carro === false ? 6 : 9
+  const confirmados = docsConfirmadosPorCandidato.get(c.id) || 0
+  return { total, confirmados, completo: confirmados >= total }
+}
+
+function docsBadgeHtml(c) {
+  const { total, confirmados, completo } = docsStatus(c)
+  return completo
+    ? `<span class="docs-badge ok" title="入社処理完了：書類 ${confirmados}/${total}">✅</span>`
+    : `<span class="docs-badge pending" title="入社処理未提出：書類 ${confirmados}/${total}">📄${confirmados}/${total}</span>`
+}
+
 function diasNaEtapa(c) {
   const stage = getStage(c)
   const dateMap = { renrakumae: c.created_at, taiochu: c.dt_taiochu, mensetsu: c.dt_mensetsu, kentouchu: c.dt_kentouchu, kengaku: c.dt_kengaku, naitei: c.dt_naitei, nyusha: c.dt_nyusha, zaiseki: c.dt_zaiseki || c.dt_nyusha, stock: c.dt_stock, ng: c.dt_ng, black: c.created_at }
@@ -153,16 +167,19 @@ async function carregarDados() {
   document.getElementById('pipeline').innerHTML = '<div class="loading">読み込み中...</div>'
   let locQuery = sb.from('locations').select('id,nome,jimusho,order_atual,naitei_atual').eq('tipo', '工場').order('nome')
   if (currentProfile?.role !== 'admin') locQuery = locQuery.eq('ativo', true)
-  const [res1, res2, res3, res4] = await Promise.all([
+  const [res1, res2, res3, res4, res5] = await Promise.all([
     sb.from('candidates').select('*').eq('is_deleted', false).order('created_at', { ascending: false }),
     locQuery,
     sb.from('shokaisha').select('nome,jimusho'),
     sb.from('perfis_publicos').select('nome,jimusho,shokai_nome,role,fabricas'),
+    sb.from('documentos_funcionarios').select('candidate_id').not('candidate_id', 'is', null),
   ])
   todosOsCandidatos = res1.data || []
   todasLocations    = res2.data || []
   todasFabricas     = todasLocations.map(f => f.nome)
   todosPerfisPublicos = res4.data || []
+  docsConfirmadosPorCandidato = new Map()
+  ;(res5.data || []).forEach(d => docsConfirmadosPorCandidato.set(d.candidate_id, (docsConfirmadosPorCandidato.get(d.candidate_id) || 0) + 1))
   nomeParaJimusho = {}
   ;(res3.data || []).forEach(s => { if (s.nome && s.jimusho) nomeParaJimusho[s.nome] = s.jimusho })
   ;(res4.data || []).forEach(p => { if (p.shokai_nome && p.jimusho) nomeParaJimusho[p.shokai_nome] = p.jimusho })
@@ -995,7 +1012,7 @@ function renderPipeline() {
           return `<div class="candidate-row${colClass}" onclick="abrirModal('${c.id}')">
             <span onclick="event.stopPropagation()"><input type="checkbox" onchange="toggleSelecaoImpressao('${c.id}', this.checked)" ${_selecionadosImpressao.has(c.id) ? 'checked' : ''}></span>
             <span style="font-size:13px;color:#222;font-weight:600">${c.numero_cadastro ?? '—'}</span>
-            <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}">${c.is_blacklisted ? '<span class="black-flag">⚠</span> ' : ''}${c.shimei || '—'}</span>
+            <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}">${c.is_blacklisted ? '<span class="black-flag">⚠</span> ' : ''}${(showNaiteiCol || showNyushaActionCol || showZaisekiCol) ? docsBadgeHtml(c) + ' ' : ''}${c.shimei || '—'}</span>
             <span style="font-size:11px;color:#666">${c.shokai || '—'}</span>
             <span>${c.telefone || '—'}</span>
             <span style="font-size:11px">${c.fabrica || '—'}</span>
@@ -1258,7 +1275,6 @@ function abrirModal(id) {
   document.getElementById('btnCall').href    = tel ? `tel:${tel}` : '#'
   document.getElementById('btnWA').href      = tel ? `https://wa.me/${wa}` : '#'
   document.getElementById('btnRireki').href    = tel ? `curriculo-edit.html?tel=${tel.replace(/\D/g,'')}` : '#'
-  document.getElementById('btnHiaringu').href  = c.id ? `hiaringu.html?id=${c.id}` : '#'
 
   const chk = (arr, val) => asArr(arr).includes(val) ? 'checked' : ''
   const sel = (opts, val) => opts.map(o => `<option ${o===val?'selected':''}>${o}</option>`).join('')
@@ -1366,11 +1382,18 @@ function abrirModal(id) {
     </div>
 
     <div class="modal-section">
+      <div class="modal-section-title">📄 送られた書類</div>
+      <div id="docsSection" class="docs-empty">読み込み中...</div>
+    </div>
+
+    <div class="modal-section">
       <div class="modal-section-title">コピー用データ</div>
       <textarea id="f_copytext" rows="14" readonly style="width:100%;font-family:monospace;font-size:12px;white-space:pre-wrap;resize:vertical;box-sizing:border-box">${buildCopyText(c)}</textarea>
       <button class="btn-hoje" style="margin-top:8px" onclick="copiarDados(this)">コピー</button>
     </div>
   `
+
+  carregarDocumentosCandidato(c)
 
   const editavelTudo = podeEditar(c)
   const editavelInfo = !editavelTudo && podeEditarInfo(c)
@@ -1387,6 +1410,116 @@ function abrirModal(id) {
   }
 
   document.getElementById('modal').style.display = 'flex'
+}
+
+const DOC_TIPO_LABELS = {
+  zairyu_card:               '在留カード',
+  cnh:                       '運転免許証',
+  my_number:                 'マイナンバー',
+  caderneta:                 '通帳',
+  seguro_desemprego:         '雇用保険被保険者証',
+  certificado_qualificacao:  '就労資格証明書',
+  shakensho:                 '車検証',
+  hokensho:                  '任意保険証',
+  jibaiseki:                 '自賠責保険証',
+}
+
+function renderDocsSummaryBar(c, confirmadosCount) {
+  const bar = document.getElementById('docsSummaryBar')
+  if (!bar) return
+  const { total } = docsStatus(c)
+  const completo = confirmadosCount >= total
+  const pct = total ? Math.min(100, Math.round(confirmadosCount / total * 100)) : 0
+  bar.style.display = 'flex'
+  bar.innerHTML = `
+    <span class="docs-summary-count">📄 書類 ${confirmadosCount}/${total}</span>
+    <div class="docs-summary-track"><div class="docs-summary-fill" style="background:${completo ? '#2e7d32' : '#1976d2'};width:${pct}%"></div></div>
+    ${completo ? '<span class="docs-summary-badge ok">✅ 完了</span>' : '<span class="docs-summary-badge">未提出あり</span>'}
+  `
+}
+
+async function carregarDocumentosCandidato(c) {
+  const container = document.getElementById('docsSection')
+  if (!container) return
+  const tel = (c.telefone || '').replace(/\D/g, '')
+  if (!tel) { container.innerHTML = '<div class="docs-empty">電話番号が登録されていません。</div>'; renderDocsSummaryBar(c, 0); return }
+
+  const { data, error } = await sb.from('documentos_funcionarios')
+    .select('*')
+    .eq('telefone', tel)
+    .order('criado_em', { ascending: false })
+
+  if (error) { container.innerHTML = `<div class="docs-empty" style="color:#c62828">読み込みエラー: ${error.message}</div>`; renderDocsSummaryBar(c, 0); return }
+  if (!data || data.length === 0) { container.innerHTML = '<div class="docs-empty">まだ書類が送られていません。</div>'; renderDocsSummaryBar(c, 0); return }
+
+  const comUrl = await Promise.all(data.map(async d => {
+    const { data: signed } = await sb.storage.from('documentos-funcionarios').createSignedUrl(d.storage_path, 600)
+    return { ...d, url: signed?.signedUrl || null }
+  }))
+
+  const confirmados = comUrl.filter(d => d.candidate_id === c.id)
+  const pendentes   = comUrl.filter(d => d.candidate_id === null)
+  const podeConfirmar = podeEditar(c)
+
+  renderDocsSummaryBar(c, confirmados.length)
+
+  const linha = (d, confirmado) => `
+    <div class="doc-row-item">
+      <span class="doc-row-label">${DOC_TIPO_LABELS[d.tipo] || d.tipo}</span>
+      <span class="doc-row-date">${new Date(d.criado_em).toLocaleString('ja-JP')}</span>
+      ${d.url ? `<a href="${d.url}" target="_blank" class="doc-row-link">開く</a>` : ''}
+      ${confirmado
+        ? `<span class="doc-row-ok">✅ 確定済み</span>`
+        : (podeConfirmar ? `<button class="doc-row-confirm" onclick="confirmarDocumento('${d.id}')">確定する</button>` : `<span class="doc-row-ok" style="color:#999">未確定</span>`)}
+    </div>`
+
+  container.innerHTML = `
+    ${confirmados.length ? `<div class="docs-group-title">確定済み（${confirmados.length}）</div>${confirmados.map(d=>linha(d,true)).join('')}` : ''}
+    ${pendentes.length ? `<div class="docs-group-title" style="margin-top:${confirmados.length?'12px':'0'}">未確定（${pendentes.length}） — 同じ電話番号の別候補の書類が混じっている場合があります</div>${pendentes.map(d=>linha(d,false)).join('')}` : ''}
+    ${confirmados.length ? `<button class="btn-hoje" style="margin-top:12px;padding:8px 16px" onclick="baixarPdfCompleto()">📄 PDFをまとめてダウンロード</button>` : ''}
+  `
+}
+
+async function confirmarDocumento(docId) {
+  if (!candidatoAtivo) return
+  const { error } = await sb.from('documentos_funcionarios')
+    .update({ candidate_id: candidatoAtivo.id, confirmado_em: new Date().toISOString() })
+    .eq('id', docId)
+  if (error) { alert('エラー: ' + error.message); return }
+  docsConfirmadosPorCandidato.set(candidatoAtivo.id, (docsConfirmadosPorCandidato.get(candidatoAtivo.id) || 0) + 1)
+  carregarDocumentosCandidato(candidatoAtivo)
+}
+
+async function baixarPdfCompleto() {
+  if (!candidatoAtivo) return
+  const tel = (candidatoAtivo.telefone || '').replace(/\D/g, '')
+  const { data, error } = await sb.from('documentos_funcionarios')
+    .select('*')
+    .eq('telefone', tel)
+    .eq('candidate_id', candidatoAtivo.id)
+    .order('criado_em', { ascending: true })
+  if (error || !data || data.length === 0) { alert('確定済みの書類がありません。'); return }
+
+  const { PDFDocument } = PDFLib
+  const merged = await PDFDocument.create()
+
+  for (const d of data) {
+    const { data: signed } = await sb.storage.from('documentos-funcionarios').createSignedUrl(d.storage_path, 600)
+    if (!signed?.signedUrl) continue
+    const bytes = await fetch(signed.signedUrl).then(r => r.arrayBuffer())
+    const srcPdf = await PDFDocument.load(bytes)
+    const paginas = await merged.copyPages(srcPdf, srcPdf.getPageIndices())
+    paginas.forEach(p => merged.addPage(p))
+  }
+
+  const mergedBytes = await merged.save()
+  const blob = new Blob([mergedBytes], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${candidatoAtivo.shimei || 'candidato'}_書類.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 async function salvarCandidato() {

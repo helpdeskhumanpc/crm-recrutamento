@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia de Envio de Documentos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  .card { background: white; border-radius: 8px; padding: 28px 32px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+  .card h2 { font-size: 15px; color: white; background: #e8621a; margin: -28px -32px 24px; padding: 12px 20px; border-radius: 8px 8px 0 0; }
+
+  .hero { text-align: center; padding: 32px; }
+  .hero .title { font-size: 24px; color: #e8621a; font-weight: 700; }
+  .hero .subtitle { font-size: 14px; color: #888; margin-top: 6px; }
+
+  /* ---- regras gerais: do / don't ---- */
+  .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .rule-box { border-radius: 8px; padding: 14px; text-align: center; }
+  .rule-box.ok { background: #e8f5e9; border: 2px solid #4caf50; }
+  .rule-box.bad { background: #ffebee; border: 2px solid #e53935; }
+  .rule-box .label { font-weight: 700; font-size: 13px; margin-top: 10px; }
+  .rule-box.ok .label { color: #2e7d32; }
+  .rule-box.bad .label { color: #c62828; }
+  .rule-box .desc { font-size: 12px; color: #666; margin-top: 4px; }
+
+  .stage { width: 100%; height: 110px; background: #dcdcdc; border-radius: 6px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .doc-mock { width: 130px; height: 82px; background: linear-gradient(135deg,#ffffff,#eef3f8); border: 2px solid #90a4ae; border-radius: 7px; position: relative; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.12); }
+  .doc-mock::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 13px; background: #1976d2; }
+  .doc-mock .photo-box { position: absolute; top: 24px; left: 8px; width: 26px; height: 32px; background: #cfd8dc; border: 1px solid #90a4ae; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .doc-mock .ln { position: absolute; left: 42px; height: 6px; background: #b0bec5; border-radius: 2px; }
+  .doc-mock .ln1 { top: 26px; width: 70px; }
+  .doc-mock .ln2 { top: 38px; width: 55px; }
+  .doc-mock .ln3 { top: 50px; width: 60px; }
+
+  .stage.bad-tilt .doc-mock { transform: rotate(16deg) translate(14px, 6px); }
+  .stage.bad-cut .doc-mock { transform: translateX(38px); }
+  .stage.bad-glare .doc-mock::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,0.95) 50%, transparent 60%);
+  }
+  .stage.bad-clutter .clutter { position: absolute; font-size: 20px; }
+  .stage.bad-clutter .c1 { top: 6px; left: 10px; }
+  .stage.bad-clutter .c2 { bottom: 8px; right: 14px; }
+  .stage.bad-clutter .c3 { top: 10px; right: 10px; }
+
+  .rules-grid .rule-box.ok .stage { background: #f0f0f0; }
+  .stage-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; border-radius: 6px; }
+
+  /* ---- documentos ---- */
+  .doc-item { border: 1px solid #eee; border-radius: 8px; padding: 18px 20px; margin-bottom: 14px; }
+  .doc-item.optional { background: #fff8f0; border-color: #ffd9b3; }
+  .doc-row { display: flex; gap: 14px; align-items: flex-start; }
+  .doc-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; flex-shrink: 0; background: #fafafa; }
+  .doc-body { flex: 1; min-width: 0; }
+  .doc-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .doc-jp { font-size: 19px; font-weight: 700; color: #222; }
+  .doc-pt { font-size: 14px; color: #e8621a; font-weight: 600; }
+  .doc-tag { font-size: 11px; background: #ffe0b2; color: #a05a00; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+  .doc-desc { font-size: 13px; color: #555; margin-top: 6px; line-height: 1.6; }
+  .doc-tips { font-size: 13px; color: #444; margin-top: 8px; padding-left: 18px; }
+  .doc-tips li { margin-bottom: 3px; }
+
+  .section-note { font-size: 13px; color: #888; margin: 18px 0 10px; font-style: italic; }
+
+  /* ---- telefone ---- */
+  .phone-card label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+  .phone-card input[type="tel"] { width: 100%; padding: 12px 14px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; }
+  .phone-card input[type="tel"]:focus { outline: none; border-color: #e8621a; }
+  .phone-hint { font-size: 12px; color: #c62828; margin-top: 8px; display: block; }
+
+  /* ---- upload ---- */
+  .upload-row { margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .upload-row input[type="file"] { display: none; }
+  .upload-btn { display: inline-flex; align-items: center; gap: 6px; background: #1976d2; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; }
+  .upload-row input[type="file"]:disabled + .upload-btn { background: #b0bec5; cursor: not-allowed; }
+  .upload-status { font-size: 12px; color: #666; }
+  .upload-status.ok { color: #2e7d32; font-weight: 600; }
+  .upload-status.err { color: #c62828; font-weight: 600; }
+  .upload-status.busy { color: #ef6c00; font-weight: 600; }
+
+  @media (max-width: 600px) {
+    .card { padding: 20px; }
+    .card h2 { margin: -20px -20px 20px; }
+    .rules-grid { grid-template-columns: 1fr; }
+    .doc-tag { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="card hero">
+    <div class="title">Guia de Envio de Documentos</div>
+    <div class="subtitle">Como fotografar e enviar corretamente cada documento para o 入社処理</div>
+  </div>
+
+  <!-- TELEFONE -->
+  <div class="card phone-card">
+    <h2>Seu número de telefone</h2>
+    <label for="telefoneInput">Telefone cadastrado <span style="color:red">*</span></label>
+    <input type="tel" id="telefoneInput" placeholder="Ex: 090-1234-5678" autocomplete="tel">
+    <span class="phone-hint" id="telefoneHint">Preencha seu telefone para liberar o envio dos documentos abaixo.</span>
+  </div>
+
+  <!-- PROGRESSO -->
+  <div class="card" style="padding:16px 24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:14px;font-weight:600;color:#333">Documentos enviados</span>
+      <span id="progressText" style="font-size:14px;font-weight:700;color:#1976d2">0 de 9</span>
+    </div>
+    <div style="background:#eee;border-radius:6px;height:8px;margin-top:10px;overflow:hidden;">
+      <div id="progressBar" style="background:#4caf50;height:100%;width:0%;transition:width .3s;"></div>
+    </div>
+  </div>
+
+  <!-- REGRAS GERAIS -->
+  <div class="card">
+    <h2>Regras gerais para a foto</h2>
+    <p style="font-size:13px;color:#555;line-height:1.7">
+      Essas regras valem para <b>todos</b> os documentos. Siga-as para evitar que o documento seja recusado e precise ser reenviado.
+    </p>
+
+    <div class="rules-grid">
+      <div class="rule-box ok">
+        <div class="stage">
+          <img class="stage-img" src="img/regra-certo.jpg" alt="Exemplo certo" onerror="this.remove()">
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+            <div class="ln ln3"></div>
+          </div>
+        </div>
+        <div class="label">✅ Certo</div>
+        <div class="desc">Documento sozinho, reto, inteiro e bem iluminado</div>
+      </div>
+      <div class="rule-box bad">
+        <div class="stage bad-tilt">
+          <img class="stage-img" src="img/regra-errado-torto.jpg" alt="Foto torta" onerror="this.remove()">
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+          </div>
+        </div>
+        <div class="label">❌ Errado</div>
+        <div class="desc">Foto torta / inclinada</div>
+      </div>
+
+      <div class="rule-box bad">
+        <div class="stage bad-cut">
+          <img class="stage-img" src="img/regra-errado-cortado.jpg" alt="Foto cortada" onerror="this.remove()">
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+          </div>
+        </div>
+        <div class="label">❌ Errado</div>
+        <div class="desc">Parte do documento cortada / fora da foto</div>
+      </div>
+      <div class="rule-box bad">
+        <div class="stage bad-glare">
+          <img class="stage-img" src="img/regra-errado-brilho.jpg" alt="Foto com brilho" onerror="this.remove()">
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+          </div>
+        </div>
+        <div class="label">❌ Errado</div>
+        <div class="desc">Brilho / reflexo de luz ou flash sobre o documento</div>
+      </div>
+
+      <div class="rule-box bad" style="grid-column: 1 / -1">
+        <div class="stage bad-clutter">
+          <img class="stage-img" src="img/regra-errado-objetos.jpg" alt="Foto com objetos ao lado" onerror="this.remove()">
+          <span class="clutter c1">📱</span>
+          <span class="clutter c2">🔑</span>
+          <span class="clutter c3">☕</span>
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+          </div>
+        </div>
+        <div class="label">❌ Errado</div>
+        <div class="desc">Outros objetos ou documentos ao lado na mesma foto</div>
+      </div>
+    </div>
+
+    <ul class="doc-tips" style="margin-top:18px">
+      <li>Tire a foto em um fundo liso e escuro ou claro (mesa, chão), sem nada em volta.</li>
+      <li>Use luz natural, de dia, perto de uma janela. Evite flash direto — ele cria reflexo em documentos plastificados.</li>
+      <li>Coloque o documento esticado e sem dobras, com os 4 cantos visíveis na foto.</li>
+      <li>A foto precisa estar nítida (sem tremer) e em cores — não em preto e branco e sem filtro.</li>
+      <li>Quando o documento tiver frente e verso, envie uma foto de cada lado, separadamente.</li>
+    </ul>
+  </div>
+
+  <!-- DOCUMENTOS SEMPRE NECESSÁRIOS -->
+  <div class="card">
+    <h2>Documentos necessários</h2>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/zairyu-card.jpg" alt="Exemplo 在留カード" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">在留カード</span>
+            <span class="doc-pt">Cartão de Residência (Zairyu Card)</span>
+          </div>
+          <div class="doc-desc">Documento de identificação de estrangeiro residente no Japão.</div>
+          <ul class="doc-tips">
+            <li>Envie a foto da <b>frente</b> e do <b>verso</b> separadamente.</li>
+            <li>Confirme que o número do cartão e a foto do rosto estão legíveis.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_zairyu_card" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('zairyu_card', this)">
+            <label for="file_zairyu_card" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_zairyu_card"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/carteira-motorista.jpg" alt="Exemplo 運転免許証" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">運転免許証</span>
+            <span class="doc-pt">Carteira de Motorista</span>
+          </div>
+          <div class="doc-desc">Carteira de habilitação japonesa.</div>
+          <ul class="doc-tips">
+            <li>Envie a foto da <b>frente</b> e do <b>verso</b> separadamente.</li>
+            <li>Verifique se a data de validade está visível e legível.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_cnh" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('cnh', this)">
+            <label for="file_cnh" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_cnh"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/my-number.jpg" alt="Exemplo マイナンバー" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">マイナンバー</span>
+            <span class="doc-pt">My Number</span>
+          </div>
+          <div class="doc-desc">Número de identificação fiscal/social japonês (cartão ou notificação).</div>
+          <ul class="doc-tips">
+            <li>Documento sensível — fotografe apenas o próprio documento, sem deixá-lo exposto depois.</li>
+            <li>Certifique-se de que os 12 números estão legíveis.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_my_number" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('my_number', this)">
+            <label for="file_my_number" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_my_number"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/caderneta-banco.jpg" alt="Exemplo 通帳" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">通帳</span>
+            <span class="doc-pt">Caderneta do Banco</span>
+          </div>
+          <div class="doc-desc">Caderneta bancária usada para receber o pagamento.</div>
+          <ul class="doc-tips">
+            <li>Envie 2 fotos: a <b>capa</b> da caderneta e a <b>primeira página</b> interna (onde aparecem seu nome e o número da conta).</li>
+            <li>Use o mesmo botão abaixo duas vezes, uma para cada foto.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_caderneta" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('caderneta', this)">
+            <label for="file_caderneta" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_caderneta"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/seguro-desemprego.jpg" alt="Exemplo 雇用保険被保険者証" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">雇用保険被保険者証</span>
+            <span class="doc-pt">Carteira do Seguro Desemprego</span>
+          </div>
+          <div class="doc-desc">Comprovante de número do seguro desemprego (雇用保険).</div>
+          <ul class="doc-tips">
+            <li>Fotografe o documento inteiro, com o número do segurado legível.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_seguro_desemprego" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('seguro_desemprego', this)">
+            <label for="file_seguro_desemprego" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_seguro_desemprego"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/certificado-qualificacao.jpg" alt="Exemplo 就労資格証明書" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">就労資格証明書</span>
+            <span class="doc-pt">Certificado de Qualificação de Atividade</span>
+          </div>
+          <div class="doc-desc">Documento emitido pela imigração confirmando autorização para trabalhar.</div>
+          <ul class="doc-tips">
+            <li>Envie todas as páginas do documento, caso tenha mais de uma.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_certificado_qualificacao" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('certificado_qualificacao', this)">
+            <label for="file_certificado_qualificacao" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_certificado_qualificacao"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTOS CONDICIONAIS -->
+  <div class="card">
+    <h2>Documentos adicionais — somente se você tem carteira de motorista e carro</h2>
+    <p class="section-note">Envie estes três apenas se você possui carro próprio.</p>
+
+    <div class="doc-item optional">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/shakensho.jpg" alt="Exemplo 車検証" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">車検証</span>
+            <span class="doc-pt">Shakensho — Documento do Carro</span>
+            <span class="doc-tag">Se tiver carro</span>
+          </div>
+          <div class="doc-desc">Certificado de inspeção veicular (documento do carro).</div>
+          <ul class="doc-tips">
+            <li>Fotografe o documento aberto, com todas as informações visíveis.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_shakensho" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('shakensho', this)">
+            <label for="file_shakensho" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_shakensho"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item optional">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/hokensho.jpg" alt="Exemplo 任意保険証" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">任意保険証</span>
+            <span class="doc-pt">Hokensho — Seguro Voluntário do Carro</span>
+            <span class="doc-tag">Se tiver carro</span>
+          </div>
+          <div class="doc-desc">Apólice de seguro voluntário (opcional) do veículo.</div>
+          <ul class="doc-tips">
+            <li>Fotografe a página com o período de vigência do seguro.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_hokensho" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('hokensho', this)">
+            <label for="file_hokensho" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_hokensho"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item optional">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/jibaiseki.jpg" alt="Exemplo 自賠責保険証" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">自賠責保険証</span>
+            <span class="doc-pt">Jibaiseki — Seguro Obrigatório do Carro</span>
+            <span class="doc-tag">Se tiver carro</span>
+          </div>
+          <div class="doc-desc">Seguro obrigatório contra terceiros (自賠責).</div>
+          <ul class="doc-tips">
+            <li>Fotografe a página com o período de validade do seguro.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_jibaiseki" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('jibaiseki', this)">
+            <label for="file_jibaiseki" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_jibaiseki"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  const { createClient } = supabase
+  const sb = createClient(
+    'https://xzxfwrbebkwagnropgfb.supabase.co',
+    'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE'
+  )
+
+  function telefoneDigits() {
+    return (document.getElementById('telefoneInput').value || '').replace(/\D/g, '')
+  }
+
+  document.getElementById('telefoneInput').addEventListener('input', () => {
+    const ok = telefoneDigits().length >= 10
+    document.querySelectorAll('.upload-row input[type=file]').forEach(i => i.disabled = !ok)
+    document.getElementById('telefoneHint').style.display = ok ? 'none' : 'block'
+  })
+
+  function atualizarProgresso() {
+    const total = document.querySelectorAll('.upload-status').length
+    const enviados = document.querySelectorAll('.upload-status.ok').length
+    document.getElementById('progressText').textContent = `${enviados} de ${total}`
+    document.getElementById('progressBar').style.width = (total ? (enviados / total * 100) : 0) + '%'
+  }
+
+  function avisarTelefoneInvalido() {
+    const input = document.getElementById('telefoneInput')
+    const hint = document.getElementById('telefoneHint')
+    hint.style.display = 'block'
+    input.style.borderColor = '#c62828'
+    input.focus()
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setTimeout(() => { input.style.borderColor = '' }, 2000)
+  }
+
+  function blobToDataURL(blob) {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = e => resolve(e.target.result)
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.src = src
+    })
+  }
+
+  async function comprimirImagem(file) {
+    const dataUrl = await blobToDataURL(file)
+    const img = await loadImage(dataUrl)
+    const MAX = 1600
+    let w = img.width, h = img.height
+    if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+    const canvas = document.createElement('canvas')
+    canvas.width = w; canvas.height = h
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82))
+  }
+
+  async function imagemParaPdfBlob(file) {
+    const compressedBlob = await comprimirImagem(file)
+    const dataUrl = await blobToDataURL(compressedBlob)
+    const img = await loadImage(dataUrl)
+    const { jsPDF } = window.jspdf
+    const pdf = new jsPDF({
+      orientation: img.width >= img.height ? 'l' : 'p',
+      unit: 'px',
+      format: [img.width, img.height]
+    })
+    pdf.addImage(dataUrl, 'JPEG', 0, 0, img.width, img.height)
+    return pdf.output('blob')
+  }
+
+  async function enviarDocumento(tipo, inputEl) {
+    const file = inputEl.files[0]
+    if (!file) return
+    const tel = telefoneDigits()
+    if (tel.length < 10) { avisarTelefoneInvalido(); return }
+
+    const statusEl = document.getElementById('status_' + tipo)
+    statusEl.className = 'upload-status busy'
+    statusEl.textContent = '⏳ Enviando...'
+    inputEl.disabled = true
+
+    try {
+      const blob = (file.type === 'application/pdf') ? file : await imagemParaPdfBlob(file)
+      const path = `${tel}/${tipo}/${Date.now()}.pdf`
+
+      const { error: upErr } = await sb.storage
+        .from('documentos-funcionarios')
+        .upload(path, blob, { contentType: 'application/pdf' })
+      if (upErr) throw upErr
+
+      const { error: insErr } = await sb.from('documentos_funcionarios').insert([{
+        telefone: tel,
+        tipo: tipo,
+        storage_path: path,
+        nome_arquivo: file.name
+      }])
+      if (insErr) throw insErr
+
+      statusEl.className = 'upload-status ok'
+      statusEl.textContent = '✅ Enviado com sucesso'
+      atualizarProgresso()
+    } catch (err) {
+      statusEl.className = 'upload-status err'
+      statusEl.textContent = '❌ Erro ao enviar, tente novamente'
+      console.error(err)
+    } finally {
+      inputEl.disabled = false
+      inputEl.value = ''
+    }
+  }
+</script>
+
+</body>
+</html>

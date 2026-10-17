@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>စာရွက်စာတမ်းပို့ရန် လမ်းညွှန်</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Myanmar Text', 'Noto Sans Myanmar', 'Helvetica Neue', Arial, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  .card { background: white; border-radius: 8px; padding: 28px 32px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+  .card h2 { font-size: 15px; color: white; background: #e8621a; margin: -28px -32px 24px; padding: 12px 20px; border-radius: 8px 8px 0 0; }
+
+  .hero { text-align: center; padding: 32px; }
+  .hero .title { font-size: 22px; color: #e8621a; font-weight: 700; }
+  .hero .subtitle { font-size: 14px; color: #888; margin-top: 6px; }
+
+  /* ---- regras gerais: do / don't ---- */
+  .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .rule-box { border-radius: 8px; padding: 14px; text-align: center; }
+  .rule-box.ok { background: #e8f5e9; border: 2px solid #4caf50; }
+  .rule-box.bad { background: #ffebee; border: 2px solid #e53935; }
+  .rule-box .label { font-weight: 700; font-size: 13px; margin-top: 10px; }
+  .rule-box.ok .label { color: #2e7d32; }
+  .rule-box.bad .label { color: #c62828; }
+  .rule-box .desc { font-size: 12px; color: #666; margin-top: 4px; }
+
+  .stage { width: 100%; height: 110px; background: #dcdcdc; border-radius: 6px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .doc-mock { width: 130px; height: 82px; background: linear-gradient(135deg,#ffffff,#eef3f8); border: 2px solid #90a4ae; border-radius: 7px; position: relative; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.12); }
+  .doc-mock::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 13px; background: #1976d2; }
+  .doc-mock .photo-box { position: absolute; top: 24px; left: 8px; width: 26px; height: 32px; background: #cfd8dc; border: 1px solid #90a4ae; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .doc-mock .ln { position: absolute; left: 42px; height: 6px; background: #b0bec5; border-radius: 2px; }
+  .doc-mock .ln1 { top: 26px; width: 70px; }
+  .doc-mock .ln2 { top: 38px; width: 55px; }
+  .doc-mock .ln3 { top: 50px; width: 60px; }
+
+  .stage.bad-tilt .doc-mock { transform: rotate(16deg) translate(14px, 6px); }
+  .stage.bad-cut .doc-mock { transform: translateX(38px); }
+  .stage.bad-glare .doc-mock::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,0.95) 50%, transparent 60%);
+  }
+  .stage.bad-clutter .clutter { position: absolute; font-size: 20px; }
+  .stage.bad-clutter .c1 { top: 6px; left: 10px; }
+  .stage.bad-clutter .c2 { bottom: 8px; right: 14px; }
+  .stage.bad-clutter .c3 { top: 10px; right: 10px; }
+
+  .rules-grid .rule-box.ok .stage { background: #f0f0f0; }
+  .stage-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; border-radius: 6px; }
+
+  /* ---- documentos ---- */
+  .doc-item { border: 1px solid #eee; border-radius: 8px; padding: 18px 20px; margin-bottom: 14px; }
+  .doc-item.optional { background: #fff8f0; border-color: #ffd9b3; }
+  .doc-row { display: flex; gap: 14px; align-items: flex-start; }
+  .doc-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; flex-shrink: 0; background: #fafafa; }
+  .doc-body { flex: 1; min-width: 0; }
+  .doc-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .doc-jp { font-size: 19px; font-weight: 700; color: #222; }
+  .doc-pt { font-size: 14px; color: #e8621a; font-weight: 600; }
+  .doc-tag { font-size: 11px; background: #ffe0b2; color: #a05a00; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+  .doc-desc { font-size: 13px; color: #555; margin-top: 6px; line-height: 1.7; }
+  .doc-tips { font-size: 13px; color: #444; margin-top: 8px; padding-left: 18px; line-height: 1.7; }
+  .doc-tips li { margin-bottom: 3px; }
+
+  .section-note { font-size: 13px; color: #888; margin: 18px 0 10px; font-style: italic; }
+
+  /* ---- telefone ---- */
+  .phone-card label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+  .phone-card input[type="tel"] { width: 100%; padding: 12px 14px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; }
+  .phone-card input[type="tel"]:focus { outline: none; border-color: #e8621a; }
+  .phone-hint { font-size: 12px; color: #c62828; margin-top: 8px; display: block; }
+
+  /* ---- upload ---- */
+  .upload-row { margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .upload-row input[type="file"] { display: none; }
+  .upload-btn { display: inline-flex; align-items: center; gap: 6px; background: #1976d2; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; }
+  .upload-row input[type="file"]:disabled + .upload-btn { background: #b0bec5; cursor: not-allowed; }
+  .upload-status { font-size: 12px; color: #666; }
+  .upload-status.ok { color: #2e7d32; font-weight: 600; }
+  .upload-status.err { color: #c62828; font-weight: 600; }
+  .upload-status.busy { color: #ef6c00; font-weight: 600; }
+
+  @media (max-width: 600px) {
+    .card { padding: 20px; }
+    .card h2 { margin: -20px -20px 20px; }
+    .rules-grid { grid-template-columns: 1fr; }
+    .doc-tag { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="card hero">
+    <div class="title">စာရွက်စာတမ်းပို့ရန် လမ်းညွှန်</div>
+    <div class="subtitle">入社処理 (အလုပ်ဝင်ရောက်ခြင်း လုပ်ငန်းစဉ်) အတွက် စာရွက်စာတမ်းတစ်ခုချင်းစီကို မှန်ကန်စွာ ဓာတ်ပုံရိုက်ပြီး ပို့နည်း</div>
+  </div>
+
+  <!-- TELEFONE -->
+  <div class="card phone-card">
+    <h2>သင့်ဖုန်းနံပါတ်</h2>
+    <label for="telefoneInput">မှတ်ပုံတင်ထားသော ဖုန်းနံပါတ် <span style="color:red">*</span></label>
+    <input type="tel" id="telefoneInput" placeholder="ဥပမာ: 090-1234-5678" autocomplete="tel">
+    <span class="phone-hint" id="telefoneHint">အောက်ပါစာရွက်စာတမ်းများ ပို့ရန် သင့်ဖုန်းနံပါတ်ကို ဖြည့်ပါ။</span>
+  </div>
+
+  <!-- PROGRESSO -->
+  <div class="card" style="padding:16px 24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:14px;font-weight:600;color:#333">ပို့ပြီးသော စာရွက်စာတမ်းများ</span>
+      <span id="progressText" style="font-size:14px;font-weight:700;color:#1976d2">0 / 9</span>
+    </div>
+    <div style="background:#eee;border-radius:6px;height:8px;margin-top:10px;overflow:hidden;">
+      <div id="progressBar" style="background:#4caf50;height:100%;width:0%;transition:width .3s;"></div>
+    </div>
+  </div>
+
+  <!-- REGRAS GERAIS -->
+  <div class="card">
+    <h2>ဓာတ်ပုံရိုက်ရန် အထွေထွေစည်းမျဉ်းများ</h2>
+    <p style="font-size:13px;color:#555;line-height:1.7">
+      ဤစည်းမျဉ်းများသည် စာရွက်စာတမ်း <b>အားလုံး</b> အတွက် သက်ဆိုင်ပါသည်။ စာရွက်စာတမ်း ပယ်ချခံရပြီး ထပ်မံပို့ရခြင်းမှ ရှောင်ရှားရန် ၎င်းတို့ကို လိုက်နာပါ။
+    </p>
+
+    <div class="rules-grid">
+      <div class="rule-box ok">
+        <div class="stage">
+          <img class="stage-img" src="img/regra-certo.jpg" alt="မှန်ကန်သော ဥပမာ" onerror="this.remove()">
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+            <div class="ln ln3"></div>
+          </div>
+        </div>
+        <div class="label">✅ မှန်ကန်သည်</div>
+        <div class="desc">စာရွက်စာတမ်းတစ်ခုတည်း၊ ဖြောင့်တန်းစွာ၊ အပြည့်အစုံနှင့် အလင်းရောင်ကောင်းကောင်း</div>
+      </div>
+      <div class="rule-box bad">
+        <div class="stage bad-tilt">
+          <img class="stage-img" src="img/regra-errado-torto.jpg" alt="စောင်းနေသော ဓာတ်ပုံ" onerror="this.remove()">
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+          </div>
+        </div>
+        <div class="label">❌ မှားယွင်းသည်</div>
+        <div class="desc">စောင်းနေသော / ကွေ့နေသော ဓာတ်ပုံ</div>
+      </div>
+
+      <div class="rule-box bad">
+        <div class="stage bad-cut">
+          <img class="stage-img" src="img/regra-errado-cortado.jpg" alt="ဖြတ်တောက်နေသော ဓာတ်ပုံ" onerror="this.remove()">
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+          </div>
+        </div>
+        <div class="label">❌ မှားယွင်းသည်</div>
+        <div class="desc">စာရွက်စာတမ်း၏ အစိတ်အပိုင်းအချို့ ပုံပြင်ပတွင် ကျန်နေသည်</div>
+      </div>
+      <div class="rule-box bad">
+        <div class="stage bad-glare">
+          <img class="stage-img" src="img/regra-errado-brilho.jpg" alt="အလင်းရောင်ထိုးနေသော ဓာတ်ပုံ" onerror="this.remove()">
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+          </div>
+        </div>
+        <div class="label">❌ မှားယွင်းသည်</div>
+        <div class="desc">စာရွက်စာတမ်းပေါ်တွင် အလင်းရောင် သို့မဟုတ် ဖလက်ရှ် ထိုးဝင်နေသည်</div>
+      </div>
+
+      <div class="rule-box bad" style="grid-column: 1 / -1">
+        <div class="stage bad-clutter">
+          <img class="stage-img" src="img/regra-errado-objetos.jpg" alt="ပတ်ဝန်းကျင်တွင် အခြားပစ္စည်းများပါသော ဓာတ်ပုံ" onerror="this.remove()">
+          <span class="clutter c1">📱</span>
+          <span class="clutter c2">🔑</span>
+          <span class="clutter c3">☕</span>
+          <div class="doc-mock">
+            <div class="photo-box">👤</div>
+            <div class="ln ln1"></div>
+            <div class="ln ln2"></div>
+          </div>
+        </div>
+        <div class="label">❌ မှားယွင်းသည်</div>
+        <div class="desc">တစ်ပုံတည်းတွင် အခြားပစ္စည်းများ သို့မဟုတ် စာရွက်စာတမ်းများ ပါဝင်နေသည်</div>
+      </div>
+    </div>
+
+    <ul class="doc-tips" style="margin-top:18px">
+      <li>ပတ်ဝန်းကျင်တွင် မည်သည့်အရာမျှ မပါဘဲ ညီညာပြီး မှောင်သော သို့မဟုတ် ဖျော့သော နောက်ခံ (စားပွဲ၊ ကြမ်းပြင်) ပေါ်တွင် ဓာတ်ပုံရိုက်ပါ။</li>
+      <li>နေ့အချိန်တွင် ပြတင်းပေါက်အနီးရှိ သဘာဝအလင်းရောင်ကို အသုံးပြုပါ။ ဖလက်ရှ်တိုက်ရိုက်သုံးခြင်းကို ရှောင်ကြဉ်ပါ — ၎င်းသည် ပလတ်စတစ်ဖုံးထားသော စာရွက်စာတမ်းများပေါ်တွင် အလင်းရောင် ထိုးဝင်စေသည်။</li>
+      <li>စာရွက်စာတမ်းကို ချိုးငွေ့မှုမရှိဘဲ ဖြောင့်တန်းစွာ ချထားပြီး ဒေါင့်လေးဖက်စလုံး ဓာတ်ပုံတွင် မြင်ရအောင် ထားပါ။</li>
+      <li>ဓာတ်ပုံသည် ရှင်းလင်းပီသရမည် (တုန်ခါမှုမရှိစေရ)၊ အရောင်နှင့် ရိုက်ရမည် — အဖြူအမည်း မဟုတ်ဘဲ ဖစ်ထာလည်း မသုံးရ။</li>
+      <li>စာရွက်စာတမ်းတွင် ရှေ့ဘက်နှင့် နောက်ဘက် ရှိပါက နှစ်ဖက်စလုံးကို သီးခြားစီ ဓာတ်ပုံရိုက်၍ ပို့ပါ။</li>
+    </ul>
+  </div>
+
+  <!-- DOCUMENTOS SEMPRE NECESSÁRIOS -->
+  <div class="card">
+    <h2>လိုအပ်သော စာရွက်စာတမ်းများ</h2>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/zairyu-card.jpg" alt="在留カード ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">在留カード</span>
+            <span class="doc-pt">နေထိုင်ခွင့်ကတ် (Zairyu Card)</span>
+          </div>
+          <div class="doc-desc">ဂျပန်နိုင်ငံတွင် နေထိုင်သော နိုင်ငံခြားသားများအတွက် အထောက်အထားကတ်။</div>
+          <ul class="doc-tips">
+            <li>ရှေ့ဘက်နှင့် နောက်ဘက် ဓာတ်ပုံကို သီးခြားစီ ပို့ပါ။</li>
+            <li>ကတ်နံပါတ်နှင့် မျက်နှာဓာတ်ပုံ ရှင်းလင်းစွာ မြင်ရကြောင်း သေချာပါစေ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_zairyu_card" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('zairyu_card', this)">
+            <label for="file_zairyu_card" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_zairyu_card"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/carteira-motorista.jpg" alt="運転免許証 ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">運転免許証</span>
+            <span class="doc-pt">ယာဉ်မောင်းလိုင်စင်</span>
+          </div>
+          <div class="doc-desc">ဂျပန်ယာဉ်မောင်းလိုင်စင်။</div>
+          <ul class="doc-tips">
+            <li>ရှေ့ဘက်နှင့် နောက်ဘက် ဓာတ်ပုံကို သီးခြားစီ ပို့ပါ။</li>
+            <li>သက်တမ်းကုန်ဆုံးရက် ရှင်းလင်းစွာ မြင်ရကြောင်း စစ်ဆေးပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_cnh" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('cnh', this)">
+            <label for="file_cnh" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_cnh"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/my-number.jpg" alt="マイナンバー ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">マイナンバー</span>
+            <span class="doc-pt">My Number</span>
+          </div>
+          <div class="doc-desc">ဂျပန်အခွန်/လူမှုဖူလုံရေး မှတ်ပုံတင်နံပါတ် (ကတ် သို့မဟုတ် အကြောင်းကြားစာ)။</div>
+          <ul class="doc-tips">
+            <li>အရေးကြီးသော စာရွက်စာတမ်းဖြစ်သည် — စာရွက်စာတမ်းကိုသာ ဓာတ်ပုံရိုက်ပြီး ပြီးနောက် ပေါ်လွင်စွာ မထားခဲ့ပါနှင့်။</li>
+            <li>ဂဏန်း ၁၂ လုံး ရှင်းလင်းစွာ မြင်ရကြောင်း သေချာပါစေ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_my_number" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('my_number', this)">
+            <label for="file_my_number" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_my_number"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/caderneta-banco.jpg" alt="通帳 ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">通帳</span>
+            <span class="doc-pt">ဘဏ်စာအုပ်</span>
+          </div>
+          <div class="doc-desc">လစာလက်ခံရန် အသုံးပြုသော ဘဏ်စာအုပ်။</div>
+          <ul class="doc-tips">
+            <li>ဓာတ်ပုံ ၂ ပုံ ပို့ပါ — ဘဏ်စာအုပ်၏ <b>မျက်နှာဖုံး</b> နှင့် <b>ပထမစာမျက်နှာ</b> (အမည်နှင့် အကောင့်နံပါတ် ပါရှိသော စာမျက်နှာ)။</li>
+            <li>အောက်ပါခလုတ်တစ်ခုတည်းကို ဓာတ်ပုံနှစ်ပုံအတွက် နှစ်ကြိမ် နှိပ်ပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_caderneta" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('caderneta', this)">
+            <label for="file_caderneta" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_caderneta"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/seguro-desemprego.jpg" alt="雇用保険被保険者証 ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">雇用保険被保険者証</span>
+            <span class="doc-pt">အလုပ်လက်မဲ့ အာမခံကတ်</span>
+          </div>
+          <div class="doc-desc">အလုပ်လက်မဲ့အာမခံ (雇用保険) နံပါတ် အထောက်အထား။</div>
+          <ul class="doc-tips">
+            <li>အာမခံနံပါတ် ရှင်းလင်းစွာ မြင်ရအောင် စာရွက်စာတမ်းတစ်ခုလုံးကို ဓာတ်ပုံရိုက်ပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_seguro_desemprego" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('seguro_desemprego', this)">
+            <label for="file_seguro_desemprego" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_seguro_desemprego"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/certificado-qualificacao.jpg" alt="就労資格証明書 ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">就労資格証明書</span>
+            <span class="doc-pt">အလုပ်လုပ်ကိုင်ခွင့် အထောက်အထားလက်မှတ်</span>
+          </div>
+          <div class="doc-desc">အလုပ်လုပ်ကိုင်ခွင့်ရှိကြောင်း လူဝင်မှုကြီးကြပ်ရေးမှ ထုတ်ပေးသော အထောက်အထား။</div>
+          <ul class="doc-tips">
+            <li>စာမျက်နှာ တစ်ခုထက်ပိုပါက အားလုံးကို ပို့ပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_certificado_qualificacao" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('certificado_qualificacao', this)">
+            <label for="file_certificado_qualificacao" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_certificado_qualificacao"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTOS CONDICIONAIS -->
+  <div class="card">
+    <h2>နောက်ထပ် စာရွက်စာတမ်းများ — ယာဉ်မောင်းလိုင်စင်နှင့် ကားရှိပါက သာလိုအပ်သည်</h2>
+    <p class="section-note">ကိုယ်ပိုင်ကားပိုင်ဆိုင်ပါက ဤသုံးခုကိုသာ ပို့ပါ။</p>
+
+    <div class="doc-item optional">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/shakensho.jpg" alt="車検証 ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">車検証</span>
+            <span class="doc-pt">Shakensho — ကားစစ်ဆေးမှု အထောက်အထား</span>
+            <span class="doc-tag">ကားရှိပါက</span>
+          </div>
+          <div class="doc-desc">ယာဉ်စစ်ဆေးမှု လက်မှတ် (ကားစာရွက်စာတမ်း)။</div>
+          <ul class="doc-tips">
+            <li>စာရွက်စာတမ်းကို ဖွင့်ထား၍ အချက်အလက်အားလုံး မြင်ရအောင် ဓာတ်ပုံရိုက်ပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_shakensho" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('shakensho', this)">
+            <label for="file_shakensho" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_shakensho"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item optional">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/hokensho.jpg" alt="任意保険証 ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">任意保険証</span>
+            <span class="doc-pt">Hokensho — ကားစေတနာ့ဝန်ထမ်းအာမခံ</span>
+            <span class="doc-tag">ကားရှိပါက</span>
+          </div>
+          <div class="doc-desc">ကား၏ စေတနာ့ဝန်ထမ်း (ရွေးချယ်နိုင်သော) အာမခံစာချုပ်။</div>
+          <ul class="doc-tips">
+            <li>အာမခံသက်တမ်း ပါရှိသော စာမျက်နှာကို ဓာတ်ပုံရိုက်ပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_hokensho" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('hokensho', this)">
+            <label for="file_hokensho" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_hokensho"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item optional">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/jibaiseki.jpg" alt="自賠責保険証 ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">自賠責保険証</span>
+            <span class="doc-pt">Jibaiseki — ကားမဖြစ်မနေ အာမခံ</span>
+            <span class="doc-tag">ကားရှိပါက</span>
+          </div>
+          <div class="doc-desc">မဖြစ်မနေ လိုအပ်သော တတိယပုဂ္ဂိုလ် အာမခံ (自賠責)။</div>
+          <ul class="doc-tips">
+            <li>အာမခံသက်တမ်း ပါရှိသော စာမျက်နှာကို ဓာတ်ပုံရိုက်ပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_jibaiseki" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('jibaiseki', this)">
+            <label for="file_jibaiseki" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_jibaiseki"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  const { createClient } = supabase
+  const sb = createClient(
+    'https://xzxfwrbebkwagnropgfb.supabase.co',
+    'sb_publishable_rPu8_l2pdy3XtOTAus6Mxw_rp2HO_XE'
+  )
+
+  function telefoneDigits() {
+    return (document.getElementById('telefoneInput').value || '').replace(/\D/g, '')
+  }
+
+  document.getElementById('telefoneInput').addEventListener('input', () => {
+    const ok = telefoneDigits().length >= 10
+    document.querySelectorAll('.upload-row input[type=file]').forEach(i => i.disabled = !ok)
+    document.getElementById('telefoneHint').style.display = ok ? 'none' : 'block'
+  })
+
+  function atualizarProgresso() {
+    const total = document.querySelectorAll('.upload-status').length
+    const enviados = document.querySelectorAll('.upload-status.ok').length
+    document.getElementById('progressText').textContent = `${enviados} / ${total}`
+    document.getElementById('progressBar').style.width = (total ? (enviados / total * 100) : 0) + '%'
+  }
+
+  function avisarTelefoneInvalido() {
+    const input = document.getElementById('telefoneInput')
+    const hint = document.getElementById('telefoneHint')
+    hint.style.display = 'block'
+    input.style.borderColor = '#c62828'
+    input.focus()
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setTimeout(() => { input.style.borderColor = '' }, 2000)
+  }
+
+  function blobToDataURL(blob) {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = e => resolve(e.target.result)
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.src = src
+    })
+  }
+
+  async function comprimirImagem(file) {
+    const dataUrl = await blobToDataURL(file)
+    const img = await loadImage(dataUrl)
+    const MAX = 1600
+    let w = img.width, h = img.height
+    if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+    const canvas = document.createElement('canvas')
+    canvas.width = w; canvas.height = h
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82))
+  }
+
+  async function imagemParaPdfBlob(file) {
+    const compressedBlob = await comprimirImagem(file)
+    const dataUrl = await blobToDataURL(compressedBlob)
+    const img = await loadImage(dataUrl)
+    const { jsPDF } = window.jspdf
+    const pdf = new jsPDF({
+      orientation: img.width >= img.height ? 'l' : 'p',
+      unit: 'px',
+      format: [img.width, img.height]
+    })
+    pdf.addImage(dataUrl, 'JPEG', 0, 0, img.width, img.height)
+    return pdf.output('blob')
+  }
+
+  async function enviarDocumento(tipo, inputEl) {
+    const file = inputEl.files[0]
+    if (!file) return
+    const tel = telefoneDigits()
+    if (tel.length < 10) { avisarTelefoneInvalido(); return }
+
+    const statusEl = document.getElementById('status_' + tipo)
+    statusEl.className = 'upload-status busy'
+    statusEl.textContent = '⏳ ပို့နေသည်...'
+    inputEl.disabled = true
+
+    try {
+      const blob = (file.type === 'application/pdf') ? file : await imagemParaPdfBlob(file)
+      const path = `${tel}/${tipo}/${Date.now()}.pdf`
+
+      const { error: upErr } = await sb.storage
+        .from('documentos-funcionarios')
+        .upload(path, blob, { contentType: 'application/pdf' })
+      if (upErr) throw upErr
+
+      const { error: insErr } = await sb.from('documentos_funcionarios').insert([{
+        telefone: tel,
+        tipo: tipo,
+        storage_path: path,
+        nome_arquivo: file.name
+      }])
+      if (insErr) throw insErr
+
+      statusEl.className = 'upload-status ok'
+      statusEl.textContent = '✅ အောင်မြင်စွာ ပို့ပြီးပါပြီ'
+      atualizarProgresso()
+    } catch (err) {
+      statusEl.className = 'upload-status err'
+      statusEl.textContent = '❌ ပို့ရာတွင် အမှားရှိသည်၊ ထပ်မံကြိုးစားပါ'
+      console.error(err)
+    } finally {
+      inputEl.disabled = false
+      inputEl.value = ''
+    }
+  }
+</script>
+
+</body>
+</html>
