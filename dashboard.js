@@ -129,8 +129,14 @@ function getStage(c) {
   return 'renrakumae'
 }
 
+function ehNacionalidadeMyanmar(c) {
+  const n = (c.nacionalidade || '').toLowerCase()
+  return n.includes('myanmar') || n.includes('mianmar') || n.includes('burma') || n.includes('ミャンマー') || n.includes('ビルマ')
+}
+
 function docsStatus(c) {
-  const total = c.tem_carro === false ? 6 : 9
+  let total = c.tem_carro === false ? 6 : 9
+  if (ehNacionalidadeMyanmar(c)) total += 1 // パスポート extra, só pedido na pagina myanmar
   const confirmados = docsConfirmadosPorCandidato.get(c.id) || 0
   return { total, confirmados, completo: confirmados >= total }
 }
@@ -1417,11 +1423,12 @@ const DOC_TIPO_LABELS = {
   cnh:                       '運転免許証',
   my_number:                 'マイナンバー',
   caderneta:                 '通帳',
-  seguro_desemprego:         '雇用保険被保険者証',
+  seguro_desemprego:         '雇用保険番号',
   certificado_qualificacao:  '就労資格証明書',
   shakensho:                 '車検証',
   hokensho:                  '任意保険証',
   jibaiseki:                 '自賠責保険証',
+  passaporte:                'パスポート',
 }
 
 function renderDocsSummaryBar(c, confirmadosCount) {
@@ -1637,11 +1644,12 @@ function showTab(tab, btn) {
   document.getElementById('stockPoolView').style.display = tab === 'stockpool' ? 'flex'  : 'none'
   document.getElementById('shokaiView').style.display    = tab === 'shokai'    ? 'flex'  : 'none'
   document.getElementById('vagasLinkView').style.display = tab === 'vagaslink' ? 'flex'  : 'none'
+  document.getElementById('docsLinkView').style.display  = tab === 'docslink'  ? 'flex'  : 'none'
   document.getElementById('orderStatusView').style.display = tab === 'orderstatus' ? 'block' : 'none'
   document.getElementById('makotoView').style.display    = tab === 'makoto'     ? 'block' : 'none'
   document.getElementById('statsBar').style.display = (tab === 'orderstatus' || tab === 'makoto') ? 'none' : 'flex'
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-  if (tab === 'leads' || tab === 'stockpool' || tab === 'shokai' || tab === 'vagaslink' || tab === 'makoto') {
+  if (tab === 'leads' || tab === 'stockpool' || tab === 'shokai' || tab === 'vagaslink' || tab === 'docslink' || tab === 'makoto') {
     document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'))
     if (btn) btn.classList.add('active')
   } else {
@@ -1701,6 +1709,22 @@ function copiarVagaLink(i) {
 
 function compartilharVagaLink(i) {
   const url = window._vagasLinkAtuais[i]
+  if (navigator.share) navigator.share({ url }).catch(() => {})
+  else navigator.clipboard.writeText(url).then(() => alert('リンクをコピーしました！'))
+}
+
+// ─── 書類提出リンク ───
+const DOCS_LINK_URLS = {
+  pt: 'https://jobs-human.com/envio-de-documentos/',
+  mm: 'https://jobs-human.com/envio-de-documentos-myanmar/',
+}
+
+function copiarDocsLink(lang) {
+  navigator.clipboard.writeText(DOCS_LINK_URLS[lang]).then(() => alert('リンクをコピーしました！'))
+}
+
+function compartilharDocsLink(lang) {
+  const url = DOCS_LINK_URLS[lang]
   if (navigator.share) navigator.share({ url }).catch(() => {})
   else navigator.clipboard.writeText(url).then(() => alert('リンクをコピーしました！'))
 }

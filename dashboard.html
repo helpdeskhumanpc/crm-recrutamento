@@ -62,11 +62,15 @@
   <div class="sidebar-item sidebar-nav sidebar-special" id="btnPoolTab" onclick="showTab('stockpool', this)">
     <div class="factory-name">全体ストック</div>
   </div>
-  <a class="sidebar-item sidebar-nav sidebar-special" href="https://jobs-human.com/cadastro/" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit">
-    <div class="factory-name">候補者登録</div>
-  </a>
+  <h2>リンク</h2>
   <div class="sidebar-item sidebar-nav sidebar-special" id="btnVagasLinkTab" style="display:none" onclick="showTab('vagaslink', this)">
     <div class="factory-name">紹介リンク</div>
+  </div>
+  <a class="sidebar-item sidebar-nav sidebar-special" href="https://jobs-human.com/cadastro/" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit">
+    <div class="factory-name">候補者登録リンク</div>
+  </a>
+  <div class="sidebar-item sidebar-nav sidebar-special" id="btnDocsLinkTab" onclick="showTab('docslink', this)">
+    <div class="factory-name">書類提出リンク</div>
   </div>
   <div class="sidebar-item sidebar-nav sidebar-special" id="btnMakotoTab" style="display:none" onclick="showTab('makoto', this)">
     <div class="factory-name">🤖 Makoto設定</div>
@@ -106,7 +110,7 @@
     <div class="topbar-row" id="topbarRow1">
       <button class="btn-hamburger" onclick="toggleSidebar()">☰</button>
       <button id="btnVoltarDesktop" onclick="alternarLayout()" style="display:none">PC表示に戻る</button>
-      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.77</span></h1>
+      <h1>採用管理 <span style="font-size:11px;font-weight:400;color:#999;vertical-align:middle">v1.78</span></h1>
       <button class="tab-btn active" onclick="showTab('pipeline', this)">状況</button>
       <button class="tab-btn" onclick="showTab('calendar', this)">カレンダー</button>
       <button class="tab-btn" onclick="showTab('charts', this)">グラフ</button>
@@ -340,6 +344,30 @@
       <div style="font-size:11px;color:#999;margin-top:2px">このリンクを共有してください。ここから登録された候補者は自動的にあなたの紹介として記録されます。</div>
     </div>
     <div id="vagasLinkGrid" class="vagas-link-grid"></div>
+  </div>
+
+  <!-- 書類提出リンク VIEW -->
+  <div id="docsLinkView">
+    <div style="background:white;border-radius:8px;padding:10px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+      <div style="font-size:14px;font-weight:700;color:#1e88e5">書類提出リンク</div>
+      <div style="font-size:11px;color:#999;margin-top:2px">候補者に合った言語のリンクをコピーして送ってください。</div>
+    </div>
+    <div class="vagas-link-grid">
+      <div class="vagas-link-card">
+        <div class="vagas-link-nome">ポルトガル語</div>
+        <div class="vagas-link-actions">
+          <button class="btn-vlink btn-vlink-copy" onclick="copiarDocsLink('pt')">コピー</button>
+          <button class="btn-vlink btn-vlink-share" onclick="compartilharDocsLink('pt')">共有</button>
+        </div>
+      </div>
+      <div class="vagas-link-card">
+        <div class="vagas-link-nome">ミャンマー語</div>
+        <div class="vagas-link-actions">
+          <button class="btn-vlink btn-vlink-copy" onclick="copiarDocsLink('mm')">コピー</button>
+          <button class="btn-vlink btn-vlink-share" onclick="compartilharDocsLink('mm')">共有</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- オーダー状況 (jimusho: proprio escritorio; admin: todos, separados) -->

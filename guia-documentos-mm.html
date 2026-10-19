@@ -110,7 +110,7 @@
   <div class="card" style="padding:16px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <span style="font-size:14px;font-weight:600;color:#333">ပို့ပြီးသော စာရွက်စာတမ်းများ</span>
-      <span id="progressText" style="font-size:14px;font-weight:700;color:#1976d2">0 / 9</span>
+      <span id="progressText" style="font-size:14px;font-weight:700;color:#1976d2">0 / 10</span>
     </div>
     <div style="background:#eee;border-radius:6px;height:8px;margin-top:10px;overflow:hidden;">
       <div id="progressBar" style="background:#4caf50;height:100%;width:0%;transition:width .3s;"></div>
@@ -234,7 +234,7 @@
         <div class="doc-body">
           <div class="doc-head">
             <span class="doc-jp">運転免許証</span>
-            <span class="doc-pt">ယာဉ်မောင်းလိုင်စင်</span>
+            <span class="doc-pt">Menkyoshou — ယာဉ်မောင်းလိုင်စင်</span>
           </div>
           <div class="doc-desc">ဂျပန်ယာဉ်မောင်းလိုင်စင်။</div>
           <ul class="doc-tips">
@@ -278,7 +278,7 @@
         <div class="doc-body">
           <div class="doc-head">
             <span class="doc-jp">通帳</span>
-            <span class="doc-pt">ဘဏ်စာအုပ်</span>
+            <span class="doc-pt">Tsuuchou — ဘဏ်စာအုပ်</span>
           </div>
           <div class="doc-desc">လစာလက်ခံရန် အသုံးပြုသော ဘဏ်စာအုပ်။</div>
           <ul class="doc-tips">
@@ -296,15 +296,15 @@
 
     <div class="doc-item">
       <div class="doc-row">
-        <img class="doc-thumb" src="img/seguro-desemprego.jpg" alt="雇用保険被保険者証 ဥပမာ" onerror="this.remove()">
+        <img class="doc-thumb" src="img/seguro-desemprego.jpg" alt="雇用保険番号 ဥပမာ" onerror="this.remove()">
         <div class="doc-body">
           <div class="doc-head">
-            <span class="doc-jp">雇用保険被保険者証</span>
-            <span class="doc-pt">အလုပ်လက်မဲ့ အာမခံကတ်</span>
+            <span class="doc-jp">雇用保険番号</span>
+            <span class="doc-pt">Koyou Hoken Bangou — အလုပ်လက်မဲ့ အာမခံ နံပါတ်</span>
           </div>
-          <div class="doc-desc">အလုပ်လက်မဲ့အာမခံ (雇用保険) နံပါတ် အထောက်အထား။</div>
+          <div class="doc-desc">အလုပ်လက်မဲ့အာမခံ (雇用保険) နံပါတ်။</div>
           <ul class="doc-tips">
-            <li>အာမခံနံပါတ် ရှင်းလင်းစွာ မြင်ရအောင် စာရွက်စာတမ်းတစ်ခုလုံးကို ဓာတ်ပုံရိုက်ပါ။</li>
+            <li>အာမခံနံပါတ် ရှင်းလင်းစွာ မြင်ရသော နေရာကို ဓာတ်ပုံရိုက်ပါ။</li>
           </ul>
           <div class="upload-row">
             <input type="file" id="file_seguro_desemprego" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('seguro_desemprego', this)">
@@ -321,7 +321,7 @@
         <div class="doc-body">
           <div class="doc-head">
             <span class="doc-jp">就労資格証明書</span>
-            <span class="doc-pt">အလုပ်လုပ်ကိုင်ခွင့် အထောက်အထားလက်မှတ်</span>
+            <span class="doc-pt">Shuurou Shikaku Shoumeisho — အလုပ်လုပ်ကိုင်ခွင့် အထောက်အထားလက်မှတ်</span>
           </div>
           <div class="doc-desc">အလုပ်လုပ်ကိုင်ခွင့်ရှိကြောင်း လူဝင်မှုကြီးကြပ်ရေးမှ ထုတ်ပေးသော အထောက်အထား။</div>
           <ul class="doc-tips">
@@ -331,6 +331,28 @@
             <input type="file" id="file_certificado_qualificacao" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('certificado_qualificacao', this)">
             <label for="file_certificado_qualificacao" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
             <span class="upload-status" id="status_certificado_qualificacao"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/passaporte.jpg" alt="パスポート ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">パスポート</span>
+            <span class="doc-pt">Pasupooto — ပတ်စပို့ (Passport)</span>
+          </div>
+          <div class="doc-desc">ဂျပန်နိုင်ငံတွင် အလုပ်လုပ်ကိုင်ခွင့်ရှိကြောင်း ဖော်ပြသည့် ပတ်စပို့။</div>
+          <ul class="doc-tips">
+            <li>ဓာတ်ပုံ ၂ ပုံ ပို့ပါ — <b>ကိုယ်ရေးအချက်အလက် စာမျက်နှာ</b> (ဓာတ်ပုံ၊ အမည်၊ ပတ်စပို့နံပါတ် ပါရှိသည့်စာမျက်နှာ) နှင့် <b>ဂျပန်တွင် အလုပ်လုပ်ခွင့်ပြုထားကြောင်း ဖော်ပြသည့် စာမျက်နှာ</b> (ဗီဇာ/အထောက်အထား တံဆိပ်)။</li>
+            <li>အောက်ပါခလုတ်တစ်ခုတည်းကို ဓာတ်ပုံနှစ်ပုံအတွက် နှစ်ကြိမ် နှိပ်ပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_passaporte" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('passaporte', this)">
+            <label for="file_passaporte" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_passaporte"></span>
           </div>
         </div>
       </div>
@@ -421,13 +443,46 @@
   )
 
   function telefoneDigits() {
-    return (document.getElementById('telefoneInput').value || '').replace(/\D/g, '')
+    let n = (document.getElementById('telefoneInput').value || '').replace(/\D/g, '')
+    if (n.startsWith('81')) n = '0' + n.slice(2)
+    return n
   }
 
+  let telefoneCheckTimer = null
+
   document.getElementById('telefoneInput').addEventListener('input', () => {
+    const hint = document.getElementById('telefoneHint')
     const ok = telefoneDigits().length >= 10
-    document.querySelectorAll('.upload-row input[type=file]').forEach(i => i.disabled = !ok)
-    document.getElementById('telefoneHint').style.display = ok ? 'none' : 'block'
+    document.querySelectorAll('.upload-row input[type=file]').forEach(i => i.disabled = true)
+    clearTimeout(telefoneCheckTimer)
+
+    if (!ok) {
+      hint.textContent = 'အောက်ပါစာရွက်စာတမ်းများ ပို့ရန် သင့်ဖုန်းနံပါတ်ကို ဖြည့်ပါ။'
+      hint.style.color = '#c62828'
+      hint.style.display = 'block'
+      return
+    }
+
+    hint.textContent = '🔍 စစ်ဆေးနေသည်...'
+    hint.style.color = '#888'
+    hint.style.display = 'block'
+
+    telefoneCheckTimer = setTimeout(async () => {
+      const tel = telefoneDigits()
+      const { data, error } = await sb.rpc('telefone_existe', { tel })
+      if (error) {
+        hint.textContent = '⚠️ ဖုန်းနံပါတ် စစ်ဆေးရာတွင် အမှားရှိသည်၊ ထပ်မံကြိုးစားပါ။'
+        hint.style.color = '#c62828'
+        return
+      }
+      if (data) {
+        hint.style.display = 'none'
+        document.querySelectorAll('.upload-row input[type=file]').forEach(i => i.disabled = false)
+      } else {
+        hint.textContent = '❌ ဖုန်းနံပါတ် ရှာမတွေ့ပါ။ နံပါတ်ကို ပြန်စစ်ပါ။'
+        hint.style.color = '#c62828'
+      }
+    }, 500)
   })
 
   function atualizarProgresso() {

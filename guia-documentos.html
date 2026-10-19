@@ -234,7 +234,7 @@
         <div class="doc-body">
           <div class="doc-head">
             <span class="doc-jp">運転免許証</span>
-            <span class="doc-pt">Carteira de Motorista</span>
+            <span class="doc-pt">Menkyoshou — Carteira de Motorista</span>
           </div>
           <div class="doc-desc">Carteira de habilitação japonesa.</div>
           <ul class="doc-tips">
@@ -278,7 +278,7 @@
         <div class="doc-body">
           <div class="doc-head">
             <span class="doc-jp">通帳</span>
-            <span class="doc-pt">Caderneta do Banco</span>
+            <span class="doc-pt">Tsuuchou — Caderneta do Banco</span>
           </div>
           <div class="doc-desc">Caderneta bancária usada para receber o pagamento.</div>
           <ul class="doc-tips">
@@ -296,15 +296,15 @@
 
     <div class="doc-item">
       <div class="doc-row">
-        <img class="doc-thumb" src="img/seguro-desemprego.jpg" alt="Exemplo 雇用保険被保険者証" onerror="this.remove()">
+        <img class="doc-thumb" src="img/seguro-desemprego.jpg" alt="Exemplo 雇用保険番号" onerror="this.remove()">
         <div class="doc-body">
           <div class="doc-head">
-            <span class="doc-jp">雇用保険被保険者証</span>
-            <span class="doc-pt">Carteira do Seguro Desemprego</span>
+            <span class="doc-jp">雇用保険番号</span>
+            <span class="doc-pt">Koyou Hoken Bangou — Número do Seguro Desemprego</span>
           </div>
-          <div class="doc-desc">Comprovante de número do seguro desemprego (雇用保険).</div>
+          <div class="doc-desc">Número do seguro desemprego (雇用保険).</div>
           <ul class="doc-tips">
-            <li>Fotografe o documento inteiro, com o número do segurado legível.</li>
+            <li>Fotografe onde o número do seguro desemprego aparece claramente.</li>
           </ul>
           <div class="upload-row">
             <input type="file" id="file_seguro_desemprego" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('seguro_desemprego', this)">
@@ -321,7 +321,7 @@
         <div class="doc-body">
           <div class="doc-head">
             <span class="doc-jp">就労資格証明書</span>
-            <span class="doc-pt">Certificado de Qualificação de Atividade</span>
+            <span class="doc-pt">Shuurou Shikaku Shoumeisho — Certificado de Qualificação de Atividade</span>
           </div>
           <div class="doc-desc">Documento emitido pela imigração confirmando autorização para trabalhar.</div>
           <ul class="doc-tips">
@@ -421,13 +421,46 @@
   )
 
   function telefoneDigits() {
-    return (document.getElementById('telefoneInput').value || '').replace(/\D/g, '')
+    let n = (document.getElementById('telefoneInput').value || '').replace(/\D/g, '')
+    if (n.startsWith('81')) n = '0' + n.slice(2)
+    return n
   }
 
+  let telefoneCheckTimer = null
+
   document.getElementById('telefoneInput').addEventListener('input', () => {
+    const hint = document.getElementById('telefoneHint')
     const ok = telefoneDigits().length >= 10
-    document.querySelectorAll('.upload-row input[type=file]').forEach(i => i.disabled = !ok)
-    document.getElementById('telefoneHint').style.display = ok ? 'none' : 'block'
+    document.querySelectorAll('.upload-row input[type=file]').forEach(i => i.disabled = true)
+    clearTimeout(telefoneCheckTimer)
+
+    if (!ok) {
+      hint.textContent = 'Preencha seu telefone para liberar o envio dos documentos abaixo.'
+      hint.style.color = '#c62828'
+      hint.style.display = 'block'
+      return
+    }
+
+    hint.textContent = '🔍 Verificando...'
+    hint.style.color = '#888'
+    hint.style.display = 'block'
+
+    telefoneCheckTimer = setTimeout(async () => {
+      const tel = telefoneDigits()
+      const { data, error } = await sb.rpc('telefone_existe', { tel })
+      if (error) {
+        hint.textContent = '⚠️ Erro ao verificar telefone, tente novamente.'
+        hint.style.color = '#c62828'
+        return
+      }
+      if (data) {
+        hint.style.display = 'none'
+        document.querySelectorAll('.upload-row input[type=file]').forEach(i => i.disabled = false)
+      } else {
+        hint.textContent = '❌ Telefone não encontrado em nosso sistema. Confirme o número digitado.'
+        hint.style.color = '#c62828'
+      }
+    }, 500)
   })
 
   function atualizarProgresso() {
