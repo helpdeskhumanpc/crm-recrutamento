@@ -45,7 +45,7 @@ if (window.innerWidth > 768) {
 let todosOsCandidatos = []
 let todasFabricas = []
 let todasLocations = []
-let docsConfirmadosPorCandidato = new Map() // candidate_id -> quantidade de documentos confirmados
+let docsPorTelefone = new Map() // telefone normalizado -> {tipo: quantidade recebida} (conta tudo que chegou, confirmado ou não)
 let nomeParaJimusho = {} // shokai (nome) -> jimusho, combinando shokaisha + perfis_publicos
 let todosPerfisPublicos = [] // nome/jimusho/shokai_nome/role/fabricas de todos os perfis (view perfis_publicos)
 let fabricaAtiva = null
@@ -134,11 +134,39 @@ function ehNacionalidadeMyanmar(c) {
   return n.includes('myanmar') || n.includes('mianmar') || n.includes('burma') || n.includes('ミャンマー') || n.includes('ビルマ')
 }
 
+function normTelDocs(t) {
+  let n = (t || '').replace(/\D/g, '')
+  if (n.startsWith('81')) n = '0' + n.slice(2)
+  return n
+}
+
+const DOC_TIPOS_FIXOS = ['zairyu_card', 'my_number', 'caderneta', 'seguro_desemprego', 'certificado_qualificacao']
+const DOC_TIPOS_CARRO = ['cnh', 'shakensho', 'hokensho', 'jibaiseki']
+
+// Quantas fotos/arquivos cada tipo precisa pra contar como "completo" (frente+verso, capa+pagina, etc.) — default 1
+const DOC_TIPO_FOTOS_NECESSARIAS = {
+  zairyu_card: 2, cnh: 2, caderneta: 2, passaporte: 2, my_number: 2,
+}
+
+function tiposNecessarios(c) {
+  const tipos = [...DOC_TIPOS_FIXOS]
+  if (c.tem_carro !== false) tipos.push(...DOC_TIPOS_CARRO)
+  if (ehNacionalidadeMyanmar(c)) tipos.push('passaporte')
+  return tipos
+}
+
+// Conta quantos tipos (da lista `tipos`) já receberam a quantidade de arquivos necessária,
+// a partir de `countsByTipo` ({tipo: quantidade recebida}) — conta no RECEBIMENTO, não na confirmação
+function tiposSatisfeitos(countsByTipo, tipos) {
+  return tipos.filter(t => (countsByTipo[t] || 0) >= (DOC_TIPO_FOTOS_NECESSARIAS[t] || 1)).length
+}
+
 function docsStatus(c) {
-  let total = c.tem_carro === false ? 6 : 9
-  if (ehNacionalidadeMyanmar(c)) total += 1 // パスポート extra, só pedido na pagina myanmar
-  const confirmados = docsConfirmadosPorCandidato.get(c.id) || 0
-  return { total, confirmados, completo: confirmados >= total }
+  const tel = normTelDocs(c.telefone)
+  const countsByTipo = docsPorTelefone.get(tel) || {}
+  const tipos = tiposNecessarios(c)
+  const completos = tiposSatisfeitos(countsByTipo, tipos)
+  return { total: tipos.length, confirmados: completos, completo: completos >= tipos.length }
 }
 
 function docsBadgeHtml(c) {
@@ -178,14 +206,19 @@ async function carregarDados() {
     locQuery,
     sb.from('shokaisha').select('nome,jimusho'),
     sb.from('perfis_publicos').select('nome,jimusho,shokai_nome,role,fabricas'),
-    sb.from('documentos_funcionarios').select('candidate_id').not('candidate_id', 'is', null),
+    sb.from('documentos_funcionarios').select('telefone,tipo'),
   ])
   todosOsCandidatos = res1.data || []
   todasLocations    = res2.data || []
   todasFabricas     = todasLocations.map(f => f.nome)
   todosPerfisPublicos = res4.data || []
-  docsConfirmadosPorCandidato = new Map()
-  ;(res5.data || []).forEach(d => docsConfirmadosPorCandidato.set(d.candidate_id, (docsConfirmadosPorCandidato.get(d.candidate_id) || 0) + 1))
+  docsPorTelefone = new Map()
+  ;(res5.data || []).forEach(d => {
+    const tel = normTelDocs(d.telefone)
+    if (!docsPorTelefone.has(tel)) docsPorTelefone.set(tel, {})
+    const counts = docsPorTelefone.get(tel)
+    counts[d.tipo] = (counts[d.tipo] || 0) + 1
+  })
   nomeParaJimusho = {}
   ;(res3.data || []).forEach(s => { if (s.nome && s.jimusho) nomeParaJimusho[s.nome] = s.jimusho })
   ;(res4.data || []).forEach(p => { if (p.shokai_nome && p.jimusho) nomeParaJimusho[p.shokai_nome] = p.jimusho })
@@ -651,6 +684,10 @@ function toggleColunaTodos(checked) {
 
 function escHtml(v) {
   return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+}
+
+function escAttr(v) {
+  return escHtml(v).replace(/"/g, '&quot;')
 }
 
 function imprimirPDFCustom() {
@@ -1448,7 +1485,7 @@ function renderDocsSummaryBar(c, confirmadosCount) {
 async function carregarDocumentosCandidato(c) {
   const container = document.getElementById('docsSection')
   if (!container) return
-  const tel = (c.telefone || '').replace(/\D/g, '')
+  const tel = normTelDocs(c.telefone)
   if (!tel) { container.innerHTML = '<div class="docs-empty">電話番号が登録されていません。</div>'; renderDocsSummaryBar(c, 0); return }
 
   const { data, error } = await sb.from('documentos_funcionarios')
@@ -1468,7 +1505,10 @@ async function carregarDocumentosCandidato(c) {
   const pendentes   = comUrl.filter(d => d.candidate_id === null)
   const podeConfirmar = podeEditar(c)
 
-  renderDocsSummaryBar(c, confirmados.length)
+  const countsByTipo = {}
+  data.forEach(d => { countsByTipo[d.tipo] = (countsByTipo[d.tipo] || 0) + 1 })
+  const completos = tiposSatisfeitos(countsByTipo, tiposNecessarios(c))
+  renderDocsSummaryBar(c, completos)
 
   const linha = (d, confirmado) => `
     <div class="doc-row-item">
@@ -1493,13 +1533,12 @@ async function confirmarDocumento(docId) {
     .update({ candidate_id: candidatoAtivo.id, confirmado_em: new Date().toISOString() })
     .eq('id', docId)
   if (error) { alert('エラー: ' + error.message); return }
-  docsConfirmadosPorCandidato.set(candidatoAtivo.id, (docsConfirmadosPorCandidato.get(candidatoAtivo.id) || 0) + 1)
   carregarDocumentosCandidato(candidatoAtivo)
 }
 
 async function baixarPdfCompleto() {
   if (!candidatoAtivo) return
-  const tel = (candidatoAtivo.telefone || '').replace(/\D/g, '')
+  const tel = normTelDocs(candidatoAtivo.telefone)
   const { data, error } = await sb.from('documentos_funcionarios')
     .select('*')
     .eq('telefone', tel)
@@ -2871,7 +2910,7 @@ function renderLeads() {
           actions = `<span style="font-size:11px;color:#2e7d32;font-weight:600">✓ Encaminhado</span>`
         }
         return `<div class="lead-row">
-          <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}" style="font-weight:600;cursor:pointer;color:#1e88e5" onclick="abrirModal('${c.id}')">${c.shimei || '—'}</span>
+          <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}" style="font-weight:600;cursor:pointer;color:#1e88e5" onclick="abrirModal('${c.id}')">${c.tantousha_comentario ? `<span title="${escAttr(c.tantousha_comentario)}" style="cursor:help" onclick="event.stopPropagation();alert(${JSON.stringify('担当者コメント:\n\n' + c.tantousha_comentario)})">💬</span> ` : ''}${c.shimei || '—'}</span>
           <span>${c.telefone || '—'}</span>
           <span style="font-size:11px">${c.fabrica || '—'}</span>
           <span style="font-size:11px">${c.prefecture || '—'}</span>

@@ -230,28 +230,6 @@
 
     <div class="doc-item">
       <div class="doc-row">
-        <img class="doc-thumb" src="img/carteira-motorista.jpg" alt="Exemplo 運転免許証" onerror="this.remove()">
-        <div class="doc-body">
-          <div class="doc-head">
-            <span class="doc-jp">運転免許証</span>
-            <span class="doc-pt">Menkyoshou — Carteira de Motorista</span>
-          </div>
-          <div class="doc-desc">Carteira de habilitação japonesa.</div>
-          <ul class="doc-tips">
-            <li>Envie a foto da <b>frente</b> e do <b>verso</b> separadamente.</li>
-            <li>Verifique se a data de validade está visível e legível.</li>
-          </ul>
-          <div class="upload-row">
-            <input type="file" id="file_cnh" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('cnh', this)">
-            <label for="file_cnh" class="upload-btn">📎 Enviar foto/arquivo</label>
-            <span class="upload-status" id="status_cnh"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="doc-item">
-      <div class="doc-row">
         <img class="doc-thumb" src="img/my-number.jpg" alt="Exemplo マイナンバー" onerror="this.remove()">
         <div class="doc-body">
           <div class="doc-head">
@@ -261,6 +239,7 @@
           <div class="doc-desc">Número de identificação fiscal/social japonês (cartão ou notificação).</div>
           <ul class="doc-tips">
             <li>Documento sensível — fotografe apenas o próprio documento, sem deixá-lo exposto depois.</li>
+            <li>Envie a foto da <b>frente</b> e do <b>verso</b> separadamente.</li>
             <li>Certifique-se de que os 12 números estão legíveis.</li>
           </ul>
           <div class="upload-row">
@@ -340,7 +319,30 @@
   <!-- DOCUMENTOS CONDICIONAIS -->
   <div class="card">
     <h2>Documentos adicionais — somente se você tem carteira de motorista e carro</h2>
-    <p class="section-note">Envie estes três apenas se você possui carro próprio.</p>
+    <p class="section-note">Envie estes quatro apenas se você possui carro próprio.</p>
+
+    <div class="doc-item optional">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/carteira-motorista.jpg" alt="Exemplo 運転免許証" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">運転免許証</span>
+            <span class="doc-pt">Menkyoshou — Carteira de Motorista</span>
+            <span class="doc-tag">Se tiver carro</span>
+          </div>
+          <div class="doc-desc">Carteira de habilitação japonesa.</div>
+          <ul class="doc-tips">
+            <li>Envie a foto da <b>frente</b> e do <b>verso</b> separadamente.</li>
+            <li>Verifique se a data de validade está visível e legível.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_cnh" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('cnh', this)">
+            <label for="file_cnh" class="upload-btn">📎 Enviar foto/arquivo</label>
+            <span class="upload-status" id="status_cnh"></span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="doc-item optional">
       <div class="doc-row">

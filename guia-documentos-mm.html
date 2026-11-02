@@ -230,28 +230,6 @@
 
     <div class="doc-item">
       <div class="doc-row">
-        <img class="doc-thumb" src="img/carteira-motorista.jpg" alt="運転免許証 ဥပမာ" onerror="this.remove()">
-        <div class="doc-body">
-          <div class="doc-head">
-            <span class="doc-jp">運転免許証</span>
-            <span class="doc-pt">Menkyoshou — ယာဉ်မောင်းလိုင်စင်</span>
-          </div>
-          <div class="doc-desc">ဂျပန်ယာဉ်မောင်းလိုင်စင်။</div>
-          <ul class="doc-tips">
-            <li>ရှေ့ဘက်နှင့် နောက်ဘက် ဓာတ်ပုံကို သီးခြားစီ ပို့ပါ။</li>
-            <li>သက်တမ်းကုန်ဆုံးရက် ရှင်းလင်းစွာ မြင်ရကြောင်း စစ်ဆေးပါ။</li>
-          </ul>
-          <div class="upload-row">
-            <input type="file" id="file_cnh" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('cnh', this)">
-            <label for="file_cnh" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
-            <span class="upload-status" id="status_cnh"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="doc-item">
-      <div class="doc-row">
         <img class="doc-thumb" src="img/my-number.jpg" alt="マイナンバー ဥပမာ" onerror="this.remove()">
         <div class="doc-body">
           <div class="doc-head">
@@ -261,6 +239,7 @@
           <div class="doc-desc">ဂျပန်အခွန်/လူမှုဖူလုံရေး မှတ်ပုံတင်နံပါတ် (ကတ် သို့မဟုတ် အကြောင်းကြားစာ)။</div>
           <ul class="doc-tips">
             <li>အရေးကြီးသော စာရွက်စာတမ်းဖြစ်သည် — စာရွက်စာတမ်းကိုသာ ဓာတ်ပုံရိုက်ပြီး ပြီးနောက် ပေါ်လွင်စွာ မထားခဲ့ပါနှင့်။</li>
+            <li>ရှေ့ဘက်နှင့် နောက်ဘက် ဓာတ်ပုံကို သီးခြားစီ ပို့ပါ။</li>
             <li>ဂဏန်း ၁၂ လုံး ရှင်းလင်းစွာ မြင်ရကြောင်း သေချာပါစေ။</li>
           </ul>
           <div class="upload-row">
@@ -362,7 +341,30 @@
   <!-- DOCUMENTOS CONDICIONAIS -->
   <div class="card">
     <h2>နောက်ထပ် စာရွက်စာတမ်းများ — ယာဉ်မောင်းလိုင်စင်နှင့် ကားရှိပါက သာလိုအပ်သည်</h2>
-    <p class="section-note">ကိုယ်ပိုင်ကားပိုင်ဆိုင်ပါက ဤသုံးခုကိုသာ ပို့ပါ။</p>
+    <p class="section-note">ကိုယ်ပိုင်ကားပိုင်ဆိုင်ပါက ဤလေးခုကိုသာ ပို့ပါ။</p>
+
+    <div class="doc-item optional">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/carteira-motorista.jpg" alt="運転免許証 ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">運転免許証</span>
+            <span class="doc-pt">Menkyoshou — ယာဉ်မောင်းလိုင်စင်</span>
+            <span class="doc-tag">ကားရှိပါက</span>
+          </div>
+          <div class="doc-desc">ဂျပန်ယာဉ်မောင်းလိုင်စင်။</div>
+          <ul class="doc-tips">
+            <li>ရှေ့ဘက်နှင့် နောက်ဘက် ဓာတ်ပုံကို သီးခြားစီ ပို့ပါ။</li>
+            <li>သက်တမ်းကုန်ဆုံးရက် ရှင်းလင်းစွာ မြင်ရကြောင်း စစ်ဆေးပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_cnh" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('cnh', this)">
+            <label for="file_cnh" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_cnh"></span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="doc-item optional">
       <div class="doc-row">
