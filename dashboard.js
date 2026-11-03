@@ -1476,6 +1476,7 @@ const DOC_TIPO_LABELS = {
   hokensho:                  '任意保険証',
   jibaiseki:                 '自賠責保険証',
   passaporte:                'パスポート',
+  juminhyo:                  '住民票',
 }
 
 function renderDocsSummaryBar(c, confirmadosCount) {

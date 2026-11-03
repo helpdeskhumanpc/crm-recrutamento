@@ -115,7 +115,7 @@
   <div class="card" style="padding:16px 24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <span style="font-size:14px;font-weight:600;color:#333">ပို့ပြီးသော စာရွက်စာတမ်းများ</span>
-      <span id="progressText" style="font-size:14px;font-weight:700;color:#1976d2">0 / 10</span>
+      <span id="progressText" style="font-size:14px;font-weight:700;color:#1976d2">0 / 11</span>
     </div>
     <div style="background:#eee;border-radius:6px;height:8px;margin-top:10px;overflow:hidden;">
       <div id="progressBar" style="background:#4caf50;height:100%;width:0%;transition:width .3s;"></div>
@@ -458,6 +458,34 @@
             <input type="file" id="file_jibaiseki" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('jibaiseki', this)">
             <label for="file_jibaiseki" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
             <span class="upload-status" id="status_jibaiseki"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTO OPCIONAL -->
+  <div class="card">
+    <h2>ရွေးချယ်ခွင့်ရှိသော စာရွက်စာတမ်း</h2>
+    <p class="section-note">ဤစာရွက်စာတမ်းရှိပါက သာ ပို့ပါ — မဖြစ်မနေ မလိုအပ်ပါ။</p>
+
+    <div class="doc-item optional">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/juminhyo.jpg" alt="住民票 ဥပမာ" onerror="this.remove()">
+        <div class="doc-body">
+          <div class="doc-head">
+            <span class="doc-jp">住民票</span>
+            <span class="doc-pt">Juuminhyou — နေထိုင်ရာလိပ်စာ သက်သေခံလက်မှတ်</span>
+            <span class="doc-tag">ရွေးချယ်နိုင်သည်</span>
+          </div>
+          <div class="doc-desc">မြို့အုပ်ချုပ်ရေးရုံးမှ ထုတ်ပေးသည့် သင့်နေထိုင်ရာလိပ်စာကို သက်သေပြသည့် စာရွက်စာတမ်း။</div>
+          <ul class="doc-tips">
+            <li>စာရွက်စာတမ်းတစ်ခုလုံး ရှင်းလင်းစွာ မြင်ရအောင် ဓာတ်ပုံရိုက်ပါ။</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_juminhyo" accept="image/*,application/pdf" capture="environment" disabled onchange="enviarDocumento('juminhyo', this)">
+            <label for="file_juminhyo" class="upload-btn">📎 ဓာတ်ပုံ/ဖိုင် ပို့ရန်</label>
+            <span class="upload-status" id="status_juminhyo"></span>
           </div>
         </div>
       </div>
