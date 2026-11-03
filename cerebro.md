@@ -1074,6 +1074,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-11-02 | **v1.81** — マイナンバー passa a exigir 2 fotos (frente/verso) pra contar como completo, em vez de 1 — `DOC_TIPO_FOTOS_NECESSARIAS` em `dashboard.js` e dica adicionada nas duas páginas públicas |
 | 2026-11-03 | **v1.82** — Comentário do 担当者 em Leads do Site deixa de ser só um ícone 💬 (precisava clicar) e passa a aparecer direto abaixo do nome, truncado com reticências se for longo, texto completo no tooltip ao passar o mouse — pedido do Eder pra já mostrar a mensagem sem interação extra |
 | 2026-11-03 | **v1.83** — Foto 3x4 do candidato (`candidates.foto_url`, coluna nova). Dois lados: (1) popup (ficha) do `dashboard.js` mostra a foto se já existir, ou "写真なし", com botão pra o staff enviar/trocar manualmente; (2) novo card "Foto 3x4" em `guia-documentos.html`/`guia-documentos-mm.html` (precisa colar manualmente no Elementor) deixa o próprio candidato enviar, usando RPC `atualizar_foto_candidato` (`sql-telefone-existe.sql`) pra achar o candidato pelo telefone sem expor a tabela. Os dois lados sobem pro mesmo bucket `fotos-curriculos` (já usado pelo `form-curriculo.html`). Aviso de texto fixo pedindo fundo branco ou bege nos dois lugares (sem checagem automática, é só lembrete visual) |
+| 2026-11-03 | **v1.84** — Foto 3x4 entra como primeira página do PDF gerado pelo botão "📄 PDFをまとめてダウンロード" (`baixarPdfCompleto`, `dashboard.js`), quando o candidato tem `foto_url`. O botão agora aparece mesmo sem nenhum documento confirmado, desde que haja foto |
 
 ## Sistema de Versão
 
@@ -1081,8 +1082,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.83**
-- Tags criadas até agora: `v1.00` a `v1.83` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.84**
+- Tags criadas até agora: `v1.00` a `v1.84` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 

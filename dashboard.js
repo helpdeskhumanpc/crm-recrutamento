@@ -1533,7 +1533,7 @@ async function carregarDocumentosCandidato(c) {
   container.innerHTML = `
     ${confirmados.length ? `<div class="docs-group-title">確定済み（${confirmados.length}）</div>${confirmados.map(d=>linha(d,true)).join('')}` : ''}
     ${pendentes.length ? `<div class="docs-group-title" style="margin-top:${confirmados.length?'12px':'0'}">未確定（${pendentes.length}） — 同じ電話番号の別候補の書類が混じっている場合があります</div>${pendentes.map(d=>linha(d,false)).join('')}` : ''}
-    ${confirmados.length ? `<button class="btn-hoje" style="margin-top:12px;padding:8px 16px" onclick="baixarPdfCompleto()">📄 PDFをまとめてダウンロード</button>` : ''}
+    ${(confirmados.length || c.foto_url) ? `<button class="btn-hoje" style="margin-top:12px;padding:8px 16px" onclick="baixarPdfCompleto()">📄 PDFをまとめてダウンロード</button>` : ''}
   `
 }
 
@@ -1554,12 +1554,25 @@ async function baixarPdfCompleto() {
     .eq('telefone', tel)
     .eq('candidate_id', candidatoAtivo.id)
     .order('criado_em', { ascending: true })
-  if (error || !data || data.length === 0) { alert('確定済みの書類がありません。'); return }
+  if (error) { alert('エラー: ' + error.message); return }
+  const docs = data || []
+  if (docs.length === 0 && !candidatoAtivo.foto_url) { alert('確定済みの書類がありません。'); return }
 
   const { PDFDocument } = PDFLib
   const merged = await PDFDocument.create()
 
-  for (const d of data) {
+  if (candidatoAtivo.foto_url) {
+    try {
+      const fotoBytes = await fetch(candidatoAtivo.foto_url).then(r => r.arrayBuffer())
+      const img = await merged.embedJpg(fotoBytes)
+      const page = merged.addPage([img.width, img.height])
+      page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height })
+    } catch (e) {
+      console.error('foto embed failed', e)
+    }
+  }
+
+  for (const d of docs) {
     const { data: signed } = await sb.storage.from('documentos-funcionarios').createSignedUrl(d.storage_path, 600)
     if (!signed?.signedUrl) continue
     const bytes = await fetch(signed.signedUrl).then(r => r.arrayBuffer())
@@ -1567,6 +1580,8 @@ async function baixarPdfCompleto() {
     const paginas = await merged.copyPages(srcPdf, srcPdf.getPageIndices())
     paginas.forEach(p => merged.addPage(p))
   }
+
+  if (merged.getPageCount() === 0) { alert('確定済みの書類がありません。'); return }
 
   const mergedBytes = await merged.save()
   const blob = new Blob([mergedBytes], { type: 'application/pdf' })
