@@ -81,6 +81,11 @@
   .upload-status.err { color: #c62828; font-weight: 600; }
   .upload-status.busy { color: #ef6c00; font-weight: 600; }
 
+  .foto-status { font-size: 12px; color: #666; }
+  .foto-status.ok { color: #2e7d32; font-weight: 600; }
+  .foto-status.err { color: #c62828; font-weight: 600; }
+  .foto-status.busy { color: #ef6c00; font-weight: 600; }
+
   @media (max-width: 600px) {
     .card { padding: 20px; }
     .card h2 { margin: -20px -20px 20px; }
@@ -114,6 +119,32 @@
     </div>
     <div style="background:#eee;border-radius:6px;height:8px;margin-top:10px;overflow:hidden;">
       <div id="progressBar" style="background:#4caf50;height:100%;width:0%;transition:width .3s;"></div>
+    </div>
+  </div>
+
+  <!-- FOTO 3x4 -->
+  <div class="card">
+    <h2>Foto 3x4</h2>
+    <p style="font-size:13px;color:#555;line-height:1.7">
+      Também precisamos de uma foto sua tipo 3x4, para uso no cadastro.
+    </p>
+    <div class="doc-item">
+      <div class="doc-row">
+        <img class="doc-thumb" src="img/foto-3x4-exemplo.jpg" alt="Exemplo de foto 3x4" onerror="this.remove()">
+        <div class="doc-body">
+          <ul class="doc-tips">
+            <li><b>Fundo branco ou bege</b>, liso, sem outras pessoas ou objetos atrás.</li>
+            <li>Foto recente, de frente, com rosto e ombros visíveis.</li>
+            <li>Sem boné, óculos escuros ou qualquer coisa cobrindo o rosto.</li>
+            <li>Boa iluminação, sem sombras fortes no rosto.</li>
+          </ul>
+          <div class="upload-row">
+            <input type="file" id="file_foto3x4" accept="image/*" disabled onchange="enviarFoto3x4(this)">
+            <label for="file_foto3x4" class="upload-btn">📎 Enviar foto</label>
+            <span class="foto-status" id="status_foto3x4"></span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -522,6 +553,55 @@
     })
     pdf.addImage(dataUrl, 'JPEG', 0, 0, img.width, img.height)
     return pdf.output('blob')
+  }
+
+  async function comprimirFoto3x4(file) {
+    const dataUrl = await blobToDataURL(file)
+    const img = await loadImage(dataUrl)
+    const MAX = 800
+    let w = img.width, h = img.height
+    if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+    const canvas = document.createElement('canvas')
+    canvas.width = w; canvas.height = h
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+  }
+
+  async function enviarFoto3x4(inputEl) {
+    const file = inputEl.files[0]
+    if (!file) return
+    const tel = telefoneDigits()
+    if (tel.length < 10) { avisarTelefoneInvalido(); return }
+
+    const statusEl = document.getElementById('status_foto3x4')
+    statusEl.className = 'foto-status busy'
+    statusEl.textContent = '⏳ Enviando...'
+    inputEl.disabled = true
+
+    try {
+      const blob = await comprimirFoto3x4(file)
+      const path = `candidato_${tel}_${Date.now()}.jpg`
+
+      const { error: upErr } = await sb.storage
+        .from('fotos-curriculos')
+        .upload(path, blob, { contentType: 'image/jpeg' })
+      if (upErr) throw upErr
+
+      const foto_url = sb.storage.from('fotos-curriculos').getPublicUrl(path).data.publicUrl
+      const { data: ok, error: rpcErr } = await sb.rpc('atualizar_foto_candidato', { tel, nova_foto_url: foto_url })
+      if (rpcErr) throw rpcErr
+      if (!ok) throw new Error('telefone não encontrado')
+
+      statusEl.className = 'foto-status ok'
+      statusEl.textContent = '✅ Enviado com sucesso'
+    } catch (err) {
+      statusEl.className = 'foto-status err'
+      statusEl.textContent = '❌ Erro ao enviar, tente novamente'
+      console.error(err)
+    } finally {
+      inputEl.disabled = false
+      inputEl.value = ''
+    }
   }
 
   async function enviarDocumento(tipo, inputEl) {

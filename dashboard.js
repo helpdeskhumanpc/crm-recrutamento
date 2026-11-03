@@ -1325,16 +1325,26 @@ function abrirModal(id) {
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-section">
       <div class="modal-section-title">基本情報</div>
-      <div class="modal-grid">
-        <div class="modal-field"><label>氏名</label><input id="f_shimei" value="${c.shimei||''}"></div>
-        <div class="modal-field"><label>電話番号</label><input id="f_telefone" value="${c.telefone||''}"></div>
-        <div class="modal-field"><label>国籍</label><input id="f_nac" value="${c.nacionalidade||''}"></div>
-        <div class="modal-field"><label>年齢</label><input type="number" id="f_idade" value="${c.idade||''}"></div>
-        <div class="modal-field"><label>生年月日</label><input type="date" id="f_nasc" value="${c.data_nascimento||''}"></div>
-        <div class="modal-field"><label>性別</label><select id="f_sexo"><option value="">—</option>${sel(['男性','女性','その他'],c.sexo)}</select></div>
-        <div class="modal-field"><label>都道府県</label><input id="f_pref" value="${c.prefecture||''}"></div>
-        <div class="modal-field"><label>市区町村</label><input id="f_city" value="${c.city||''}"></div>
-        <div class="modal-field"><label>〒</label><input id="f_cep" value="${c.postal_code||''}"></div>
+      <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:0 0 auto">
+          <div id="fotoCandidatoBox" style="width:120px;height:160px;border:1px solid #ddd;border-radius:6px;overflow:hidden;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;text-align:center">${c.foto_url ? `<img src="${escAttr(c.foto_url)}" style="width:100%;height:100%;object-fit:cover">` : '写真なし'}</div>
+          <label class="btn-hoje" style="display:block;text-align:center;margin-top:6px;cursor:pointer;box-sizing:border-box;width:120px">
+            <span id="fotoCandidatoLabelText">${c.foto_url ? '写真を変更' : '写真をアップロード'}</span>
+            <input type="file" id="f_foto_input" accept="image/*" style="display:none" onchange="uploadFotoCandidato(this)">
+          </label>
+          <div style="font-size:10px;color:#999;margin-top:4px;width:120px">背景は白または薄いベージュの無地にしてください</div>
+        </div>
+        <div class="modal-grid" style="flex:1 1 300px">
+          <div class="modal-field"><label>氏名</label><input id="f_shimei" value="${c.shimei||''}"></div>
+          <div class="modal-field"><label>電話番号</label><input id="f_telefone" value="${c.telefone||''}"></div>
+          <div class="modal-field"><label>国籍</label><input id="f_nac" value="${c.nacionalidade||''}"></div>
+          <div class="modal-field"><label>年齢</label><input type="number" id="f_idade" value="${c.idade||''}"></div>
+          <div class="modal-field"><label>生年月日</label><input type="date" id="f_nasc" value="${c.data_nascimento||''}"></div>
+          <div class="modal-field"><label>性別</label><select id="f_sexo"><option value="">—</option>${sel(['男性','女性','その他'],c.sexo)}</select></div>
+          <div class="modal-field"><label>都道府県</label><input id="f_pref" value="${c.prefecture||''}"></div>
+          <div class="modal-field"><label>市区町村</label><input id="f_city" value="${c.city||''}"></div>
+          <div class="modal-field"><label>〒</label><input id="f_cep" value="${c.postal_code||''}"></div>
+        </div>
       </div>
     </div>
 
@@ -1566,6 +1576,64 @@ async function baixarPdfCompleto() {
   a.download = `${candidatoAtivo.shimei || 'candidato'}_書類.pdf`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function comprimirFotoCandidato(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = e => {
+      const img = new Image()
+      img.onload = () => {
+        const MAX = 800
+        let w = img.width, h = img.height
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.85)
+      }
+      img.onerror = reject
+      img.src = e.target.result
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+function renderFotoCandidatoBox() {
+  const box = document.getElementById('fotoCandidatoBox')
+  if (!box) return
+  box.innerHTML = candidatoAtivo.foto_url ? `<img src="${escAttr(candidatoAtivo.foto_url)}" style="width:100%;height:100%;object-fit:cover">` : '写真なし'
+  const labelText = document.getElementById('fotoCandidatoLabelText')
+  if (labelText) labelText.textContent = candidatoAtivo.foto_url ? '写真を変更' : '写真をアップロード'
+}
+
+async function uploadFotoCandidato(input) {
+  const file = input.files[0]
+  if (!file || !candidatoAtivo) return
+  const box = document.getElementById('fotoCandidatoBox')
+  input.disabled = true
+  box.textContent = '送信中...'
+  try {
+    const blob = await comprimirFotoCandidato(file)
+    const nome = `candidato_${candidatoAtivo.id}_${Date.now()}.jpg`
+    const { data: uploadData, error: uploadError } = await sb.storage
+      .from('fotos-curriculos')
+      .upload(nome, blob, { contentType: 'image/jpeg' })
+    if (uploadError) { alert('エラー: ' + uploadError.message); return }
+    const foto_url = sb.storage.from('fotos-curriculos').getPublicUrl(uploadData.path).data.publicUrl
+    const { error } = await sb.from('candidates').update({ foto_url }).eq('id', candidatoAtivo.id)
+    if (error) { alert('エラー: ' + error.message); return }
+    candidatoAtivo.foto_url = foto_url
+    const idx = todosOsCandidatos.findIndex(x => x.id === candidatoAtivo.id)
+    if (idx >= 0) todosOsCandidatos[idx].foto_url = foto_url
+  } catch (e) {
+    alert('エラー: ' + e.message)
+  } finally {
+    input.disabled = false
+    input.value = ''
+    renderFotoCandidatoBox()
+  }
 }
 
 async function salvarCandidato() {
