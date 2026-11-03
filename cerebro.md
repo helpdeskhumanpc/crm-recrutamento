@@ -1072,6 +1072,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-10-20 | **v1.79** — Bug corrigido na contagem de progresso de documentos (somava arquivo confirmado em vez de tipo satisfeito, estourava conta em tipos com 2 fotos) + mudança de regra pra contar por recebimento em vez de confirmação (aviso antecipado pro tantousha). Ícone 💬 em Leads do Site mostra o 担当者コメント ao passar o mouse/clicar, sem precisar abrir o candidato. Ver Pendências, item 9, pra detalhe completo |
 | 2026-11-02 | **v1.80** — 運転免許証 sai da lista de documentos sempre obrigatórios e passa a ser exigido só junto com os outros 3 documentos do carro (agora 4 condicionais, não 3) — refletido em `DOC_TIPOS_FIXOS`/`DOC_TIPOS_CARRO` (`dashboard.js`) e nas duas páginas públicas (card movido de seção, texto "estes três" → "estes quatro"/ "သုံးခု" → "လေးခု") |
 | 2026-11-02 | **v1.81** — マイナンバー passa a exigir 2 fotos (frente/verso) pra contar como completo, em vez de 1 — `DOC_TIPO_FOTOS_NECESSARIAS` em `dashboard.js` e dica adicionada nas duas páginas públicas |
+| 2026-11-03 | **v1.82** — Comentário do 担当者 em Leads do Site deixa de ser só um ícone 💬 (precisava clicar) e passa a aparecer direto abaixo do nome, truncado com reticências se for longo, texto completo no tooltip ao passar o mouse — pedido do Eder pra já mostrar a mensagem sem interação extra |
 
 ## Sistema de Versão
 
@@ -1079,8 +1080,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.81**
-- Tags criadas até agora: `v1.00` a `v1.81` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.82**
+- Tags criadas até agora: `v1.00` a `v1.82` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 

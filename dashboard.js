@@ -2910,7 +2910,10 @@ function renderLeads() {
           actions = `<span style="font-size:11px;color:#2e7d32;font-weight:600">✓ Encaminhado</span>`
         }
         return `<div class="lead-row">
-          <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}" style="font-weight:600;cursor:pointer;color:#1e88e5" onclick="abrirModal('${c.id}')">${c.tantousha_comentario ? `<span title="${escAttr(c.tantousha_comentario)}" style="cursor:help" onclick="event.stopPropagation();alert(${JSON.stringify('担当者コメント:\n\n' + c.tantousha_comentario)})">💬</span> ` : ''}${c.shimei || '—'}</span>
+          <span style="display:block;min-width:0">
+            <span class="${isTelDuplicado(c) ? 'dup-tel' : ''}" style="font-weight:600;cursor:pointer;color:#1e88e5" onclick="abrirModal('${c.id}')">${c.shimei || '—'}</span>
+            ${c.tantousha_comentario ? `<span style="display:block;font-size:11px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer" title="${escAttr(c.tantousha_comentario)}" onclick="abrirModal('${c.id}')">💬 ${escHtml(c.tantousha_comentario)}</span>` : ''}
+          </span>
           <span>${c.telefone || '—'}</span>
           <span style="font-size:11px">${c.fabrica || '—'}</span>
           <span style="font-size:11px">${c.prefecture || '—'}</span>
