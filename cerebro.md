@@ -1076,6 +1076,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-11-03 | **v1.83** — Foto 3x4 do candidato (`candidates.foto_url`, coluna nova). Dois lados: (1) popup (ficha) do `dashboard.js` mostra a foto se já existir, ou "写真なし", com botão pra o staff enviar/trocar manualmente; (2) novo card "Foto 3x4" em `guia-documentos.html`/`guia-documentos-mm.html` (precisa colar manualmente no Elementor) deixa o próprio candidato enviar, usando RPC `atualizar_foto_candidato` (`sql-telefone-existe.sql`) pra achar o candidato pelo telefone sem expor a tabela. Os dois lados sobem pro mesmo bucket `fotos-curriculos` (já usado pelo `form-curriculo.html`). Aviso de texto fixo pedindo fundo branco ou bege nos dois lugares (sem checagem automática, é só lembrete visual) |
 | 2026-11-03 | **v1.84** — Foto 3x4 entra como primeira página do PDF gerado pelo botão "📄 PDFをまとめてダウンロード" (`baixarPdfCompleto`, `dashboard.js`), quando o candidato tem `foto_url`. O botão agora aparece mesmo sem nenhum documento confirmado, desde que haja foto |
 | 2026-11-03 | **v1.85** — Novo documento **住民票** (1 foto, opcional de verdade) nas duas páginas públicas, sempre na última seção, depois dos fixos e dos condicionais do carro. Não entra em `DOC_TIPOS_FIXOS`/`DOC_TIPOS_CARRO` — não afeta a barra de progresso nem a contagem de completude do dashboard, só aparece listado se o candidato enviar (`DOC_TIPO_LABELS` em `dashboard.js`) |
+| 2026-11-09 | **v1.86** — Grid de cards do **紹介リンク** (`renderVagasLink`, `dashboard.js`) agora é agrupado visualmente por **事務所** (`locations.jimusho`), com um título de seção por escritório (ordem alfabética, fábricas sem jimusho caem em "その他"). Continua mostrando todas as fábricas ativas pra qualquer usuário com `shokai_nome` — é só reorganização visual, não mudou filtro de acesso |
 
 ## Sistema de Versão
 
@@ -1083,8 +1084,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.85**
-- Tags criadas até agora: `v1.00` a `v1.85` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.86**
+- Tags criadas até agora: `v1.00` a `v1.86` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 

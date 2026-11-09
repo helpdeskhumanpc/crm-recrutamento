@@ -1800,7 +1800,7 @@ async function renderVagasLink() {
   grid.innerHTML = '<div style="padding:10px;color:#aaa;font-size:12px">読み込み中...</div>'
 
   const { data, error } = await sb.from('locations')
-    .select('nome,link_divulgacao')
+    .select('nome,jimusho,link_divulgacao')
     .eq('ativo', true)
     .not('link_divulgacao', 'is', null)
     .order('nome')
@@ -1812,18 +1812,38 @@ async function renderVagasLink() {
     return
   }
 
+  const grupos = {}
+  vagas.forEach(v => {
+    const jm = v.jimusho || 'その他'
+    ;(grupos[jm] = grupos[jm] || []).push(v)
+  })
+  const nomesGrupos = Object.keys(grupos).filter(jm => jm !== 'その他').sort()
+  if (grupos['その他']) nomesGrupos.push('その他')
+
   const ref = encodeURIComponent(currentProfile?.shokai_nome || '')
-  grid.innerHTML = vagas.map((v, i) => `
-    <div class="vagas-link-card">
-      <div class="vagas-link-nome">${v.nome}</div>
-      <div class="vagas-link-actions">
-        <button class="btn-vlink btn-vlink-copy" onclick="copiarVagaLink(${i})">コピー</button>
-        <button class="btn-vlink btn-vlink-share" onclick="compartilharVagaLink(${i})">共有</button>
+  let idx = 0
+  grid.innerHTML = nomesGrupos.map(jm => `
+    <div class="vagas-link-group">
+      <div class="vagas-link-group-title">${jm}</div>
+      <div class="vagas-link-grid">
+        ${grupos[jm].map(v => {
+          const i = idx++
+          return `
+            <div class="vagas-link-card">
+              <div class="vagas-link-nome">${v.nome}</div>
+              <div class="vagas-link-actions">
+                <button class="btn-vlink btn-vlink-copy" onclick="copiarVagaLink(${i})">コピー</button>
+                <button class="btn-vlink btn-vlink-share" onclick="compartilharVagaLink(${i})">共有</button>
+              </div>
+            </div>
+          `
+        }).join('')}
       </div>
     </div>
   `).join('')
 
-  window._vagasLinkAtuais = vagas.map(v => `${v.link_divulgacao}${v.link_divulgacao.includes('?') ? '&' : '?'}ref=${ref}`)
+  window._vagasLinkAtuais = nomesGrupos.flatMap(jm => grupos[jm])
+    .map(v => `${v.link_divulgacao}${v.link_divulgacao.includes('?') ? '&' : '?'}ref=${ref}`)
 }
 
 function copiarVagaLink(i) {
