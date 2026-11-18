@@ -1332,6 +1332,7 @@ function abrirModal(id) {
             <span id="fotoCandidatoLabelText">${c.foto_url ? '写真を変更' : '写真をアップロード'}</span>
             <input type="file" id="f_foto_input" accept="image/*" style="display:none" onchange="uploadFotoCandidato(this)">
           </label>
+          <button id="fotoCandidatoDelBtn" onclick="apagarFotoCandidato()" style="display:${c.foto_url && podeEditar(c) ? 'block' : 'none'};width:120px;margin-top:4px;padding:6px;background:none;border:1px solid #c62828;color:#c62828;border-radius:6px;font-size:11px;cursor:pointer">写真を削除</button>
           <div style="font-size:10px;color:#999;margin-top:4px;width:120px">背景は白または薄いベージュの無地にしてください</div>
         </div>
         <div class="modal-grid" style="flex:1 1 300px">
@@ -1529,6 +1530,7 @@ async function carregarDocumentosCandidato(c) {
       ${confirmado
         ? `<span class="doc-row-ok">✅ 確定済み</span>`
         : (podeConfirmar ? `<button class="doc-row-confirm" onclick="confirmarDocumento('${d.id}')">確定する</button>` : `<span class="doc-row-ok" style="color:#999">未確定</span>`)}
+      ${podeConfirmar ? `<button onclick="apagarDocumento('${d.id}', '${d.storage_path}')" style="background:none;border:1px solid #c62828;color:#c62828;border-radius:6px;font-size:11px;padding:3px 8px;cursor:pointer">削除</button>` : ''}
     </div>`
 
   container.innerHTML = `
@@ -1544,6 +1546,34 @@ async function confirmarDocumento(docId) {
     .update({ candidate_id: candidatoAtivo.id, confirmado_em: new Date().toISOString() })
     .eq('id', docId)
   if (error) { alert('エラー: ' + error.message); return }
+  carregarDocumentosCandidato(candidatoAtivo)
+}
+
+async function apagarDocumento(docId, storagePath) {
+  if (!confirm('この書類を完全に削除しますか？（元に戻せません）')) return
+  const { data, error } = await sb.from('documentos_funcionarios').delete().eq('id', docId).select('id')
+  if (error) { alert('エラー: ' + error.message); return }
+  if (!data || data.length === 0) { alert('削除できませんでした（権限を確認してください）'); return }
+  await sb.storage.from('documentos-funcionarios').remove([storagePath])
+  carregarDocumentosCandidato(candidatoAtivo)
+}
+
+async function apagarFotoCandidato() {
+  if (!candidatoAtivo?.foto_url) return
+  if (!confirm('候補者の写真を完全に削除しますか？（元に戻せません）')) return
+  const fotoUrl = candidatoAtivo.foto_url
+  const { data, error } = await sb.from('candidates').update({ foto_url: null }).eq('id', candidatoAtivo.id).select('id')
+  if (error) { alert('エラー: ' + error.message); return }
+  if (!data || data.length === 0) { alert('削除できませんでした（権限を確認してください）'); return }
+
+  const marcador = '/fotos-curriculos/'
+  const pos = fotoUrl.indexOf(marcador)
+  if (pos >= 0) await sb.storage.from('fotos-curriculos').remove([decodeURIComponent(fotoUrl.slice(pos + marcador.length))])
+
+  candidatoAtivo.foto_url = null
+  const idx = todosOsCandidatos.findIndex(x => x.id === candidatoAtivo.id)
+  if (idx >= 0) todosOsCandidatos[idx].foto_url = null
+  renderFotoCandidatoBox()
   carregarDocumentosCandidato(candidatoAtivo)
 }
 
@@ -1622,6 +1652,8 @@ function renderFotoCandidatoBox() {
   box.innerHTML = candidatoAtivo.foto_url ? `<img src="${escAttr(candidatoAtivo.foto_url)}" style="width:100%;height:100%;object-fit:cover">` : '写真なし'
   const labelText = document.getElementById('fotoCandidatoLabelText')
   if (labelText) labelText.textContent = candidatoAtivo.foto_url ? '写真を変更' : '写真をアップロード'
+  const delBtn = document.getElementById('fotoCandidatoDelBtn')
+  if (delBtn) delBtn.style.display = candidatoAtivo.foto_url && podeEditar(candidatoAtivo) ? 'block' : 'none'
 }
 
 async function uploadFotoCandidato(input) {

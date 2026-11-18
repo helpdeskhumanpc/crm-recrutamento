@@ -42,3 +42,17 @@ create policy "select staff documentos" on storage.objects for select using (
   and exists (select 1 from profiles where profiles.id = auth.uid()
     and profiles.role in ('admin','jimusho','tantousha'))
 );
+
+-- 4) Exclusão pelo popup do candidato (botões 削除 de documento e 写真を削除)
+drop policy if exists "delete staff documentos_linha" on documentos_funcionarios;
+create policy "delete staff documentos_linha" on documentos_funcionarios for delete using (
+  exists (select 1 from profiles where profiles.id = auth.uid()
+    and profiles.role in ('admin','jimusho','tantousha'))
+);
+
+drop policy if exists "delete staff arquivos" on storage.objects;
+create policy "delete staff arquivos" on storage.objects for delete using (
+  bucket_id in ('documentos-funcionarios','fotos-curriculos')
+  and exists (select 1 from profiles where profiles.id = auth.uid()
+    and profiles.role in ('admin','jimusho','tantousha'))
+);
