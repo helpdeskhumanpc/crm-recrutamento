@@ -129,7 +129,6 @@
     </div>
 
     <!-- 工場 / 面接日 -->
-    <!-- PRE-FILTRO POR ESTADO: descomentar quando necessário
     <div class="form-row">
       <div>
         <label>都道府県（工場）</label>
@@ -138,14 +137,12 @@
         </select>
       </div>
       <div>
-    -->
-    <div class="form-group">
-      <label>工場 <span class="required">*</span></label>
-      <select id="fabricaSelect" name="fabrica" required>
-        <option value="">選択してください</option>
-      </select>
+        <label>工場 <span class="required">*</span></label>
+        <select id="fabricaSelect" name="fabrica" required>
+          <option value="">選択してください</option>
+        </select>
+      </div>
     </div>
-    <!-- fim do bloco com filtro por estado -->
     <div class="form-row">
       <div>
         <label>面接日</label>
@@ -424,6 +421,18 @@
     if (error || !data) return
     todasFabricas = data
     preencherFabricas(data)
+    preencherEstados(data)
+  }
+
+  function preencherEstados(lista) {
+    const sel = document.getElementById('estadoSelect')
+    const estados = [...new Set(lista.map(f => f.estado).filter(Boolean))].sort()
+    estados.forEach(e => {
+      const opt = document.createElement('option')
+      opt.value = e
+      opt.textContent = e
+      sel.appendChild(opt)
+    })
   }
 
   function preencherFabricas(lista) {

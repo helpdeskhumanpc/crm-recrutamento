@@ -1343,7 +1343,7 @@ function abrirModal(id) {
           <div class="modal-field"><label>性別</label><select id="f_sexo"><option value="">—</option>${sel(['男性','女性','その他'],c.sexo)}</select></div>
           <div class="modal-field"><label>都道府県</label><input id="f_pref" value="${c.prefecture||''}"></div>
           <div class="modal-field"><label>市区町村</label><input id="f_city" value="${c.city||''}"></div>
-          <div class="modal-field"><label>〒</label><input id="f_cep" value="${c.postal_code||''}"></div>
+          <div class="modal-field"><label>〒 <a href="#" onclick="abrirCepNoMapa(event)" style="font-size:11px;font-weight:400;color:#1e88e5;text-decoration:none;margin-left:6px">🗺 Google Maps</a></label><input id="f_cep" value="${c.postal_code||''}"></div>
         </div>
       </div>
     </div>
@@ -1650,6 +1650,13 @@ async function uploadFotoCandidato(input) {
     input.value = ''
     renderFotoCandidatoBox()
   }
+}
+
+function abrirCepNoMapa(e) {
+  e.preventDefault()
+  const cep = document.getElementById('f_cep').value.trim()
+  if (!cep) { alert('郵便番号を入力してください'); return }
+  window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('〒' + cep), '_blank', 'noopener')
 }
 
 async function salvarCandidato() {

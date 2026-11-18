@@ -152,7 +152,7 @@ Campo `fabricas` é um array — formato JSON:
 | Arquivo | Função |
 |---------|--------|
 | `dashboard.html` | CRM completo — pipeline, leads, stock pool, calendário, gráficos, link de indicação |
-| `form-candidato.html` | Formulário interno de cadastro (japonês) — origem `indicado` |
+| `form-candidato.html` | Formulário interno de cadastro (japonês) — origem `indicado` — **colado manualmente via Elementor HTML widget em `jobs-human.com/cadastro/`, não é servido dinamicamente do Railway** (confirmado em 2026-11-11 — a tabela antiga não tinha essa observação, só o `form-vaga.html` tinha) |
 | `form-vaga.html` | Formulário público (português) no WordPress — origem `web` — **colado manualmente via Elementor HTML widget, não é servido dinamicamente do Railway** |
 | `form-vaga-ig.html` | Variante do form-vaga.html (labels em inglês) — status de onde está embutido no site ainda não confirmado com o Eder |
 | `link-afiliado.html` | Página standalone com senha compartilhada (`0246`) pra gerar link de indicação — **criada em 2026-08-19 e hoje sem uso**: decisão foi usar só a aba 紹介リンク do dashboard (exige login individual), esse arquivo ficou como transição pra quem ainda não tinha conta |
@@ -647,7 +647,7 @@ Recebe o payload do candidato e executa **em paralelo**:
 |-------|------|-----------|
 | 事務所 | Select dinâmico | Carrega de `shokaisha` table |
 | 紹介者 | Select dinâmico | Filtrado por 事務所 selecionada |
-| 工場 | Select dinâmico | Carrega de `locations` table |
+| 工場 | Select dinâmico | Carrega de `locations` table, filtrado por 都道府県（工場） pré-selecionado (v1.87) |
 | 面接日 | Date | Opcional |
 | 面接時間 | Time | Opcional |
 | 氏名 | Text | Obrigatório |
@@ -1077,6 +1077,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-11-03 | **v1.84** — Foto 3x4 entra como primeira página do PDF gerado pelo botão "📄 PDFをまとめてダウンロード" (`baixarPdfCompleto`, `dashboard.js`), quando o candidato tem `foto_url`. O botão agora aparece mesmo sem nenhum documento confirmado, desde que haja foto |
 | 2026-11-03 | **v1.85** — Novo documento **住民票** (1 foto, opcional de verdade) nas duas páginas públicas, sempre na última seção, depois dos fixos e dos condicionais do carro. Não entra em `DOC_TIPOS_FIXOS`/`DOC_TIPOS_CARRO` — não afeta a barra de progresso nem a contagem de completude do dashboard, só aparece listado se o candidato enviar (`DOC_TIPO_LABELS` em `dashboard.js`) |
 | 2026-11-09 | **v1.86** — Grid de cards do **紹介リンク** (`renderVagasLink`, `dashboard.js`) agora é agrupado visualmente por **事務所** (`locations.jimusho`), com um título de seção por escritório (ordem alfabética, fábricas sem jimusho caem em "その他"). Continua mostrando todas as fábricas ativas pra qualquer usuário com `shokai_nome` — é só reorganização visual, não mudou filtro de acesso |
+| 2026-11-11 | **v1.87** — Ativado o pré-filtro de 都道府県 antes do 工場 no `form-candidato.html` (bloco que já existia comentado desde antes, igual ao padrão 事務所→紹介者). Nova função `preencherEstados()` popula o dropdown `estadoSelect` com os estados distintos de `locations.estado`; `filtrarFabricasPorEstado()` já existia e não mudou. **Depende de `locations.estado` estar preenchido** por fábrica no Supabase — fábrica sem estado preenchido não aparece em nenhum filtro de estado específico (só aparece quando "全県" está selecionado) |
+| 2026-11-18 | **v1.88** — Link **🗺 Google Maps** ao lado do rótulo 〒 no popup do candidato (`abrirCepNoMapa`, `dashboard.js`): abre o Google Maps numa nova aba buscando o CEP que estiver no campo naquele momento |
 
 ## Sistema de Versão
 
@@ -1084,8 +1086,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.86**
-- Tags criadas até agora: `v1.00` a `v1.86` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.88**
+- Tags criadas até agora: `v1.00` a `v1.88` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 
