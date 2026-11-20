@@ -2435,6 +2435,18 @@ async function renderOrderStatus() {
     return
   }
   container.innerHTML = jimushos.map(jm => renderOrderStatusEscritorio(jm)).join('<div class="ordst-divider"></div>')
+  jimushos.forEach(jm => desenharRankingShokai(`ordstShokai-${encodeURIComponent(jm)}`, candidatosUltimoMes(candidatosDoEscritorio(jm))))
+}
+
+function candidatosUltimoMes(lista) {
+  const hoje = new Date()
+  const ini = new Date(hoje); ini.setMonth(ini.getMonth() - 1)
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  const iniStr = iso(ini), fimStr = iso(hoje)
+  return lista.filter(c => {
+    const d = c.dt_shokai || c.created_at?.slice(0, 10)
+    return d && d >= iniStr && d <= fimStr
+  })
 }
 
 // Navegação da agenda do オーダー状況 — desloca a janela de 14 dias pra frente/trás.
@@ -2461,16 +2473,8 @@ function renderOrderStatusEscritorio(jimusho) {
   const comNyu       = cands.filter(c => c.dt_nyusha).length
   const pct = (a, b) => b === 0 ? '—' : Math.round(a / b * 100) + '%'
 
-  const filtroIni = document.getElementById('filterDtIni')?.value
-  const filtroFim = document.getElementById('filterDtFim')?.value
-  const shokaiMap = {}
-  cands.forEach(c => {
-    const d = c.dt_shokai || c.created_at?.slice(0, 10)
-    if (!d || !c.shokai) return
-    if ((filtroIni && d < filtroIni) || (filtroFim && d > filtroFim)) return
-    ;(shokaiMap[c.shokai] = shokaiMap[c.shokai] || []).push(c.shimei)
-  })
-  const shokaiLista = Object.entries(shokaiMap).sort((a, b) => b[1].length - a[1].length)
+  const nShokai = new Set(candidatosUltimoMes(cands).map(c => c.shokai).filter(Boolean)).size
+  const alturaShokai = Math.max(220, nShokai * 28 + 60)
 
   // cards de オーダー (só leitura aqui — edição agora é na barra da fábrica ativa) — só quem tem order_atual > 0
   const fabricasComOrder = todasLocations
@@ -2527,14 +2531,8 @@ function renderOrderStatusEscritorio(jimusho) {
       </div>
       ${agendaHtml}
 
-      <h3 class="ordst-subtitulo">紹介者（期間内）</h3>
-      ${shokaiLista.length
-        ? shokaiLista.map(([nome, nomes]) => `
-          <div style="background:var(--ordst-card);border:1px solid var(--ordst-card-border);border-radius:10px;padding:10px 14px;margin-bottom:8px">
-            <div style="font-weight:700;color:var(--ordst-text)">${nome} <span style="color:var(--ordst-muted);font-weight:400">— ${nomes.length}名</span></div>
-            <div style="font-size:12px;color:var(--ordst-muted);margin-top:4px">${nomes.join('、')}</div>
-          </div>`).join('')
-        : '<div class="ordst-empty">この期間に紹介された候補者がいません。</div>'}
+      <h3 class="ordst-subtitulo">紹介者（過去1か月）</h3>
+      <div style="position:relative;height:${alturaShokai}px;background:var(--ordst-card);border:1px solid var(--ordst-card-border);border-radius:10px;padding:12px"><canvas id="ordstShokai-${encodeURIComponent(jimusho)}"></canvas></div>
     </div>`
 }
 
@@ -2719,6 +2717,56 @@ function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy
 
 Chart.register(ChartDataLabels)
 
+// Grupos usados pelo ranking 紹介者 (Gráficos e オーダー状況)
+const GRUPOS_SHOKAI = [
+  { label: '進行中',      color: '#1e88e5', stages: ['renrakumae','taiochu','mensetsu','kengaku'] },
+  { label: '成約',        color: '#2e7d32', stages: ['naitei','nyusha','zaiseki'] },
+  { label: 'ストック',     color: '#f9a825', stages: ['stock'] },
+  { label: 'NG・ブラック', color: '#c62828', stages: ['ng','black'] },
+]
+
+function desenharRankingShokai(canvasId, candidatos) {
+  const labelColor = document.body.classList.contains('dark-mode') ? '#e0e0e8' : '#333'
+  const shMap = {}
+  const shGrupoMap = {}
+  candidatos.forEach(c => {
+    if (!c.shokai) return
+    shMap[c.shokai] = (shMap[c.shokai] || 0) + 1
+    if (!shGrupoMap[c.shokai]) shGrupoMap[c.shokai] = {}
+    const stg = getStage(c)
+    const grupo = GRUPOS_SHOKAI.find(g => g.stages.includes(stg)) || GRUPOS_SHOKAI[0]
+    shGrupoMap[c.shokai][grupo.label] = (shGrupoMap[c.shokai][grupo.label] || 0) + 1
+  })
+  const shLabels = Object.keys(shMap).sort((a,b) => shMap[b] - shMap[a])
+  destroyChart(canvasId)
+  chartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
+    type: 'bar',
+    data: {
+      labels: shLabels,
+      datasets: GRUPOS_SHOKAI.map(g => ({
+        label: g.label,
+        data: shLabels.map(s => shGrupoMap[s]?.[g.label] || 0),
+        backgroundColor: g.color,
+      })),
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+        datalabels: {
+          display: ctx => ctx.datasetIndex === ctx.chart.data.datasets.length - 1,
+          anchor: 'end', align: 'end', color: labelColor, font: { weight: 'bold' },
+          formatter: (v, ctx) => ctx.chart.data.datasets.reduce((s, d) => s + (d.data[ctx.dataIndex] || 0), 0) || '',
+        },
+      },
+      scales: {
+        x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+        y: { stacked: true, ticks: { autoSkip: false } },
+      }
+    }
+  })
+}
+
 function renderCharts() {
   const dark = document.body.classList.contains('dark-mode')
   Chart.defaults.color = dark ? '#c7c7d6' : '#666'
@@ -2758,14 +2806,6 @@ function renderCharts() {
     data: { labels: stageLabels, datasets: [{ data: stageCounts, backgroundColor: stageColors, borderRadius: 4 }] },
     options: { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'end', color: labelColor, font: { weight: 'bold' }, formatter: v => v > 0 ? v : '' } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
   })
-
-  // Grupos usados tanto no gráfico por escritório quanto no ranking por 紹介者
-  const GRUPOS_SHOKAI = [
-    { label: '進行中',      color: '#1e88e5', stages: ['renrakumae','taiochu','mensetsu','kengaku'] },
-    { label: '成約',        color: '#2e7d32', stages: ['naitei','nyusha','zaiseki'] },
-    { label: 'ストック',     color: '#f9a825', stages: ['stock'] },
-    { label: 'NG・ブラック', color: '#c62828', stages: ['ng','black'] },
-  ]
 
   // Por escritório — mesma ideia do ranking 紹介者, mas agrupado por jimusho.
   // Candidato sem shokai reconhecido (nome não bate com shokaisha nem perfis_publicos,
@@ -2850,40 +2890,10 @@ function renderCharts() {
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
   })
 
-  // Ranking 紹介者 (barra empilhada por grupo de etapa, em vez das 10 etapas soltas)
-  const shMap = {}      // total por shokai, so pra ordenar o ranking
-  const shGrupoMap = {} // shokai -> { grupoLabel: count }
-  dados.forEach(c => {
-    if (!c.shokai) return
-    shMap[c.shokai] = (shMap[c.shokai] || 0) + 1
-    if (!shGrupoMap[c.shokai]) shGrupoMap[c.shokai] = {}
-    const stg = getStage(c)
-    const grupo = GRUPOS_SHOKAI.find(g => g.stages.includes(stg)) || GRUPOS_SHOKAI[0]
-    shGrupoMap[c.shokai][grupo.label] = (shGrupoMap[c.shokai][grupo.label] || 0) + 1
-  })
-  const shLabels = Object.keys(shMap).sort((a,b) => shMap[b] - shMap[a])
   // altura dinâmica: cresce com a quantidade de 紹介者 para mostrar todos os nomes
-  document.getElementById('chartShokaiWrap').style.height = Math.max(220, shLabels.length * 28 + 60) + 'px'
-  destroyChart('chartShokai')
-  chartInstances['chartShokai'] = new Chart(document.getElementById('chartShokai'), {
-    type: 'bar',
-    data: {
-      labels: shLabels,
-      datasets: GRUPOS_SHOKAI.map(g => ({
-        label: g.label,
-        data: shLabels.map(s => shGrupoMap[s]?.[g.label] || 0),
-        backgroundColor: g.color,
-      })),
-    },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }, datalabels: rotuloTotal },
-      scales: {
-        x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
-        y: { stacked: true, ticks: { autoSkip: false } },
-      }
-    }
-  })
+  const nShokai = new Set(dados.map(c => c.shokai).filter(Boolean)).size
+  document.getElementById('chartShokaiWrap').style.height = Math.max(220, nShokai * 28 + 60) + 'px'
+  desenharRankingShokai('chartShokai', dados)
 }
 
 function carregarChartFabricaFilter() {
