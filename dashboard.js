@@ -2738,6 +2738,7 @@ function desenharRankingShokai(canvasId, candidatos) {
     shGrupoMap[c.shokai][grupo.label] = (shGrupoMap[c.shokai][grupo.label] || 0) + 1
   })
   const shLabels = Object.keys(shMap).sort((a,b) => shMap[b] - shMap[a])
+  const maxTotal = Math.max(0, ...Object.values(shMap))
   destroyChart(canvasId)
   chartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
     type: 'bar',
@@ -2760,7 +2761,7 @@ function desenharRankingShokai(canvasId, candidatos) {
         },
       },
       scales: {
-        x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+        x: { stacked: true, beginAtZero: true, suggestedMax: maxTotal * 1.15 + 1, ticks: { precision: 0 } },
         y: { stacked: true, ticks: { autoSkip: false } },
       }
     }

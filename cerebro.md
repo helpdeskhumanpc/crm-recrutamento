@@ -1082,6 +1082,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-11-18 | **v1.89** — Botões **削除** em cada documento e **写真を削除** na foto do candidato no popup (`apagarDocumento`, `apagarFotoCandidato`, `dashboard.js`), visíveis só com `podeEditar(c)`. Exclusão definitiva: apaga a linha em `documentos_funcionarios` (ou zera `candidates.foto_url`) e depois o arquivo no storage. Exige as policies de DELETE em `sql-documentos-funcionarios.sql` (seção 4) |
 | 2026-11-20 | **v1.90** — No オーダー状況, o gráfico de barras 状況 (funil por etapa) foi substituído pela lista **紹介者（期間内）**: cada 紹介者 do escritório com a contagem e os nomes dos candidatos indicados, filtrados pelo período de 登録日 (com fallback para `created_at` quando `dt_shokai` estiver vazio). Remove também `ORDST_STAGE_COLORS` (não usado mais) |
 | 2026-11-20 | **v1.91** — No オーダー状況, a lista de 紹介者 vira o gráfico de barras empilhadas por grupo de etapa (mesmo do Gráficos), por escritório, com período fixo de **último mês** (independe do filtro de 登録日 do topo). A função de desenho foi extraída para `desenharRankingShokai()` (nível de módulo) e é usada pelas duas telas. Aba Gráficos não muda |
+| 2026-11-20 | **v1.92** — Rótulos de total do ranking 紹介者 sumiam nas barras mais longas (saíam da área do gráfico). Eixo X ganha folga (`suggestedMax`) acima da maior soma. Afeta também a aba Gráficos, já que usa a mesma função |
 
 ## Sistema de Versão
 
@@ -1089,8 +1090,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.91**
-- Tags criadas até agora: `v1.00` a `v1.91` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.92**
+- Tags criadas até agora: `v1.00` a `v1.92` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 
