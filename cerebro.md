@@ -1080,6 +1080,7 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 | 2026-11-11 | **v1.87** — Ativado o pré-filtro de 都道府県 antes do 工場 no `form-candidato.html` (bloco que já existia comentado desde antes, igual ao padrão 事務所→紹介者). Nova função `preencherEstados()` popula o dropdown `estadoSelect` com os estados distintos de `locations.estado`; `filtrarFabricasPorEstado()` já existia e não mudou. **Depende de `locations.estado` estar preenchido** por fábrica no Supabase — fábrica sem estado preenchido não aparece em nenhum filtro de estado específico (só aparece quando "全県" está selecionado) |
 | 2026-11-18 | **v1.88** — Link **🗺 Google Maps** ao lado do rótulo 〒 no popup do candidato (`abrirCepNoMapa`, `dashboard.js`): abre o Google Maps numa nova aba buscando o CEP que estiver no campo naquele momento |
 | 2026-11-18 | **v1.89** — Botões **削除** em cada documento e **写真を削除** na foto do candidato no popup (`apagarDocumento`, `apagarFotoCandidato`, `dashboard.js`), visíveis só com `podeEditar(c)`. Exclusão definitiva: apaga a linha em `documentos_funcionarios` (ou zera `candidates.foto_url`) e depois o arquivo no storage. Exige as policies de DELETE em `sql-documentos-funcionarios.sql` (seção 4) |
+| 2026-11-20 | **v1.90** — No オーダー状況, o gráfico de barras 状況 (funil por etapa) foi substituído pela lista **紹介者（期間内）**: cada 紹介者 do escritório com a contagem e os nomes dos candidatos indicados, filtrados pelo período de 登録日 (com fallback para `created_at` quando `dt_shokai` estiver vazio). Remove também `ORDST_STAGE_COLORS` (não usado mais) |
 
 ## Sistema de Versão
 
@@ -1087,8 +1088,8 @@ Enviar notificação automática às **9:00 e 13:00 JST** (00:00 e 04:00 UTC) co
 - A cada mudança publicada, o número sobe e uma tag anotada é criada no git (`git tag -a vX.XX`) apontando pro commit daquela versão, e enviada ao GitHub (`git push origin vX.XX`)
 - Convenção: o número **menor** (segundo, ex: `1.02`) sobe a cada mudança normal; o número **maior** (primeiro, ex: `2.0`) sobe em mudanças estruturais grandes (redesenho, mudança de arquitetura)
 - Para reverter: `git checkout vX.XX` recupera o código exatamente daquele ponto, sem perder o histórico do que veio depois
-- Versão atual: **v1.89**
-- Tags criadas até agora: `v1.00` a `v1.89` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
+- Versão atual: **v1.90**
+- Tags criadas até agora: `v1.00` a `v1.90` (v1.63 "painel Makoto + navegação de agenda em オーダー状況" e v1.64 "fábrica delegada aparece no menu mesmo com 0 candidato" foram publicadas por outra sessão — não documentadas em detalhe aqui ainda)
 
 ## Pendências
 

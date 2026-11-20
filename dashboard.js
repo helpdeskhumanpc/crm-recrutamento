@@ -2412,11 +2412,6 @@ async function salvarMakotoFabrica() {
 }
 
 // ─── オーダー状況 (jimusho: proprio escritorio; admin: todos, separados) ───
-const ORDST_STAGE_COLORS = {
-  renrakumae:'#1e88e5', taiochu:'#f57c00', mensetsu:'#00897b', kentouchu:'#f9a825', kengaku:'#5e35b1',
-  naitei:'#2e7d32', nyusha:'#7b1fa2', zaiseki:'#00695c', stock:'#e91e8c', ng:'#c62828', black:'#212121',
-}
-
 function fabricasDoJimushoNome(jimusho) {
   return todasLocations.filter(l => l.jimusho === jimusho).map(l => l.nome)
 }
@@ -2466,21 +2461,16 @@ function renderOrderStatusEscritorio(jimusho) {
   const comNyu       = cands.filter(c => c.dt_nyusha).length
   const pct = (a, b) => b === 0 ? '—' : Math.round(a / b * 100) + '%'
 
-  // funil consolidado — 入社 conta pelo dt_nyusha dentro do período filtrado, não pela
-  // exceção de "sempre mostrar quem já entrou" que o resto do app usa (dentroDoPeriodo)
   const filtroIni = document.getElementById('filterDtIni')?.value
   const filtroFim = document.getElementById('filterDtFim')?.value
-  const funil = STAGES.filter(s => s.key !== 'zaiseki').map(s => {
-    let count
-    if (s.key === 'nyusha') {
-      count = cands.filter(c => getStage(c) === 'nyusha' && c.dt_nyusha
-        && (!filtroIni || c.dt_nyusha >= filtroIni) && (!filtroFim || c.dt_nyusha <= filtroFim)).length
-    } else {
-      count = cands.filter(c => getStage(c) === s.key).length
-    }
-    return { label: s.label, color: ORDST_STAGE_COLORS[s.key], count }
+  const shokaiMap = {}
+  cands.forEach(c => {
+    const d = c.dt_shokai || c.created_at?.slice(0, 10)
+    if (!d || !c.shokai) return
+    if ((filtroIni && d < filtroIni) || (filtroFim && d > filtroFim)) return
+    ;(shokaiMap[c.shokai] = shokaiMap[c.shokai] || []).push(c.shimei)
   })
-  const funilMax = Math.max(1, ...funil.map(f => f.count))
+  const shokaiLista = Object.entries(shokaiMap).sort((a, b) => b[1].length - a[1].length)
 
   // cards de オーダー (só leitura aqui — edição agora é na barra da fábrica ativa) — só quem tem order_atual > 0
   const fabricasComOrder = todasLocations
@@ -2537,15 +2527,14 @@ function renderOrderStatusEscritorio(jimusho) {
       </div>
       ${agendaHtml}
 
-      <h3 class="ordst-subtitulo">状況</h3>
-      <div class="ordst-funil">
-        ${funil.map(f => `
-          <div class="ordst-funil-row">
-            <span class="ordst-funil-label">${f.label}</span>
-            <div class="ordst-funil-bar-wrap"><div class="ordst-funil-bar" style="width:${f.count/funilMax*100}%;background:${f.color}"></div></div>
-            <span class="ordst-funil-count">${f.count}</span>
-          </div>`).join('')}
-      </div>
+      <h3 class="ordst-subtitulo">紹介者（期間内）</h3>
+      ${shokaiLista.length
+        ? shokaiLista.map(([nome, nomes]) => `
+          <div style="background:var(--ordst-card);border:1px solid var(--ordst-card-border);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+            <div style="font-weight:700;color:var(--ordst-text)">${nome} <span style="color:var(--ordst-muted);font-weight:400">— ${nomes.length}名</span></div>
+            <div style="font-size:12px;color:var(--ordst-muted);margin-top:4px">${nomes.join('、')}</div>
+          </div>`).join('')
+        : '<div class="ordst-empty">この期間に紹介された候補者がいません。</div>'}
     </div>`
 }
 
